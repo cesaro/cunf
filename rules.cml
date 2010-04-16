@@ -1,0 +1,41 @@
+
+banner BANNER
+prefix "CONFIG_"
+
+# symbol definitions
+symbols
+
+# menu names
+main		'Mole2'
+glue		'Glue code'
+tests		'Test & debug'
+
+# option names
+BANNER			'Mole2'
+DEBUG			'Compile debug & assert code'
+NODELIST_STEP		'Allocation step for the nodelist'
+
+DUMMY			'Dummy symbol'
+
+# option defaults
+default DEBUG from y
+default NODELIST_STEP from 1024 range 256-65536
+
+# configuration and visualization constrains
+
+# derived configuration
+
+# menues
+menu glue
+	DUMMY
+
+menu tests
+	DEBUG
+
+menu main
+	glue
+	tests
+	NODELIST_STEP%
+
+start main
+
