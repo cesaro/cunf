@@ -20,7 +20,7 @@ struct nl *li_freelist = NULL;	  /* pointer to freed nodelist elements */
 contingent_t *li_contlist = NULL; /* pointer to allocated contingents   */
 int li_counter = 0;    /* num of free elements in the latest contingent */
 
-struct nl * nl_alloc ()
+static struct nl * _nl_alloc ()
 {
 	struct nl *tmp_nl;
 	contingent_t *tmp_co;
@@ -47,7 +47,7 @@ struct nl * nl_alloc ()
 
 struct nl* nl_push (struct nl **list, void *node)
 {
-	struct nl *newlist = nl_alloc();
+	struct nl *newlist = _nl_alloc();
 	newlist->node = node;
 	newlist->next = *list;
 	return *list = newlist;
@@ -85,7 +85,7 @@ void nl_delete (struct nl *list)
 /*****************************************************************************/
 /* compare two lists; return 0 if equal, -1 if list1 < list2, 1 otherwise    */
 
-char nl_compare (struct nl *list1, struct nl *list2)
+char nl_compare (const struct nl *list1, const struct nl *list2)
 {
 	while (list1 && list2 && list1->node == list2->node)
 		list1 = list1->next, list2 = list2->next;

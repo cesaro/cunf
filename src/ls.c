@@ -3,9 +3,10 @@
  * Static single-linked list -- implementation
  */
 
-#include "ls.h"
-#include "debug.h"
 #include "config.h"
+#include "debug.h"
+#include "glue.h"
+#include "ls.h"
 
 #ifdef CONFIG_DEBUG
 static void _ls_assert (struct ls * l)

@@ -15,7 +15,7 @@ struct u u;
 
 /*****************************************************************************/
 
-void usage(char *myname)
+void usage (const char *myname)
 {
 	fprintf(stderr,
 		"%s -- low level net unfolder\n\n"
@@ -32,32 +32,95 @@ void usage(char *myname)
 	"Unless specified otherwise, all filenames will default to\n"
 	"the basename of <LLnetfile> plus appropriate extensions.\n\n"
 
-	"Version 1.0.6 (23.03.2006)\n", myname, myname);
+	"Version 2, " __DATE__ "\n", myname, myname);
 
-	exit(1);
+	exit (EXIT_SUCCESS);
 }
 
-/*****************************************************************************/
+#define P printf
+
+void write_dot (void)
+{
+	struct event *e;
+	struct cond *c;
+	struct ls *n;
+	int i, enr;
+
+	P ("digraph {\n\t/* events */\n");
+	for (n = u.unf.events.next; n; n = n->next) {
+		e = ls_i (struct event, n, nod);
+		if (e->id == 0) continue;
+
+		for (i = e->post.deg - 1; i >= 0; i--) {
+			c = dg_i (struct cond, e->post.adj[i], post);
+			P ("\te%-6d -> c%d;\n", e->id, c->id);
+		}
+	}
+
+	P ("\n\t/* conditions */\n");
+	for (n = u.unf.events.next; n; n = n->next) {
+		e = ls_i (struct event, n, nod);
+		if (e->id == 0) continue;
+
+		for (i = e->pre.deg - 1; i >= 0; i--) {
+			c = dg_i (struct cond, e->pre.adj[i], pre);
+			P ("\tc%-6d -> e%d;\n", c->id, e->id);
+		}
+	}
+
+	P ("\n\t/* attributes for events */\n");
+	enr = 0;
+	for (n = u.unf.events.next; n; n = n->next) {
+		e = ls_i (struct event, n, nod);
+		if (e->id == 0) continue;
+		enr++;
+		P ("\te%-6d [label=\"e%d:%s\" shape=box];\n",
+				e->id, e->id, e->origin->name);
+	}
+
+	P ("\n\t/* attributes for conditions */\n");
+	for (n = u.unf.conds.next; n; n = n->next) {
+		c = ls_i (struct cond, n, nod);
+
+		P ("\tc%-6d [label=\"c%d:%s\" shape=circle];\n",
+				c->id, c->id, c->origin->name);
+	}
+
+	P ("\n");
+	P ("\t/* %d events ( + %d cut-offs)\n"
+	   "\t * %d transitions\n"
+	   "\t * %d conditions\n"
+	   "\t * %d places\n"
+	   "\t */\n"
+	   "}\n",
+			enr,
+			u.unf.numev - enr,
+			u.net.numtr,
+			u.unf.numco,
+			u.net.numpl);
+}
 
 int main (int argc, char **argv)
 {
 	int	 i;
 	char    *llnet = NULL, *mcifile;
 	char    **dptr = &llnet;
-	char	*tmpname, *idx;
+	char	*tmpname, *idx, *sptr;
 
 	/* initialize global parameters */
 	u.stoptr = 0;
 	u.depth = 0;
 	u.interactive = 0;
-	u.exitcode = 0;
+
+	u.mark = 1;
 
 	/* parse command line */
+	sptr = 0;
 	for (i = 1; i < argc; i++)
 		if (!strcmp(argv[i],"-m"))
 			dptr = &mcifile;
 		else if (!strcmp(argv[i],"-T"))
-			u.stoptr = argv[++i];
+			sptr = argv[++i];
 		else if (!strcmp(argv[i],"-d"))
 			u.depth = atoi(argv[++i]);
 		else if (!strcmp(argv[i],"-i"))
@@ -82,14 +145,14 @@ int main (int argc, char **argv)
 			dptr = NULL;
 		}
 
-	if (!llnet) usage(argv[0]);
+	if (!llnet) usage (argv[0]);
 
 	read_pep_net (llnet);
-	nc_static_checks ();
+	nc_static_checks (sptr);
 	db_net ();
-	/* unfold();
-	write_mci_file(mcifile); */
+	unfold ();
+	write_dot ();
 
-	return u.exitcode;
+	return EXIT_SUCCESS;
 }
 

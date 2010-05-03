@@ -9,13 +9,14 @@ all: $(TARGETS)
 fake :
 	@echo $(MSRCS)
 	@echo $(CC)
+	@echo $(SRCS)
 
 $(TARGETS) : % : %.o $(OBJS)
 	@echo " LD  $@"
 	@$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $^ $(LDFLAGS) 
 
 e : $(TARGETS)
-	./test/dg
+	./src/main test/examples/test1.ll_net
 
 t : $(TARGETS)
 	time ./test/dg
@@ -24,7 +25,7 @@ ee : $(TARGETS)
 	./test/dg 2>&1 | tee /tmp/mole.log
 
 g : $(TARGETS)
-	gdb ./test/dg
+	gdb ./src/main
 
 menuconfig .config : rules.out
 	@echo " CNF $<"

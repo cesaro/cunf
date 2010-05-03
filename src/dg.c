@@ -3,25 +3,44 @@
  * Directed graph -- implementation
  */
 
+#include <string.h>
+#include <limits.h>
+#include <stdint.h>
+
 #include "debug.h"
 #include "glue.h"
 
 #include "dg.h"
 
+static uint32_t _dg_nextpow (uint32_t i)
+{
+	uint32_t m;
+	int a;
+
+	/* next power to 2^31 is 2^32, or 0 mod 2^32 :) */
+	if (i & (1 << 31)) return 0;
+
+	/* shift a bits to the right if m >= i, otherwise do it to the left;
+	 * and stop when a is zero */
+	m = 1 << 16;
+	for (a = 8; a; a /= 2) if (m >= i) m >>= a; else m <<= a;
+	return m;
+}
+
 static void _dg_alloc (struct dg * n)
 {
-	/* 2 slots is the minimum size */
-	if (n->deg == 0) {
-		n->adj = gl_realloc (0, 2 * sizeof (struct dg *));
-		return;
-	}
-
-	/* if current size is a power of two, duplicate the size */
+	/* if current size is a power of two */
 	if ((n->deg & (n->deg - 1)) == 0) {
+
+		/* 2 slots is the minimum size */
+		if (n->deg == 0) {
+			n->adj = gl_realloc (0, 2 * sizeof (struct dg *));
+			return;
+		}
+
+		/* duplicate the size */
 		n->adj = gl_realloc (n->adj, n->deg * 2 * sizeof (struct dg *));
 	}
-
-	/* otherwise, nothing to do! */
 }
 
 void dg_init (struct dg * n)
@@ -65,6 +84,32 @@ void dg_rem (struct dg * n1, struct dg * n2)
 	ASSERT (n1);
 	ASSERT (n2);
 	ASSERT (0);
+}
+
+void dg_cpy (struct dg * dst, struct dg * src)
+{
+	int size;
+
+	ASSERT (dst);
+	ASSERT (src);
+
+	/* compute the smallest power of 2 that is greater than the degree */
+	size = (int) _dg_nextpow ((uint32_t) src->deg);
+	ASSERT (size < INT_MAX);
+	ASSERT (size >= 1);
+	ASSERT (size >= src->deg);
+
+	/* copy the degree and return if it is 0 */
+	dst->deg = src->deg;
+	if (src->deg == 0) {
+		dst->adj = 0;
+		return;
+	}
+
+	/* allocate memory for the adjacency array and make a raw copy of the
+	 * original */
+	dst->adj = gl_malloc (sizeof (struct dg *) * size);
+	memcpy (dst->adj, src->adj, src->deg * sizeof (struct dg *));
 }
 
 int dg_test (const struct dg * n1, const struct dg * n2)

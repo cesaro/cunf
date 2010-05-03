@@ -7,8 +7,8 @@
 #include "glue.h"
 
 #ifdef CONFIG_DEBUG
-/* #define PRINT(args...) fprintf (stderr, ##args) */
-#define PRINT printf
+#define PRINT(args...) fprintf (stderr, ##args)
+/* #define PRINT printf */
 
 #define ASSERT(expr)    \
 	if (! (expr)) { \

@@ -6,7 +6,7 @@ CPPFLAGS:=-I include/
 LDFLAGS:=
 
 # object file targets
-SRCS:=$(wildcard $R/src/[^m]*.c)
+SRCS:=$(filter-out %/main.c, $(wildcard $R/src/*.c))
 
 OBJS:=$(patsubst %.c,%.o,$(SRCS))
 

@@ -6,11 +6,13 @@
 
 #include <string.h>
 
-#include "global.h"
 #include "nodelist.h"
 #include "unfold.h"
+#include "global.h"
+#include "debug.h"
 #include "glue.h"
 #include "ls.h"
+
 #include "netconv.h"
 
 /****************************************************************************/
@@ -28,7 +30,7 @@ void nc_create_unfolding()
 {
 	ls_init (&u.unf.conds);
 	ls_init (&u.unf.events);
-	u.unf.numco = u.unf.numev = 0;
+	u.unf.numco = u.unf.numev = u.unf.numh = 0;
 	u.unf.e0 = 0;
 }
 
@@ -44,8 +46,12 @@ struct place * nc_create_place (void)
 	p = gl_malloc (sizeof (struct place));
 	ls_insert (&u.net.places, &p->nod);
 
-	p->pre = p->post = p->conds = NULL;
-	p->num = ++u.net.numpl;
+	dg_init (&p->pre);
+	dg_init (&p->post);
+	dg_init (&p->cont);
+	p->conds = 0;
+	p->id = u.net.numpl++;
+
 	return p;
 }
 
@@ -56,9 +62,11 @@ struct trans * nc_create_transition (void)
 	t = gl_malloc (sizeof (struct trans));
 	ls_insert (&u.net.trans, &t->nod);
 
-	t->pre = t->post = NULL;
-	t->pre_size = 0;
-	t->num = ++u.net.numtr;
+	dg_init (&t->pre);
+	dg_init (&t->post);
+	dg_init (&t->cont);
+	t->id = u.net.numtr++;
+
 	return t;
 }
 
@@ -66,16 +74,11 @@ struct trans * nc_create_transition (void)
 /* nc_create_arc							    */
 /* Create an arc between two nodes (place->transition or transition->place) */
 
-void nc_create_arc (struct nl **fromlist, struct nl **tolist,
-		   void *from, void *to)
+void nc_create_arc (struct dg * src_post, struct dg * dst_pre,
+		struct dg * src_pre, struct dg * dst_post)
 {
-	struct nl *list;
-
-	for (list = *fromlist; list; list = list->next)
-		if (list->node == to) return;
-
-	nl_push(fromlist,to);
-	nl_push(tolist,from);
+	dg_add2 (src_post, dst_post);
+	dg_add2 (dst_pre, src_pre);
 }
 
 /****************************************************************************/
@@ -86,59 +89,40 @@ void nc_compute_sizes (void)
 {
 	struct ls *n;
 	struct trans *t;
-	struct nl *nl;
-	int k;
 
 	u.net.maxpre = u.net.maxpost = u.net.maxcont = 0;
 	for (n = u.net.trans.next; n; n = n->next) {
-		t = ls_item (struct trans, n, nod);
+		t = ls_i (struct trans, n, nod);
 
-		k = 0;
-		for (nl = t->pre; nl; nl = nl->next) k++;
-		t->pre_size = k;
-		if (u.net.maxpre < k) u.net.maxpre = k;
-
-		k = 0;
-		for (nl = t->post; nl; nl = nl->next) k++;
-		t->post_size = k;
-		if (u.net.maxpost < k) u.net.maxpost = k;
-
-		k = 0;
-		for (nl = t->cont; nl; nl = nl->next) k++;
-		t->cont_size = k;
-		if (u.net.maxcont < k) u.net.maxcont = k;
+		if (u.net.maxpre < t->pre.deg) u.net.maxpre = t->pre.deg;
+		if (u.net.maxpost < t->post.deg) u.net.maxpost = t->post.deg;
+		if (u.net.maxcont < t->cont.deg) u.net.maxcont = t->cont.deg;
 	}
 }
 
 /*****************************************************************************/
 
-void nc_static_checks (void)
+void nc_static_checks (const char * stoptr)
 {
-	struct place *p;
 	struct trans *t;
 	struct ls *n;
-	int found;
 
-	found = 0;
+	ASSERT (u.stoptr == 0);
 	for (n = u.net.trans.next; n; n = n->next) {
-		t = ls_item (struct trans, n, nod);
-		if (t->pre == 0 || t->post == 0) {
+		t = ls_i (struct trans, n, nod);
+		if (t->pre.deg == 0 && t != u.net.t0) {
 			gl_warn ("%s is not restricted", t->name);
 		}
-		if (u.stoptr && !strcmp (t->name, u.stoptr)) {
-			found = 1;
+		if (stoptr && !strcmp (t->name, stoptr)) {
+			u.stoptr = t;
 		}
 	}
 
-	if (u.stoptr && ! found) {
-		gl_err ("Transition '%s' not found", u.stoptr);
+	if (stoptr && u.stoptr == 0) {
+		gl_err ("Transition '%s' not found", stoptr);
 	}
 
-	p = 0;
-	for (n = u.net.places.next; n; n = n->next) {
-		p = ls_item (struct place, n, nod);
-		if (p->marked) break;
-	}
-	if (! p) gl_err ("No initial marking!");
+	ASSERT (u.net.t0);
+	if (u.net.t0->post.deg == 0) gl_err ("No initial marking!");
 }
 

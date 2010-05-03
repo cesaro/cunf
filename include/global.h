@@ -8,6 +8,7 @@
 
 /****************************************************************************/
 /* FIXME structures for places, transitions, conditions, events		    */
+/* FIXME -- assert that presets are always at least of size 1 */
 
 /* If you change these structures, do keep the "next" field at the top;
    reverse_list() depends on it.					    */
@@ -15,41 +16,45 @@
 struct place {
 	struct ls nod;
 	char  *name;	    /* short name			    */
-	int    num;	    /* number				    */
-	struct nl *pre;     /* unordered list of preset		    */
-	struct nl *post;    /* unordered list of postset	    */
-	struct nl *cont;    /* read arcs (unordered)    	    */
+	int    id;	    /* number				    */
+	struct dg pre;     /* unordered list of preset		    */
+	struct dg post;    /* unordered list of postset	    */
+	struct dg cont;    /* read arcs (unordered)    	    */
 	struct nl *conds;   /* conditions derived from this place   */
-	char marked;	    /* non-zero if place is marked	    */
+	int m;	    	/* non-zero if place is marked	    */
 };
 
 struct trans {
 	struct ls nod;
 	char  *name;	    /* short name			    */
-	int    num;	    /* number				    */
-	struct nl *pre;     /* unordered list of preset		    */
-	struct nl *post;    /* unordered list of postset	    */
-	struct nl *cont;    /* read arcs (unordered)    	    */
-	short  pre_size, post_size, cont_size;
+	int    id;	    /* number				    */
+	struct dg pre;     /* unordered list of preset		    */
+	struct dg post;    /* unordered list of postset	    */
+	struct dg cont;    /* read arcs (unordered)    	    */
+	int m;
 };
 
 struct cond {
-	struct ls nod;			/* list of conditions */
-	struct event_t *pre;		/* the single event in the preset */
-	struct dg post;			/* unordered list of postset */
+	struct ls nod;			/* node for the list of conditions */
+	struct event *pre;		/* preset, only one event */
+	struct dg post;			/* postset, list of events */
+	struct dg cont;			/* context, list of events */
 	struct place *origin;		/* associated place */
-	int    num;			/* number (needed by co_relation) */
+	int    id;			/* number (needed by co_relation) */
 	int    m;			/* mark, used by multiple functions */
 };
 
 struct event {
-	struct ls nod;			/* list of events */
+	struct ls nod;			/* node for the list of events */
 	struct dg pre;			/* preset, list of conditions */
 	struct dg post;			/* postset, list of conditions */
+	struct dg cont;			/* context, list of conditions */
+	struct dg ac;			/* asymmetric conflict rel. node */
+	struct dg hist;			/* histories associated to the event */
 	struct trans *origin;		/* associated transition */
-	int    m;			/* mark, used by multiple functions */
-	int    num;
+	int    id;
 	short  foata_level;
+	int m;
 };
 
 struct net {
@@ -58,24 +63,26 @@ struct net {
 	int numpl, numtr;	/* number of places/transitions in net	*/
 	int maxpre, maxpost;	/* maximal size of a t-pre/postset	*/
 	int maxcont;
+	struct trans *t0;
 };
 
 struct unf {
 	struct ls conds;	/* list of conditions */
 	struct ls events;	/* list of events */
 	int numco, numev;	/* number of conditions/events in net	*/
+	int numh;		/* number if histories */
 	struct event *e0;	/* event generating the minimal conditions */
 };
 
 struct u {
 	struct net net;
 	struct unf unf;
+
 	int mark;
 
-	char *stoptr;
+	struct trans * stoptr;
 	int depth;
 	int interactive;
-	int exitcode;
 };
 
 struct u u;

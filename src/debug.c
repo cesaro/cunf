@@ -13,9 +13,9 @@ void db_net (void)
 	struct place * p;
 	struct trans * t;
 	struct ls * n;
-	struct nl * nl;
+	int i;
 
-	printf ("Net, %d places, %d transitions; maxpre %d, maxpost "
+	PRINT ("Net, %d places, %d transitions; maxpre %d, maxpost "
 			"%d, maxcont %d\n",
 			u.net.numpl,
 			u.net.numtr,
@@ -24,46 +24,52 @@ void db_net (void)
 			u.net.maxcont);
 
 	for (n = u.net.places.next; n; n = n->next) {
-		p = ls_item (struct place, n, nod);
-		printf ("   Place, num %d name '%s' %s\n"
+		p = ls_i (struct place, n, nod);
+		PRINT ("   Place, id %d name '%s' %s\n"
 				"      pre: { ",
-				p->num,
+				p->id,
 				p->name,
-				p->marked ? "marked" : "");
-		for (nl = p->pre; nl; nl = nl->next) {
-			printf ("%d ", ((struct trans *) nl->node)->num);
+				p->m ? "marked" : "");
+		for (i = 0; i < p->pre.deg; i++) {
+			t = dg_i (struct trans, p->pre.adj[i], pre);
+			PRINT ("%d ", t->id);
 		}
-		printf ("}\n      post: { ");
-		for (nl = p->post; nl; nl = nl->next) {
-			printf ("%d ", ((struct trans *) nl->node)->num);
+		PRINT ("}\n      post: { ");
+		for (i = 0; i < p->post.deg; i++) {
+			t = dg_i (struct trans, p->post.adj[i], post);
+			PRINT ("%d ", t->id);
 		}
-		printf ("}\n      cont: { ");
-		for (nl = p->cont; nl; nl = nl->next) {
-			printf ("%d ", ((struct trans *) nl->node)->num);
+		PRINT ("}\n      cont: { ");
+		for (i = 0; i < p->cont.deg; i++) {
+			t = dg_i (struct trans, p->cont.adj[i], cont);
+			PRINT ("%d ", t->id);
 		}
-		printf ("}\n");
+		PRINT ("}\n");
 	}
 
-	printf ("\n");
+	PRINT ("\n");
 	for (n = u.net.trans.next; n; n = n->next) {
-		t = ls_item (struct trans, n, nod);
-		printf ("   Trans, num %d name '%s'\n"
+		t = ls_i (struct trans, n, nod);
+		PRINT ("   Trans, id %d name '%s'\n"
 				"      pre: size %d { ",
-				t->num,
+				t->id,
 				t->name,
-				t->pre_size);
-		for (nl = t->pre; nl; nl = nl->next) {
-			printf ("%d ", ((struct place *) nl->node)->num);
+				t->pre.deg);
+		for (i = 0; i < t->pre.deg; i++) {
+			p = dg_i (struct place, t->pre.adj[i], pre);
+			PRINT ("%d ", p->id);
 		}
-		printf ("}\n      post: size %d { ", t->post_size);
-		for (nl = t->post; nl; nl = nl->next) {
-			printf ("%d ", ((struct place *) nl->node)->num);
+		PRINT ("}\n      post: size %d { ", t->post.deg);
+		for (i = 0; i < t->post.deg; i++) {
+			p = dg_i (struct place, t->post.adj[i], post);
+			PRINT ("%d ", p->id);
 		}
-		printf ("}\n      cont: size %d { ", t->cont_size);
-		for (nl = t->cont; nl; nl = nl->next) {
-			printf ("%d ", ((struct place *) nl->node)->num);
+		PRINT ("}\n      cont: size %d { ", t->cont.deg);
+		for (i = 0; i < t->cont.deg; i++) {
+			p = dg_i (struct place, t->cont.adj[i], cont);
+			PRINT ("%d ", p->id);
 		}
-		printf ("}\n");
+		PRINT ("}\n");
 	}
 }
 

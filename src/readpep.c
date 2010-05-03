@@ -488,7 +488,7 @@ static int _insert_place()
 	PlArray[rd_ident] = nc_create_place ();
 	PlArray[rd_ident]->name = rd_name? gl_strdup(rd_name) : NULL;
 	if (rd_marked > 1) gl_err ("place %s has more than one token",rd_name);
-	PlArray[rd_ident]->marked = !!rd_marked;
+	PlArray[rd_ident]->m = !!rd_marked;
 	return 0;
 }
 
@@ -537,14 +537,14 @@ static int _insert_arc()
 	if (!pl || (pl > AnzPlNamen) || !PlArray[pl] )
 		gl_err ("arc: incorrect place identifier");
 
-	tp? nc_create_arc(&(TrArray[tr]->post),&(PlArray[pl]->pre),
-			  TrArray[tr],PlArray[pl])
-	  : nc_create_arc(&(PlArray[pl]->post),&(TrArray[tr]->pre),
-			  PlArray[pl],TrArray[tr]);
+	tp? nc_create_arc (&(TrArray[tr]->post), &(PlArray[pl]->pre),
+			   &(TrArray[tr]->pre), &(PlArray[pl]->post))
+	  : nc_create_arc (&(PlArray[pl]->post), &(TrArray[tr]->pre),
+			   &(PlArray[pl]->pre), &(TrArray[tr]->post));
 	return 0;
 }
 
-int _insert_ra()
+static int _insert_ra()
 {
 	int tr = rd_co->x, pl = rd_co->y;
 
@@ -561,9 +561,40 @@ int _insert_ra()
 	nc_create_arc(&(TrArray[tr]->postset),&(PlArray[pl]->preset),
 			  TrArray[tr],PlArray[pl]);
 #endif
-	nc_create_arc(&(TrArray[tr]->cont),&(PlArray[pl]->cont),
-			  TrArray[tr],PlArray[pl]);
+	nc_create_arc (&TrArray[tr]->cont, &PlArray[pl]->cont,
+			&TrArray[tr]->cont, &PlArray[pl]->cont);
 	return 0;
+}
+
+static void _insert_t0 (void)
+{
+	struct trans *t0;
+	struct ls *n;
+	struct place *p;
+
+	t0 = gl_malloc (sizeof (struct trans));
+	ls_insert (&u.net.trans, &t0->nod);
+
+	dg_init (&t0->pre);
+	dg_init (&t0->post);
+	dg_init (&t0->cont);
+	t0->id = 0;
+	t0->name = "___t0";
+
+	/* the postset of t0 consist on all marked places */
+	for (n = u.net.places.next; n; n = n->next) {
+		p = ls_i (struct place, n, nod);
+		if (p->m) {
+			dg_add (&t0->post, &p->post);
+			dg_add (&p->pre, &t0->pre);
+
+			/* we remove the mark :) */
+			p->m = 0;
+		}
+	}
+
+	/* a pointer to t0 is stored in u.net */
+	u.net.t0 = t0;
 }
 
 /*****************************************************************************/
@@ -625,6 +656,11 @@ void read_pep_net (char *PEPfilename)
 	gl_free(PlArray);
 	gl_free(TrArray);
 
+	/* this is cheating! we now append some initial transition t0
+	 * generating the initial marking */
+	_insert_t0 ();
+
+	/* compute the sizes for max{pre|post|cont} */
 	nc_compute_sizes ();
 }
 

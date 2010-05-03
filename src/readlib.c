@@ -11,6 +11,7 @@
 #include <ctype.h>
 #include <string.h>
 
+#include "readlib.h"
 #include "glue.h"
 
 /*****************************************************************************/
