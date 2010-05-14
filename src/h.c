@@ -8,17 +8,12 @@
 #include "h.h"
 
 static void _h_confl_lists (struct h * h1, struct h * h2, struct dls * l1,
-		struct dls * l2, struct dls * l12)
+		struct dls * l2, struct dls * l12, int m1, int m2, int m12)
 {
-	int i, m1, m2, m12;
+	int i;
 	struct h *h;
 	struct h *hp;
 	struct dls *n;
-
-	/* generate three different marks */
-	m1 = ++u.mark;
-	m2 = ++u.mark;
-	m12 = ++u.mark;
 
 	/* explore history h1, mark with m1 insert all nodes in the dls list
 	 * l1 */
@@ -99,8 +94,8 @@ static int _h_confl_check (struct dls * l1, struct dls * l2, struct dls * l12)
 	struct dls * n, * np;
 	struct h * h, * hp;
 
-	/* check that, for all histories h in l2, there is no history hp in
-	 * either l1 or l12 such that asym-confl (h, hp) */
+	/* check that, for all events h->e in l2, there is no event hp->e in
+	 * either l1 or l12 such that asym-confl (h->e, hp->e) */
 
 	for (n = l2->next; n; n = n->next) {
 		h = dls_i (struct h, n, auxnod);
@@ -111,6 +106,32 @@ static int _h_confl_check (struct dls * l1, struct dls * l2, struct dls * l12)
 		for (np = l12->next; np; np = np->next) {
 			hp = dls_i (struct h, np, auxnod);
 			if (ac_test (h->e, hp->e)) return 1;
+		}
+	}
+	return 0;
+}
+
+static int _h_confl_cnd_check (struct cond *c, struct dls *l, int m)
+{
+	int i, j;
+	struct h *h;
+	struct event *e;
+
+	/* check if condition c is consumed by events in the list l, which we
+	 * assume to be marked with m */
+
+	/* if the list is empty, it cannot consume c */
+	if (l->next == 0) return 0;
+
+	ASSERT (dls_i (struct h, l->next, auxnod)->m == m);
+
+	/* otherwise, we check whether at least one event consuming c is
+	 * present in l */
+	for (i = c->post.deg - 1; i >= 0; i--) {
+		e = dg_i (struct event, c->post.adj[i], post);
+		for (j = e->hist.deg - 1; j >= 0; j--) {
+			h = dg_i (struct h, e->hist.adj[j], nod);
+			if (h->m == m) return 1;
 		}
 	}
 	return 0;
@@ -152,6 +173,14 @@ struct h * h_dup (struct h * h)
 	return nh;
 }
 
+void h_free (struct h *h)
+{
+	dg_rem (&h->e->hist, &h->nod);
+	dg_term (&h->nod);
+	nl_delete (h->marking);
+	gl_free (h);
+}
+
 void h_add (struct h * h, struct h * hp)
 {
 	/* set up a dependency of (event associated to) history h to (event
@@ -162,37 +191,76 @@ void h_add (struct h * h, struct h * hp)
 	dg_add (&h->nod, &hp->nod);
 }
 
-int h_conflict (struct h * h1, struct h * h2)
+int h_conflict (struct h *h1, struct h *h2)
 {
 	struct dls l1, l2, l12;
+	int m1, m2, m12;
 
 	/* return the logical condition of history h1 being in conflict to h2
 	 */
 
-	_h_confl_lists (h1, h2, &l1, &l2, &l12);
+	/* generate three different marks */
+	m1 = ++u.mark;
+	m2 = ++u.mark;
+	m12 = ++u.mark;
 
+	/* build l1, the list of events in only in h1, l2, the list of evets
+	 * only in h2 and l12, the list of events in both h1 and h2 */
+	_h_confl_lists (h1, h2, &l1, &l2, &l12, m1, m2, m12);
+
+	if (_h_confl_check (&l1, &l2, &l12)) return 1;
+	return _h_confl_check (&l2, &l1, &l12);
+}
+
+int h_conflict2 (struct h *h1, struct cond *c1, struct h *h2, struct cond *c2)
+{
+	struct dls l1, l2, l12;
+	int m1, m2, m12;
+
+	/* return the logical value of the next boolean expression:
+	 * h1 is in conflict with h2, or
+	 * h2 is in conflict with h1, or
+	 * h1 consumes condition c2, or
+	 * h2 consumes condition c1
+	 */
+
+	/* generate three different marks */
+	m1 = ++u.mark;
+	m2 = ++u.mark;
+	m12 = ++u.mark;
+
+	_h_confl_lists (h1, h2, &l1, &l2, &l12, m1, m2, m12);
+
+	/* h1 (h2) consumes condition c2 (c1) */
+	if (_h_confl_cnd_check (c2, &l1, m1)) return 1;
+	if (_h_confl_cnd_check (c1, &l2, m2)) return 1;
+
+	/* h1 (h2) is in conflict with h2 (h1) */
 	if (_h_confl_check (&l1, &l2, &l12)) return 1;
 	return _h_confl_check (&l2, &l1, &l12);
 }
 
 void h_marking (struct h *h)
 {
-	struct dg *pre, *post;
-	int i, s, visited, ispre;
+	int i, s, visited;
 	struct dls auxl, *n;
 	struct h *hp, *hpp;
 	struct place *p;
+	struct cond *c;
 	struct nl * l;
 
-	/* to compute the marking associated to h we explore all events in the
-	 * history h and mark the preset of the transition associated to each
-	 * event in the history; next, we explore again the list of events and
-	 * grab all places not previously marked in the postset of the
-	 * transition associated to each event; not very efficient :( */
+	 /* 1. explore all events of history h and mark it preset
+	  * 2. explore again all events of history h and append to the marking
+	  * all places labeling conditions in the postset of each event
+	  * 3. note that, at this point, postset of event h->e may still not
+	  * built, so append to the marking the postset of h->e->origin if
+	  * needed :)
+	  * 4. we are done!  */
 
 	visited = ++u.mark;
 	ASSERT (visited > 0);
 
+	/* 1. mark the preset of all events in the history */
 	dls_init (&auxl);
 	dls_insert (&auxl, &h->auxnod);
 	h->m = visited;
@@ -210,37 +278,29 @@ void h_marking (struct h *h)
 		}
 
 		ASSERT (hp->e);
-		ASSERT (hp->e->origin);
-		/* FIXME -- we skip this to be able to run this function and
-		 * not modify transition marks :/  Less performance but still
-		 * correct */
-		/* if (hp->e->origin->m == visited) continue;
-		hp->e->origin->m = visited; */
-		pre = &hp->e->origin->pre;
-		for (i = pre->deg - 1; i >= 0; i--) {
-			p = dg_i (struct place, pre->adj[i], pre);
-			p->m = visited;
+		for (i = hp->e->pre.deg - 1; i >= 0; i--) {
+			c = dg_i (struct cond, hp->e->pre.adj[i], pre);
+			c->m = visited;
 		}
 	}
 
-	/* important, renew the visited mark !! */
-	ispre = visited;
-	visited = ++u.mark;
-	ASSERT (visited > 0);
-
+	/* 2. explore again all events and append places associated to the
+	 * postset of the original transition */
 	l = 0;
 	for (n = auxl.next; n; n = n->next) {
 		hp = dls_i (struct h, n, auxnod);
-		/* FIXME -- we skip this to be able to run this function and
-		 * not modify transition marks :/  Less performance but still
-		 * correct */
-		/* if (hp->e->origin->m == visited) continue;
-		hp->e->origin->m = visited; */
+		for (i = hp->e->post.deg - 1; i >= 0; i--) {
+			c = dg_i (struct cond, hp->e->post.adj[i], post);
+			if (c->m != visited) nl_insert (&l, c->origin);
+		}
+	}
 
-		post = &hp->e->origin->post;
-		for (i = post->deg - 1; i >= 0; i--) {
-			p = dg_i (struct place, post->adj[i], post);
-			if (p->m != ispre) nl_insert (&l, p);
+	/* 3. append the postset of h->e->origin if needed */
+	if (h->e->post.deg == 0) {
+		for (i = h->e->origin->post.deg - 1; i >= 0; i--) {
+			p = dg_i (struct place, h->e->origin->post.adj[i],
+					post);
+			nl_insert (&l, p);
 		}
 	}
 
@@ -258,5 +318,34 @@ void h_marking (struct h *h)
 			h->size);
 	marking_print (h);
 	PRINT ("\n");
+}
+
+int h_isdup (const struct h *h)
+{
+	int i;
+
+	/* history h is a duplicate if there exists another (different) history
+	 * associated to event h->e isomorphic to it (same set of outgoing
+	 * edges) */
+
+	ASSERT (h);
+	ASSERT (h->e);
+
+	for (i = h->e->hist.deg - 1; i >= 0; i--) {
+		if (&h->nod == h->e->hist.adj[i]) continue;
+		if (dg_cmp (&h->nod, h->e->hist.adj[i]) == 0) {
+			struct h *hp = dg_i (struct h, h->e->hist.adj[i], nod);
+			PRINT ("  History h%d/e%d:%s is a duplicate of "
+					"h%d/e%d:%s\n",
+					h->id,
+					h->e->id,
+					h->e->origin->name,
+					hp->id,
+					hp->e->id,
+					hp->e->origin->name);
+			return 1;
+		}
+	}
+	return 0;
 }
 

@@ -42,6 +42,7 @@ struct cond {
 	struct place *origin;		/* associated place */
 	int    id;			/* number (needed by co_relation) */
 	int    m;			/* mark, used by multiple functions */
+	int    causalm;			/* see function _pe_update_post_existing */
 };
 
 struct event {

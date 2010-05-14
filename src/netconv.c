@@ -65,7 +65,7 @@ struct trans * nc_create_transition (void)
 	dg_init (&t->pre);
 	dg_init (&t->post);
 	dg_init (&t->cont);
-	t->id = u.net.numtr++;
+	t->id = ++u.net.numtr;
 
 	return t;
 }
@@ -77,8 +77,9 @@ struct trans * nc_create_transition (void)
 void nc_create_arc (struct dg * src_post, struct dg * dst_pre,
 		struct dg * src_pre, struct dg * dst_post)
 {
-	dg_add2 (src_post, dst_post);
-	dg_add2 (dst_pre, src_pre);
+	if (dg_test (src_post, dst_post)) return;
+	dg_add (src_post, dst_post);
+	dg_add (dst_pre, src_pre);
 }
 
 /****************************************************************************/

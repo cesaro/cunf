@@ -15,8 +15,19 @@ $(TARGETS) : % : %.o $(OBJS)
 	@echo " LD  $@"
 	@$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $^ $(LDFLAGS) 
 
+_e : $(TARGETS)
+	./test/dg
+	./src/main test/examples/small/test1.ll_net
+	./src/main test/examples/small/fig1-pr.ll_net
+	./src/main test/examples/small/fig2.ll_net
+	./src/main test/examples/small/8readers.ll_net
+	./src/main test/examples/small/pag9.ll_net
+	./src/main test/examples/small/asymcnfl.ll_net
+	./src/main test/examples/small/fig1.ll_net
+	./src/main test/examples/small/fig1-cp.ll_net
+
 e : $(TARGETS)
-	./src/main test/examples/test1.ll_net
+	./src/main test/examples/normal-nets/pep/sem.ll_net
 
 t : $(TARGETS)
 	time ./test/dg

@@ -47,6 +47,25 @@ void write_dot (void)
 	int i, enr;
 
 	P ("digraph {\n\t/* events */\n");
+	enr = 0;
+	for (n = u.unf.events.next; n; n = n->next) {
+		e = ls_i (struct event, n, nod);
+		if (e->id == 0) continue;
+		enr++;
+		P ("\te%-6d [label=\"e%d:%s\" shape=box style=filled "
+				"fillcolor=grey];\n",
+				e->id, e->id, e->origin->name);
+	}
+
+	P ("\n\t/* conditions */\n");
+	for (n = u.unf.conds.next; n; n = n->next) {
+		c = ls_i (struct cond, n, nod);
+
+		P ("\tc%-6d [label=\"c%d:%s\" shape=circle];\n",
+				c->id, c->id, c->origin->name);
+	}
+
+	P ("\n\t/* postset of events */\n");
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
 		if (e->id == 0) continue;
@@ -57,7 +76,7 @@ void write_dot (void)
 		}
 	}
 
-	P ("\n\t/* conditions */\n");
+	P ("\n\t/* preset and context of events */\n");
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
 		if (e->id == 0) continue;
@@ -66,38 +85,27 @@ void write_dot (void)
 			c = dg_i (struct cond, e->pre.adj[i], pre);
 			P ("\tc%-6d -> e%d;\n", c->id, e->id);
 		}
-	}
 
-	P ("\n\t/* attributes for events */\n");
-	enr = 0;
-	for (n = u.unf.events.next; n; n = n->next) {
-		e = ls_i (struct event, n, nod);
-		if (e->id == 0) continue;
-		enr++;
-		P ("\te%-6d [label=\"e%d:%s\" shape=box];\n",
-				e->id, e->id, e->origin->name);
-	}
-
-	P ("\n\t/* attributes for conditions */\n");
-	for (n = u.unf.conds.next; n; n = n->next) {
-		c = ls_i (struct cond, n, nod);
-
-		P ("\tc%-6d [label=\"c%d:%s\" shape=circle];\n",
-				c->id, c->id, c->origin->name);
+		for (i = e->cont.deg - 1; i >= 0; i--) {
+			c = dg_i (struct cond, e->cont.adj[i], cont);
+			P ("\tc%-6d -> e%d [arrowhead=none];\n", c->id, e->id);
+		}
 	}
 
 	P ("\n");
-	P ("\t/* %d events ( + %d cut-offs)\n"
-	   "\t * %d transitions\n"
-	   "\t * %d conditions\n"
+	P ("\t/* %d transitions\n"
 	   "\t * %d places\n"
+	   "\t *\n"
+	   "\t * %d events\n"
+	   "\t * %d conditions\n"
+	   "\t * %d histories\n"
 	   "\t */\n"
 	   "}\n",
-			enr,
-			u.unf.numev - enr,
 			u.net.numtr,
+			u.net.numpl,
+			enr,
 			u.unf.numco,
-			u.net.numpl);
+			u.unf.numh);
 }
 
 int main (int argc, char **argv)

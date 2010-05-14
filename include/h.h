@@ -16,16 +16,18 @@ struct h {
 	int size;
 	int id;
 	int m;
-	/* FIXME -- update the depth for something meaningful... */
 };
 
 struct h * h_alloc (struct event * e);
 struct h * h_dup (struct h * h);
+void h_free (struct h *h);
 
 void h_add (struct h * h, struct h * hp);
+int h_isdup (const struct h *h);
 void h_marking (struct h *h);
 
-int h_conflict (struct h * h1, struct h * h2);
+int h_conflict (struct h *h1, struct h *h2);
+int h_conflict2 (struct h *h1, struct cond *c1, struct h *h2, struct cond *c2);
 
 #endif
 

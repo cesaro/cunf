@@ -51,3 +51,8 @@ STRIP:=$(CROSS)strip
 	@echo " CNF $<"
 	@./tools/cml2/cmlcompile.py -o $@ $<
 
+%.pdf : %.dot
+	@echo " DOT $<"
+	@dot -T pdf < $< > $@
+
+
