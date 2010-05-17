@@ -54,7 +54,7 @@ struct event {
 	struct dg hist;			/* histories associated to the event */
 	struct trans *origin;		/* associated transition */
 	int    id;
-	short  foata_level;
+	int iscutoff;
 	int m;
 };
 

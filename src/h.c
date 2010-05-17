@@ -15,18 +15,18 @@ static void _h_confl_lists (struct h * h1, struct h * h2, struct dls * l1,
 	struct h *hp;
 	struct dls *n;
 
-	/* explore history h1, mark with m1 insert all nodes in the dls list
-	 * l1 */
+	/* explore history h1, mark with m1 and insert all nodes in the list l1
+	 */
 	h1->m = m1;
 	dls_init (l1);
-	dls_insert (l1, &h1->auxnod);
+	dls_append (l1, &h1->auxnod);
 	for (n = l1->next; n; n = n->next) {
 		h = dls_i (struct h, n, auxnod);
 		ASSERT (h->m == m1);
 		for (i = h->nod.deg - 1; i >= 0; i--) {
 			hp = dg_i (struct h, h->nod.adj[i], nod);
 			if (hp->m == m1) continue;
-			hp->m = m1;	
+			hp->m = m1;
 			dls_append (l1, &hp->auxnod);
 		}
 	}
@@ -39,10 +39,10 @@ static void _h_confl_lists (struct h * h1, struct h * h2, struct dls * l1,
 	if (h2->m == m1) {
 		dls_remove (l1, &h2->auxnod);
 		h2->m = m12;
-		dls_insert (l12, &h2->auxnod);
+		dls_append (l12, &h2->auxnod);
 	} else {
 		h2->m = m2;
-		dls_insert (l2, &h2->auxnod);
+		dls_append (l2, &h2->auxnod);
 	}
 	for (n = l2->next; n; n = n->next) {
 		h = dls_i (struct h, n, auxnod);
@@ -54,7 +54,7 @@ static void _h_confl_lists (struct h * h1, struct h * h2, struct dls * l1,
 			if (hp->m == m1) {
 				dls_remove (l1, &hp->auxnod);
 				hp->m = m12;
-				dls_insert (l12, &hp->auxnod);
+				dls_append (l12, &hp->auxnod);
 			} else {
 				dls_append (l2, &hp->auxnod);
 				hp->m = m2;
@@ -64,6 +64,7 @@ static void _h_confl_lists (struct h * h1, struct h * h2, struct dls * l1,
 
 	/* children histories of all histories in l12 must also be inserted in
 	 * l12 */
+	BREAK (h1->id == 11 && h2->id == 7);
 	for (n = l12->next; n; n = n->next) {
 		h = dls_i (struct h, n, auxnod);
 		ASSERT (h->m == m12);
@@ -73,20 +74,34 @@ static void _h_confl_lists (struct h * h1, struct h * h2, struct dls * l1,
 			ASSERT (hp->m == m1);
 			dls_remove (l1, &hp->auxnod);
 			hp->m = m12;
-			dls_insert (l12, &hp->auxnod);
+			dls_append (l12, &hp->auxnod);
 		}
 	}
 
+	/* PRINT ("H1 : "); db_h (h1);
+	PRINT ("H2 : "); db_h (h2);
+	PRINT ("l1 : "); */
 	/* assert that all elements in l1 are marked with m1, that all ... */
+	ASSERT (u.unf.e0->hist.deg == 1);
+	ASSERT (dg_i (struct h, u.unf.e0->hist.adj[0], nod)->m == m12);
 	for (n = l1->next; n; n = n->next) {
-		ASSERT (dls_i (struct h, n, auxnod)->m == m1);
+		h = dls_i (struct h, n, auxnod);
+		ASSERT (h->m == m1);
+		// PRINT ("e%d:%s ", h->e->id, h->e->origin->name);
 	}
+	// PRINT ("\nl2 : ");
 	for (n = l2->next; n; n = n->next) {
-		ASSERT (dls_i (struct h, n, auxnod)->m == m2);
+		h = dls_i (struct h, n, auxnod);
+		ASSERT (h->m == m2);
+		// PRINT ("e%d:%s ", h->e->id, h->e->origin->name);
 	}
+	// PRINT ("\nl12 : ");
 	for (n = l12->next; n; n = n->next) {
-		ASSERT (dls_i (struct h, n, auxnod)->m == m12);
+		h = dls_i (struct h, n, auxnod);
+		ASSERT (h->m == m12);
+		// PRINT ("e%d:%s ", h->e->id, h->e->origin->name);
 	}
+	// PRINT ("\n");
 }
 
 static int _h_confl_check (struct dls * l1, struct dls * l2, struct dls * l12)
@@ -262,13 +277,13 @@ void h_marking (struct h *h)
 
 	/* 1. mark the preset of all events in the history */
 	dls_init (&auxl);
-	dls_insert (&auxl, &h->auxnod);
+	dls_append (&auxl, &h->auxnod);
 	h->m = visited;
 
 	s = 1;
 	for (n = auxl.next; n; n = n->next) {
 		hp = dls_i (struct h, n, auxnod);
-		ASSERT (h->m == visited);
+		ASSERT (hp->m == visited);
 		for (i = hp->nod.deg - 1; i >= 0; i--) {
 			hpp = dg_i (struct h, hp->nod.adj[i], nod);
 			if (hpp->m == visited) continue;

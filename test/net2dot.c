@@ -78,7 +78,7 @@ int main (int argc, char ** argv)
 
 	read_pep_net (argv[1]);
 	nc_static_checks (0);
-	db_net ();
+	// db_net ();
 	write_net_dot ();
 
 	return EXIT_SUCCESS;

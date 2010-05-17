@@ -55,4 +55,8 @@ STRIP:=$(CROSS)strip
 	@echo " DOT $<"
 	@dot -T pdf < $< > $@
 
+%.dot : %.ll_net
+	@echo " N2D $<"
+	@test/net2dot $< > $@
+
 

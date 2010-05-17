@@ -52,9 +52,14 @@ void write_dot (void)
 		e = ls_i (struct event, n, nod);
 		if (e->id == 0) continue;
 		enr++;
-		P ("\te%-6d [label=\"e%d:%s\" shape=box style=filled "
-				"fillcolor=grey];\n",
-				e->id, e->id, e->origin->name);
+		P ("\te%-6d [label=\"e%d:%s\" %s];\n",
+				e->id,
+				e->id,
+				e->origin->name,
+				e->iscutoff ? 
+				"shape=Msquare style=filled fillcolor=gray90" :
+				"shape=box style=filled fillcolor=grey"
+				);
 	}
 
 	P ("\n\t/* conditions */\n");

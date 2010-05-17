@@ -4,7 +4,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "global.h"
 #include "glue.h"
+#include "h.h"
 
 #ifdef CONFIG_DEBUG
 #define PRINT(args...) fprintf (stderr, ##args)
@@ -34,6 +36,10 @@
 void breakme (void);
 
 void db_net (void);
+void db_e (struct event *e);
+void db_c (struct cond *c);
+void db_h (struct h *h);
+void db_hgraph (void);
 
 #endif
 

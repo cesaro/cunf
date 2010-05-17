@@ -85,6 +85,7 @@ static void _unfold_init (void)
 	e0->origin = u.net.t0;
 	e0->id = u.unf.numev++;
 	e0->m = 0;
+	e0->iscutoff = 0;
 	ASSERT (e0->id == 0);
 	PRINT ("+ Event e0 !!\n");
 
@@ -143,20 +144,15 @@ void unfold (void)
 				h->e->origin->name,
 				h->size,
 				iscutoff ? "a cut-off" : "new");
+
 		if (iscutoff) continue;
+		h->e->iscutoff = 0;
 
-		/* 7. append it to the unfolding (if this is the first history
-		 * of h->e) */
-		ASSERT (h->e);
-		if (h->e->nod.next == (void *) 1) {
-			ls_insert (&u.unf.events, &h->e->nod);
-		}
-
-		/* 8. build the postset of the maximal transition, if not
+		/* 7. build the postset of the maximal transition, if not
 		 * already present in the unfolding */
 		_unfold_postset (h->e);
 
-		/* 9. update pe with this new history */
+		/* 8. update pe with this new history */
 		pe_update (h);
 	}
 }

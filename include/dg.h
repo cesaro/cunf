@@ -3,10 +3,11 @@
  * Directed graph -- interface
  */
 
-#ifndef _DGR_DGR_H_
-#define _DGR_DGR_H_
+#ifndef _DG_DG_H_
+#define _DG_DG_H_
 
-#include "debug.h"
+#include "config.h"
+
 struct dg {
 	int deg;
 	struct dg ** adj;

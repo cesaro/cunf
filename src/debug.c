@@ -1,8 +1,9 @@
 
 #include "config.h"
 #include "global.h"
-#include "glue.h"
 #include "debug.h"
+#include "glue.h"
+#include "h.h"
 
 void breakme (void)
 {
@@ -71,5 +72,114 @@ void db_net (void)
 		}
 		PRINT ("}\n");
 	}
+}
+
+
+void db_h (struct h *h)
+{
+	static int m = 1;
+	struct dls l, *n;
+	struct h *hp, *hpp;
+	int i, s;
+
+	/* generate a new mark */
+	m++;
+
+	dls_init (&l);
+	dls_append (&l, &h->debugnod);
+	h->debugm = m;
+
+	s = 1;
+	for (n = l.next; n; n = n->next) {
+		hp = dls_i (struct h, n, debugnod);
+		ASSERT (hp->debugm == m);
+		for (i = hp->nod.deg - 1; i >= 0; i--) {
+			hpp = dg_i (struct h, hp->nod.adj[i], nod);
+			if (hpp->debugm == m) continue;
+			hpp->debugm = m;
+			dls_append (&l, &hpp->debugnod);
+			s++;
+		}
+	}
+
+/*
+ h12/e34:T123; size 7; e123:T12, e3:T12, e0:__t0
+*/
+	PRINT ("h%d/e%d:%s; size %d; ",
+			h->id, h->e->id, h->e->origin->name, s);
+	for (n = l.next; n; n = n->next) {
+		hp = dls_i (struct h, n, debugnod);
+		PRINT ("e%d:%s, ", hp->e->id, hp->e->origin->name);
+	}
+	PRINT ("\n");
+}
+
+void db_hgraph (void)
+{
+	struct event *e;
+	struct h *h;
+	struct ls *n;
+	int i;
+
+	for (n = u.unf.events.next; n; n = n->next) {
+		e = ls_i (struct event, n, nod);
+		for (i = e->hist.deg - 1; i >= 0; i--) {
+			h = dg_i (struct h, e->hist.adj[i], nod);
+			db_h (h);
+		}
+	}
+	PRINT ("\n");
+}
+
+void db_c (struct cond *c)
+{
+	struct event *e;
+	int i;
+
+	PRINT ("c%d:%s  pre e%d:%s;  post ",
+			c->id,
+			c->origin->name,
+			c->pre->id,
+			c->pre->origin->name);
+
+	for (i = c->post.deg - 1; i >= 0; i--) {
+		e = dg_i (struct event, c->post.adj[i], post);
+		PRINT ("e%d:%s ", e->id, e->origin->name);
+	}
+
+	PRINT ("\b;  cont ");
+	for (i = c->cont.deg - 1; i >= 0; i--) {
+		e = dg_i (struct event, c->cont.adj[i], cont);
+		PRINT ("e%d:%s ", e->id, e->origin->name);
+	}
+	PRINT ("\b;\n");
+}
+
+void db_e (struct event *e)
+{
+	struct cond *c;
+	int i;
+
+	PRINT ("e%d:%s  pre ",
+			e->id,
+			e->origin->name);
+
+	for (i = e->pre.deg - 1; i >= 0; i--) {
+		c = dg_i (struct cond, e->pre.adj[i], pre);
+		PRINT ("c%d:%s ", c->id, c->origin->name);
+	}
+	PRINT ("\b;  post ");
+
+	for (i = e->post.deg - 1; i >= 0; i--) {
+		c = dg_i (struct cond, e->post.adj[i], post);
+		PRINT ("c%d:%s ", c->id, c->origin->name);
+	}
+
+	PRINT ("\b;  cont ");
+	for (i = e->cont.deg - 1; i >= 0; i--) {
+		c = dg_i (struct cond, e->cont.adj[i], cont);
+		PRINT ("c%d:%s ", c->id, c->origin->name);
+	}
+	PRINT ("\b;\n");
 }
 

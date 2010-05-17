@@ -27,7 +27,7 @@ _e : $(TARGETS)
 	./src/main test/examples/small/fig1-cp.ll_net
 
 e : $(TARGETS)
-	./src/main test/examples/normal-nets/pep/sem.ll_net
+	./src/main test/examples/norm/pep/sem.ll_net
 
 t : $(TARGETS)
 	time ./test/dg

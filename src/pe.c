@@ -4,6 +4,7 @@
 #include "glue.h"
 #include "ac.h"
 #include "dg.h"
+#include "ls.h"
 #include "h.h"
 
 #include "pe.h"
@@ -311,8 +312,7 @@ static struct event * _pe_new_event (struct trans * t)
 
 	/* allocate and initialize the event */
 	e = gl_malloc (sizeof (struct event));
-	e->nod.next = (void *) 1; /* FIXME -- !!!! */
-	// ls_add (&u.unf.events, &e->nod); -> we do it late, can be a cutoff!
+	ls_insert (&u.unf.events, &e->nod);
 	dg_init (&e->pre);
 	dg_init (&e->post);
 	dg_init (&e->cont);
@@ -320,6 +320,10 @@ static struct event * _pe_new_event (struct trans * t)
 	dg_init (&e->hist);
 	e->origin = t;
 	e->m = 0;
+
+	/* we will update this if we find one history for this event which is
+	 * not a cutoff */
+	e->iscutoff = 1;
 
 	e->id = u.unf.numev++;
 

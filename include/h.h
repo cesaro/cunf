@@ -16,6 +16,10 @@ struct h {
 	int size;
 	int id;
 	int m;
+#ifdef CONFIG_DEBUG
+	int debugm;
+	struct dls debugnod;
+#endif
 };
 
 struct h * h_alloc (struct event * e);
