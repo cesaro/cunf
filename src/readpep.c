@@ -579,7 +579,7 @@ static void _insert_t0 (void)
 	dg_init (&t0->post);
 	dg_init (&t0->cont);
 	t0->id = 0;
-	t0->name = "___t0";
+	t0->name = "_t0_";
 
 	/* the postset of t0 consist on all marked places */
 	for (n = u.net.places.next; n; n = n->next) {

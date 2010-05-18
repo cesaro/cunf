@@ -33,5 +33,7 @@ void h_marking (struct h *h);
 int h_conflict (struct h *h1, struct h *h2);
 int h_conflict2 (struct h *h1, struct cond *c1, struct h *h2, struct cond *c2);
 
+void h_list (struct dls *l, struct h *h);
+
 #endif
 

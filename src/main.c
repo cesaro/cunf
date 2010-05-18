@@ -41,39 +41,54 @@ void usage (const char *myname)
 
 void write_dot (void)
 {
+	struct dls l, *ln;
+	struct h *h, *hp;
 	struct event *e;
 	struct cond *c;
 	struct ls *n;
 	int i, enr;
 
 	P ("digraph {\n\t/* events */\n");
+	P ("\tnode    [shape=box style=filled fillcolor=grey60];\n");
 	enr = 0;
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
-		if (e->id == 0) continue;
+		// if (e->id == 0) continue;
 		enr++;
-		P ("\te%-6d [label=\"e%d:%s\" %s];\n",
+		P ("\te%-6d [label=\"e%d:%s\"%s];\n",
 				e->id,
 				e->id,
 				e->origin->name,
-				e->iscutoff ? 
-				"shape=Msquare style=filled fillcolor=gray90" :
-				"shape=box style=filled fillcolor=grey"
-				);
+				e->iscutoff ? " shape=Msquare" : "");
 	}
 
 	P ("\n\t/* conditions */\n");
+	P ("\tnode    [style=filled fillcolor=gray90 shape=circle];\n");
 	for (n = u.unf.conds.next; n; n = n->next) {
 		c = ls_i (struct cond, n, nod);
 
-		P ("\tc%-6d [label=\"c%d:%s\" shape=circle];\n",
+		P ("\tc%-6d [label=\"c%d:%s\"];\n",
 				c->id, c->id, c->origin->name);
 	}
 
-	P ("\n\t/* postset of events */\n");
+	P ("\n\t/* history annotations for events */\n");
+	P ("\tedge    [color=white];\n");
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
-		if (e->id == 0) continue;
+		// if (e->id == 0) continue;
+		P ("\te%-6d -> e%d [label=\"", e->id, e->id);
+		for (i = e->hist.deg - 1; i >= 0; i--) {
+			h = dg_i (struct h, e->hist.adj[i], nod);
+			P ("h%d%s", h->id, i == 0 ? "" : ",");
+		}
+		P ("\"];\n");
+	}
+
+	P ("\n\t/* postset of events */\n");
+	P ("\tedge    [color=black];\n");
+	for (n = u.unf.events.next; n; n = n->next) {
+		e = ls_i (struct event, n, nod);
+		// if (e->id == 0) continue;
 
 		for (i = e->post.deg - 1; i >= 0; i--) {
 			c = dg_i (struct cond, e->post.adj[i], post);
@@ -84,7 +99,7 @@ void write_dot (void)
 	P ("\n\t/* preset and context of events */\n");
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
-		if (e->id == 0) continue;
+		// if (e->id == 0) continue;
 
 		for (i = e->pre.deg - 1; i >= 0; i--) {
 			c = dg_i (struct cond, e->pre.adj[i], pre);
@@ -93,24 +108,45 @@ void write_dot (void)
 
 		for (i = e->cont.deg - 1; i >= 0; i--) {
 			c = dg_i (struct cond, e->cont.adj[i], cont);
-			P ("\tc%-6d -> e%d [arrowhead=none];\n", c->id, e->id);
+			P ("\tc%-6d -> e%d [arrowhead=none color=red];\n", c->id, e->id);
 		}
 	}
 
-	P ("\n");
-	P ("\t/* %d transitions\n"
-	   "\t * %d places\n"
-	   "\t *\n"
-	   "\t * %d events\n"
-	   "\t * %d conditions\n"
-	   "\t * %d histories\n"
-	   "\t */\n"
-	   "}\n",
+	P ("\n\t/* histories */\n");
+	P ("\tgraph [fontname=\"Courier\" label=< <br/>\n");
+	P ("\tHistory Size Events<br align=\"left\"/>\n");
+	for (n = u.unf.events.next; n; n = n->next) {
+		e = ls_i (struct event, n, nod);
+		if (e->id == 0) continue;
+		for (i = e->hist.deg - 1; i >= 0; i--) {
+			h = dg_i (struct h, e->hist.adj[i], nod);
+			P ("\th%-6d %4d ", h->id, h->size);
+			h_list (&l, h);
+			for (ln = l.next; ln; ln = ln->next) {
+				hp = dls_i (struct h, ln, auxnod);
+				P ("e%d:%s%s ",
+						hp->e->id,
+						hp->e->origin->name,
+						ln->next ? "," : "");
+			}
+			P ("<br align=\"left\"/>\n");
+		}
+	}
+
+	ASSERT (enr == u.unf.numev);
+	P ("\t <br align=\"left\"/>\n");
+	P ("\t%d transitions<br align=\"left\"/>\n"
+			"\t%d places<br align=\"left\"/>\n"
+			"\t%d events<br align=\"left\"/>\n"
+			"\t%d conditions<br align=\"left\"/>\n"
+			"\t%d histories<br align=\"left\"/>\n",
 			u.net.numtr,
 			u.net.numpl,
 			enr,
 			u.unf.numco,
 			u.unf.numh);
+	P ("\t>];\n");
+	P ("}\n");
 }
 
 int main (int argc, char **argv)

@@ -364,3 +364,27 @@ int h_isdup (const struct h *h)
 	return 0;
 }
 
+void h_list (struct dls *l, struct h *h)
+{
+	struct dls *n;
+	struct h *hp, *hpp;
+	int m, i;
+
+	/* explore history h, mark events with m and insert in the list l */
+
+	m = ++u.mark;
+	h->m = m;
+	dls_init (l);
+	dls_append (l, &h->auxnod);
+	for (n = l->next; n; n = n->next) {
+		hp = dls_i (struct h, n, auxnod);
+		ASSERT (hp->m == m);
+		for (i = hp->nod.deg - 1; i >= 0; i--) {
+			hpp = dg_i (struct h, hp->nod.adj[i], nod);
+			if (hpp->m == m) continue;
+			hpp->m = m;
+			dls_append (l, &hpp->auxnod);
+		}
+	}
+}
+

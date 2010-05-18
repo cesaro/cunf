@@ -21,17 +21,17 @@ static void write_net_dot (void)
 	int i;
 
 	P ("digraph {\n\t/* places */\n");
+	P ("\tnode    [style=filled fillcolor=gray90 shape=circle];\n");
 	for (n = u.net.places.next; n; n = n->next) {
 		p = ls_i (struct place, n, nod);
-		P ("\tp%-6d [shape=circle label=\"%s\"];\n", p->id, p->name);
+		P ("\tp%-6d [label=\"%s\"];\n", p->id, p->name);
 	}
 
 	P ("\n\t/* transitions */\n");
+	P ("\tnode    [shape=box style=filled fillcolor=grey60];\n");
 	for (n = u.net.trans.next; n; n = n->next) {
 		t = ls_i (struct trans, n, nod);
-		P ("\tt%-6d [shape=box style=filled fillcolor=grey "
-				"label=\"%s\"];\n",
-				t->id, t->name);
+		P ("\tt%-6d [label=\"%s\"];\n", t->id, t->name);
 	}
 
 	P ("\n\t/* postset of each transition */\n");
@@ -54,17 +54,16 @@ static void write_net_dot (void)
 
 		for (i = t->cont.deg - 1; i >= 0; i--) {
 			p = dg_i (struct place, t->cont.adj[i], cont);
-			P ("\tp%-6d -> t%d [arrowhead=none];\n",
+			P ("\tp%-6d -> t%d [arrowhead=none color=red];\n",
 					p->id, t->id);
 		}
 	}
 
 	P ("\n");
-	P ("\t/* %d transitions\n"
-	   "\t * %d places */\n"
-	   "}\n",
+	P ("\tgraph   [label=\"%d transitions\\n%d places\"];\n",
 			u.net.numtr,
 			u.net.numpl);
+	P ("}\n");
 }
 
 int main (int argc, char ** argv)
