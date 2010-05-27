@@ -28,10 +28,10 @@ static struct cond * _unfold_new_cond (struct event *e, struct place *p)
 	c->id = u.unf.numco++;
 
 	/* finally, update the preset of c, the postset of e and append the
-	 * condition to the list p->conds */
+	 * condition to the list p->conds only if e is not a cutoff */
 	dg_add (&e->post, &c->post);
 	c->pre = e;
-	nl_push (&p->conds, c);
+	if (! e->iscutoff) nl_push (&p->conds, c);
 
 	return c;
 }
@@ -117,6 +117,11 @@ void unfold (void)
 	nc_create_unfolding ();
 	marking_init ();
 	pe_init ();
+#ifdef CONFIG_MCMILLAN
+	PRINT ("  Using McMillan order\n");
+#else
+	PRINT ("  Using Esparza-Romer-Volger order\n");
+#endif
 
 	/* 2. insert initial transition t0 (in the net!!); insert the initial
 	 * event e0, the initial history h0 and build the postset of e0 */
@@ -136,7 +141,7 @@ void unfold (void)
 		if (h == 0) break;
 
 		/* 6. insert in the marking table its marking and determine if
-		 * it is a cutoff; continue if it is not :) */
+		 * it is a cutoff */
 		iscutoff = marking_add (h);
 		PRINT ("\n- h%d/e%d:%s; size %d; is %s!\n",
 				h->id,
@@ -145,14 +150,14 @@ void unfold (void)
 				h->size,
 				iscutoff ? "a cut-off" : "new");
 
-		if (iscutoff) continue;
-		h->e->iscutoff = 0;
-
 		/* 7. build the postset of the maximal transition, if not
 		 * already present in the unfolding */
+		if (! iscutoff) h->e->iscutoff = 0;
 		_unfold_postset (h->e);
 
-		/* 8. update pe with this new history */
+		/* 8. update pe with this new history only if the the maximal
+		 * event is not a cutoff */
+		if (iscutoff) continue;
 		pe_update (h);
 	}
 }

@@ -9,6 +9,8 @@ struct nl {
 
 struct nl * nl_push (struct nl **, void *);
 struct nl * nl_insert (struct nl **, void*);
+struct nl* nl_insert2 (struct nl **list, void *node,
+		int (* cmp) (void *n1, void *n2));
 void nl_delete (struct nl *);
 char nl_compare (const struct nl *list1, const struct nl *list2);
 

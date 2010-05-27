@@ -32,6 +32,8 @@ struct trans {
 	struct dg post;    /* unordered list of postset	    */
 	struct dg cont;    /* read arcs (unordered)    	    */
 	int m;
+	int parikhcnt1;	   /* parikh count */
+	int parikhcnt2;	   /* parikh count */
 };
 
 struct cond {

@@ -9,11 +9,14 @@ symbols
 main		'Mole2'
 glue		'Glue code'
 tests		'Test & debug'
+order		'Unfold order'
 
 # option names
 BANNER			'Mole2'
 DEBUG			'Compile debug & assert code'
 NODELIST_STEP		'Allocation step for the nodelist'
+MCMILLAN		'McMillan'
+ERV			'Esparza Romer Volger'
 
 DUMMY			'Dummy symbol'
 
@@ -26,6 +29,11 @@ default NODELIST_STEP from 1024 range 256-65536
 # derived configuration
 
 # menues
+choices order
+	MCMILLAN
+	ERV
+	default ERV
+
 menu glue
 	DUMMY
 
@@ -33,9 +41,10 @@ menu tests
 	DEBUG
 
 menu main
-	glue
 	tests
+	order
 	NODELIST_STEP%
+
 
 start main
 

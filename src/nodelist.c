@@ -58,12 +58,26 @@ struct nl* nl_push (struct nl **list, void *node)
 
 struct nl* nl_insert (struct nl **list, void *node)
 {
-	while (*list && node < (*list)->node)
+	while (*list && node > (*list)->node)
 		list = &((*list)->next);
 
 	if (*list && (*list)->node == node) return *list;
 
 	return nl_push(list,node);
+}
+
+/*****************************************************************************/
+/* add a place to a list; sort using function cmp, which is expected to return
+ * a negative value, 0 or a positive value if n1 < n2, n1 == n2 or n1 > n2 */
+
+struct nl* nl_insert2 (struct nl **list, void *node,
+		int (* cmp) (void *n1, void *n2))
+{
+	while (*list && cmp (node, (*list)->node) > 0) list = &((*list)->next);
+
+	if (*list && cmp ((*list)->node, node) == 0) return *list;
+
+	return nl_push (list,node);
 }
 
 /*****************************************************************************/

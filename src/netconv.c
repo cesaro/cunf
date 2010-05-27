@@ -66,6 +66,8 @@ struct trans * nc_create_transition (void)
 	dg_init (&t->post);
 	dg_init (&t->cont);
 	t->id = ++u.net.numtr;
+	t->parikhcnt1 = 0;
+	t->parikhcnt2 = 0;
 
 	return t;
 }

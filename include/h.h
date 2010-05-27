@@ -7,15 +7,27 @@
 #include "nodelist.h"
 #include "dg.h"
 
+struct parikh {
+	struct trans *t;
+	int count;
+};
+
 struct h {
+	int id;
 	struct event * e;	
 	struct dg nod;
 	struct dls auxnod;
 
-	struct nl *marking;
-	int size;
-	int id;
 	int m;
+	int size;
+	int depth;
+
+	struct nl *marking;
+	struct {
+		int size;
+		struct parikh *tab;
+	} parikh;
+
 #ifdef CONFIG_DEBUG
 	int debugm;
 	struct dls debugnod;
@@ -31,9 +43,11 @@ int h_isdup (const struct h *h);
 void h_marking (struct h *h);
 
 int h_conflict (struct h *h1, struct h *h2);
-int h_conflict2 (struct h *h1, struct cond *c1, struct h *h2, struct cond *c2);
+int h_conflict2 (struct h *h1, struct nl *cond1, struct h *h2,
+		struct nl *cond2);
 
 void h_list (struct dls *l, struct h *h);
+int h_cmp (struct h *h1, struct h *h2);
 
 #endif
 

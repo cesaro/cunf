@@ -46,19 +46,19 @@ void write_dot (void)
 	struct event *e;
 	struct cond *c;
 	struct ls *n;
-	int i, enr;
+	int i, enr, hnr;
 
 	P ("digraph {\n\t/* events */\n");
 	P ("\tnode    [shape=box style=filled fillcolor=grey60];\n");
 	enr = 0;
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
-		// if (e->id == 0) continue;
+		if (e->id == 0) continue;
 		enr++;
-		P ("\te%-6d [label=\"e%d:%s\"%s];\n",
-				e->id,
+		P ("\te%-6d [label=\"%s:e%d\"%s];\n",
 				e->id,
 				e->origin->name,
+				e->id,
 				e->iscutoff ? " shape=Msquare" : "");
 	}
 
@@ -67,15 +67,15 @@ void write_dot (void)
 	for (n = u.unf.conds.next; n; n = n->next) {
 		c = ls_i (struct cond, n, nod);
 
-		P ("\tc%-6d [label=\"c%d:%s\"];\n",
-				c->id, c->id, c->origin->name);
+		P ("\tc%-6d [label=\"%s:c%d\"];\n",
+				c->id, c->origin->name, c->id);
 	}
 
 	P ("\n\t/* history annotations for events */\n");
 	P ("\tedge    [color=white];\n");
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
-		// if (e->id == 0) continue;
+		if (e->id == 0) continue;
 		P ("\te%-6d -> e%d [label=\"", e->id, e->id);
 		for (i = e->hist.deg - 1; i >= 0; i--) {
 			h = dg_i (struct h, e->hist.adj[i], nod);
@@ -88,7 +88,7 @@ void write_dot (void)
 	P ("\tedge    [color=black];\n");
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
-		// if (e->id == 0) continue;
+		if (e->id == 0) continue;
 
 		for (i = e->post.deg - 1; i >= 0; i--) {
 			c = dg_i (struct cond, e->post.adj[i], post);
@@ -99,7 +99,7 @@ void write_dot (void)
 	P ("\n\t/* preset and context of events */\n");
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
-		// if (e->id == 0) continue;
+		if (e->id == 0) continue;
 
 		for (i = e->pre.deg - 1; i >= 0; i--) {
 			c = dg_i (struct cond, e->pre.adj[i], pre);
@@ -114,13 +114,15 @@ void write_dot (void)
 
 	P ("\n\t/* histories */\n");
 	P ("\tgraph [fontname=\"Courier\" label=< <br/>\n");
-	P ("\tHistory Size Events<br align=\"left\"/>\n");
+	P ("\tHistory Depth Size Events<br align=\"left\"/>\n");
+	hnr = 0;
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
 		if (e->id == 0) continue;
 		for (i = e->hist.deg - 1; i >= 0; i--) {
 			h = dg_i (struct h, e->hist.adj[i], nod);
-			P ("\th%-6d %4d ", h->id, h->size);
+			hnr++;
+			P ("\th%-6d %5d %4d ", h->id, h->depth, h->size);
 			h_list (&l, h);
 			for (ln = l.next; ln; ln = ln->next) {
 				hp = dls_i (struct h, ln, auxnod);
@@ -133,7 +135,8 @@ void write_dot (void)
 		}
 	}
 
-	ASSERT (enr == u.unf.numev);
+	ASSERT (enr == u.unf.numev - 1);
+	ASSERT (hnr == u.unf.numh - 1);
 	P ("\t <br align=\"left\"/>\n");
 	P ("\t%d transitions<br align=\"left\"/>\n"
 			"\t%d places<br align=\"left\"/>\n"
@@ -142,9 +145,14 @@ void write_dot (void)
 			"\t%d histories<br align=\"left\"/>\n",
 			u.net.numtr,
 			u.net.numpl,
-			enr,
+			u.unf.numev - 1,
 			u.unf.numco,
-			u.unf.numh);
+			u.unf.numh - 1);
+#ifdef CONFIG_MCMILLAN
+	P ("\tUsing McMillan order<br align=\"left\"/>\n");
+#else
+	P ("\tUsing Esparza/Romer/Volger order<br align=\"left\"/>\n");
+#endif
 	P ("\t>];\n");
 	P ("}\n");
 }

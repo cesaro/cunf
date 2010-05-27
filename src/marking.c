@@ -103,9 +103,20 @@ int marking_add (struct h *h)
 		if (ret == 0) break;
 	}
 
-	/* if it is the case, deallocate the marking and set history h as a
-	 * cutoff, whose corresponding history is he->h */
+#if CONFIG_MCMILLAN
+	/* if it is the case, and the corresponding history is smaller,
+	 * according to the McMillan's order, then it is a cutoff */
+	if (n && h_cmp (he->h, h) < 0) {
+#else
+	/* if present in the hash table, then we know h is a cutoff, as we are
+	 * sure that the corresponding history is smaller (the ERV order is
+	 * total) */
 	if (n) {
+		ASSERT (h_cmp (he->h, h) < 0);
+#endif
+
+		/* deallocate the marking and set history h as a cutoff, whose
+		 * corresponding history is he->h */
 		ASSERT (he);
 		nl_delete (h->marking); /* FIXME -- should this be done here ? */
 		h->marking = 0;

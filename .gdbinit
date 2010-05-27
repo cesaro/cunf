@@ -1,8 +1,9 @@
 
-break /storage/devel/mole/mole2/dev/src/unfold.c:135
+#break /storage/devel/mole/mole2/dev/src/unfold.c:135
 break breakme
-break main
-run test/examples/norm/pep/peterson_pfa.ll_net
-#run test/examples/norm/pep/sem.ll_net
-#run test/examples/small/test1.ll_net
+break unfold
+break main2
+break _cmp
+#break h_cmp
+run test/examples/norm/pep/parrow.ll_net
 

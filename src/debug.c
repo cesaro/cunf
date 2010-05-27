@@ -72,8 +72,13 @@ void db_net (void)
 		}
 		PRINT ("}\n");
 	}
-}
 
+	PRINT ("Transition total order for parikh vectors:\n");
+	for (n = u.net.trans.next; n; n = n->next) {
+		t = ls_i (struct trans, n, nod);
+		PRINT ("id %d name %s\n", t->id, t->name);
+	}
+}
 
 void db_h (struct h *h)
 {
@@ -101,12 +106,14 @@ void db_h (struct h *h)
 			s++;
 		}
 	}
+	/* ASSERT (s == h->size); we might call this function after h is
+	 * completely initialized */
 
 /*
- h12/e34:T123; size 7; e123:T12, e3:T12, e0:__t0
+ h12/e34:T123; depth 5; size 7; e123:T12, e3:T12, e0:__t0
 */
-	PRINT ("h%d/e%d:%s; size %d; ",
-			h->id, h->e->id, h->e->origin->name, s);
+	PRINT ("h%d/e%d:%s; depth %d; size %d; ",
+			h->id, h->e->id, h->e->origin->name, h->depth, s);
 	for (n = l.next; n; n = n->next) {
 		hp = dls_i (struct h, n, debugnod);
 		PRINT ("e%d:%s, ", hp->e->id, hp->e->origin->name);
