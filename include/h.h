@@ -39,7 +39,7 @@ struct h * h_dup (struct h * h);
 void h_free (struct h *h);
 
 void h_add (struct h * h, struct h * hp);
-int h_isdup (const struct h *h);
+int h_isdup (struct h *h);
 void h_marking (struct h *h);
 
 int h_conflict (struct h *h1, struct h *h2);

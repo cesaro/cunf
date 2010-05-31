@@ -200,7 +200,6 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 
 	/* separate the events in h1 and h2 in three lists */
 	_h_lists (h1, h2, &l1, &l2, &l12, m1, m2, m12);
-	BREAK (h1->id == 271 && h2->id == 273);
 
 	/* while both lists have events; we can safely ignore events in l12, as
 	 * they  collaborate exactly in the same amount for foata vectors of
@@ -535,8 +534,49 @@ void h_marking (struct h *h)
 	PRINT ("\n");
 }
 
-int h_isdup (const struct h *h)
+int h_isdup (struct h *h)
 {
+	/* history h is a duplicate if there exists another (different) history
+	 * associated to event h->e with the same events as h */
+	int i;
+	struct h *hp;
+	struct dls l1;
+	struct dls l2;
+	struct dls l12;
+	int m1, m2, m12;
+
+	ASSERT (h);
+	ASSERT (h->e);
+
+	/* generate three different marks */
+	m1 = ++u.mark;
+	m2 = ++u.mark;
+	m12 = ++u.mark;
+
+	/* check that every history pointed by h->e->hist is different to h */
+	for (i = h->e->hist.deg - 1; i >= 0; i--) {
+		hp = dg_i (struct h, h->e->hist.adj[i], nod);
+		if (h == hp) continue;
+		_h_lists (h, hp, &l1, &l2, &l12, m1, m2, m12); /* very expensive! */
+		if (l1.next == l1.prev && l2.next == l2.prev) {
+			if (dls_i (struct h, l1.next, auxnod) == h &&
+					dls_i (struct h, l2.next, auxnod) == hp) {
+				PRINT ("  History h%d/e%d:%s is a duplicate of "
+						"h%d/e%d:%s\n",
+						h->id,
+						h->e->id,
+						h->e->origin->name,
+						hp->id,
+						hp->e->id,
+						hp->e->origin->name);
+				return 1;
+			}
+		}
+	}
+
+	return 0;
+
+#if 0
 	int i;
 
 	/* history h is a duplicate if there exists another (different) history
@@ -562,6 +602,7 @@ int h_isdup (const struct h *h)
 		}
 	}
 	return 0;
+#endif
 }
 
 void h_list (struct dls *l, struct h *h)

@@ -73,11 +73,6 @@ void db_net (void)
 		PRINT ("}\n");
 	}
 
-	PRINT ("Transition total order for parikh vectors:\n");
-	for (n = u.net.trans.next; n; n = n->next) {
-		t = ls_i (struct trans, n, nod);
-		PRINT ("id %d name %s\n", t->id, t->name);
-	}
 }
 
 void db_h (struct h *h)

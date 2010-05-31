@@ -20,23 +20,33 @@ static void write_net_dot (void)
 	struct ls *n;
 	int i;
 
+	/* mark the places in the initial marking */
+	for (i = u.net.t0->post.deg - 1; i >= 0; i--) {
+		p = dg_i (struct place, u.net.t0->post.adj[i], post);
+		p->m = 1;
+	}
+
 	P ("digraph {\n\t/* places */\n");
 	P ("\tnode    [style=filled fillcolor=gray90 shape=circle];\n");
 	for (n = u.net.places.next; n; n = n->next) {
 		p = ls_i (struct place, n, nod);
-		P ("\tp%-6d [label=\"%s\"];\n", p->id, p->name);
+		P ("\tp%-6d [label=\"%s\"];%s\n", p->id, p->name,
+				p->m ? " /* initial */" : "");
 	}
 
 	P ("\n\t/* transitions */\n");
 	P ("\tnode    [shape=box style=filled fillcolor=grey60];\n");
 	for (n = u.net.trans.next; n; n = n->next) {
 		t = ls_i (struct trans, n, nod);
+		if (t->id == 0) ASSERT (strcmp (t->name, "_t0_") == 0);
+		if (t->id == 0) continue;
 		P ("\tt%-6d [label=\"%s\"];\n", t->id, t->name);
 	}
 
 	P ("\n\t/* postset of each transition */\n");
 	for (n = u.net.trans.next; n; n = n->next) {
 		t = ls_i (struct trans, n, nod);
+		if (t->id == 0) continue;
 
 		for (i = t->post.deg - 1; i >= 0; i--) {
 			p = dg_i (struct place, t->post.adj[i], post);
@@ -47,6 +57,7 @@ static void write_net_dot (void)
 	P ("\n\t/* preset and context of each transition */\n");
 	for (n = u.net.trans.next; n; n = n->next) {
 		t = ls_i (struct trans, n, nod);
+		if (t->id == 0) continue;
 		for (i = t->pre.deg - 1; i >= 0; i--) {
 			p = dg_i (struct place, t->pre.adj[i], pre);
 			P ("\tp%-6d -> t%d;\n", p->id, t->id);

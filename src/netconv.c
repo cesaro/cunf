@@ -51,6 +51,7 @@ struct place * nc_create_place (void)
 	dg_init (&p->cont);
 	p->conds = 0;
 	p->id = u.net.numpl++;
+	p->m = 0;
 
 	return p;
 }
@@ -68,6 +69,7 @@ struct trans * nc_create_transition (void)
 	t->id = ++u.net.numtr;
 	t->parikhcnt1 = 0;
 	t->parikhcnt2 = 0;
+	t->m = 0;
 
 	return t;
 }

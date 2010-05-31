@@ -41,12 +41,19 @@ void usage (const char *myname)
 
 void write_dot (void)
 {
+	int i, m, enr, hnr;
 	struct dls l, *ln;
 	struct h *h, *hp;
 	struct event *e;
 	struct cond *c;
 	struct ls *n;
-	int i, enr, hnr;
+
+	m = ++u.mark;
+	ASSERT (m > 0);
+	for (i = u.unf.e0->post.deg - 1; i >= 0; i--) {
+		c = dg_i (struct cond, u.unf.e0->post.adj[i], post);
+		c->m = m;
+	}
 
 	P ("digraph {\n\t/* events */\n");
 	P ("\tnode    [shape=box style=filled fillcolor=grey60];\n");
@@ -67,8 +74,9 @@ void write_dot (void)
 	for (n = u.unf.conds.next; n; n = n->next) {
 		c = ls_i (struct cond, n, nod);
 
-		P ("\tc%-6d [label=\"%s:c%d\"];\n",
-				c->id, c->origin->name, c->id);
+		P ("\tc%-6d [label=\"%s:c%d\"];%s\n",
+				c->id, c->origin->name, c->id,
+				c->m == m ? " /* initial */" : "");
 	}
 
 	P ("\n\t/* history annotations for events */\n");
@@ -136,7 +144,6 @@ void write_dot (void)
 	}
 
 	ASSERT (enr == u.unf.numev - 1);
-	ASSERT (hnr == u.unf.numh - 1);
 	P ("\t <br align=\"left\"/>\n");
 	P ("\t%d transitions<br align=\"left\"/>\n"
 			"\t%d places<br align=\"left\"/>\n"
@@ -147,7 +154,7 @@ void write_dot (void)
 			u.net.numpl,
 			u.unf.numev - 1,
 			u.unf.numco,
-			u.unf.numh - 1);
+			hnr);
 #ifdef CONFIG_MCMILLAN
 	P ("\tUsing McMillan order<br align=\"left\"/>\n");
 #else
@@ -204,9 +211,9 @@ int main (int argc, char **argv)
 
 	if (!llnet) usage (argv[0]);
 
+	PRINT ("  Reading net from '%s'\n", llnet);
 	read_pep_net (llnet);
 	nc_static_checks (sptr);
-	db_net ();
 	unfold ();
 	write_dot ();
 

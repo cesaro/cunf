@@ -118,6 +118,7 @@ static void _pe_update_cont_existing (struct h * h, struct cond * c,
 	struct cond *ci;
 	struct nl *lst;
 	int i, j, k, l;
+	int ret;
 
 	/* for each event ep for which c is in preset(ep) */
 	for (i = c->post.deg - 1; i >= 0; i--) {
@@ -161,7 +162,9 @@ static void _pe_update_cont_existing (struct h * h, struct cond * c,
 				/* if h is in conflict with some shi, or
 				 * consumes at least one transition in lst, we
 				 * don't have a new history */
-				if (h_conflict2 (h, 0, shi, lst)) break;
+				ret = h_conflict2 (h, 0, shi, lst);
+				nl_delete (lst);
+				if (ret) break;
 			}
 
 			/* if consistent with *all* shi, build the new history
@@ -344,7 +347,6 @@ static struct event * _pe_new_event (struct trans * t)
 	/* we will update this if we find one history for this event which is
 	 * not a cutoff */
 	e->iscutoff = 1;
-
 	e->id = u.unf.numev++;
 
 	/* if pe.comb.c is in preset of the new event */
@@ -537,7 +539,7 @@ static void _pe_update_post_existing (struct h *h, struct cond *c,
 	ASSERT (ep);
 	ASSERT (ep->origin);
 
-	/* we first mark the preset and context of ep using ispre field in
+	/* we first mark the preset and context of ep using causalm field in
 	 * struct cond */
 	u.mark++;
 	causalmrk = u.mark;

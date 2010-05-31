@@ -23,7 +23,7 @@ label_all($file2);
 compare_labels("condition",\@c1,\@c2);
 compare_labels("event",\@e1,\@e2);
 
-print STDERR "unfoldings in $file1 and $file2 are isomorphic\n";
+print STDERR "Nets are isomorphic!\n";
 
 exit 0;
 
@@ -113,31 +113,36 @@ sub read_unfolding {
 	%indeg = ();
 	open FD,$file;
 	while (<FD>) {
-		if (/^\s*(c\d*)\s*->\s*(e\d*);/) {
+		if (/arrowhead=none/) {
+			print STDERR "Found read arcs in '$file'; cannot " .
+					"handle this!\n";
+			exit 1;
+		}
+		if (/^\s*([cp]\d*)\s*->\s*([et]\d*);/) {
 			$hco{$co.$1} = "";
 			$hev{$ev.$2} = "";
 			$indeg{$ev.$2}++;
 			$out{$co.$1} .= "#$ev$2";
 			$in{$ev.$2} .= "#$co$1";
-			#print "file ", $file, " edge c>e ", $1, " > ", $2, "\n";
+			#print "file $file edge p>t $1 > $2\n";
 		}
-		if (/^\s*(e\d*)\s*->\s*(c\d*);/) {
+		if (/^\s*([et]\d*)\s*->\s*([cp]\d*);/) {
 			$hev{$ev.$1} = "";
 			$hco{$co.$2} = "";
 			$indeg{$co.$2}++;
 			$out{$ev.$1} .= "#$co$2";
 			$in{$co.$2} .= "#$ev$1";
-			#print "file ", $file, " edge e>c ", $1, " > ", $2, "\n";
+			#print "file $file edge t>p $1 > $2\n";
 		}
-		if (/^\s*(c\d*)\s*\[label="([^ :"]*)/) {
+		if (/^\s*([cp]\d*)\s*.label="([^ :"]*)/) {
 			$hco{$co.$1} = "";
 			$label{$co.$1} = $2;
-			#print "file ", $file, " c ", $1, " label ", $2, "\n";
+			#print "file $file p $1 label $2\n";
 		}
-		if (/^\s*(e\d*)\s*\[label="([^ :"]*)/) {
+		if (/^\s*([et]\d*)\s*.label="([^ :"]*)/) {
 			$hev{$ev.$1} = "";
 			$label{$ev.$1} = $2;
-			#print "file ", $file, " e ", $1, " label ", $2, "\n";
+			#print "file $file t $1 label $2\n";
 		}
 	}
 	close FD;
@@ -145,4 +150,9 @@ sub read_unfolding {
 	@evs = keys %hev;
 	for (keys %out) { $out{$_} = substr($out{$_},1); }
 	for (keys %in) { $in{$_} = substr($in{$_},1); }
+	$cnr = @conds;
+	$enr = @evs;
+	print STDERR "Net at '$file';  $enr transitions/events, $cnr " .
+			"places/conditions\n";
 }
+

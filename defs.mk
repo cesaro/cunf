@@ -63,3 +63,7 @@ STRIP:=$(CROSS)strip
 	@echo " UNF $<"
 	@src/main $< > $@
 
+%.ll_net : %.xml
+	@echo " P2P $<"
+	@tools/pnml2pep.pl < $< > $@
+
