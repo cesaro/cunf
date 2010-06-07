@@ -119,7 +119,7 @@ void unfold (void)
 #ifdef CONFIG_MCMILLAN
 	PRINT ("  Using McMillan order\n");
 #else
-	PRINT ("  Using Esparza-Romer-Volger order\n");
+	PRINT ("  Using Esparza-Romer-Vogler order\n");
 #endif
 
 	/* 2. insert the initial event e0, the initial history h0 and build the

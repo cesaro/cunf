@@ -160,7 +160,7 @@ void write_dot (void)
 #ifdef CONFIG_MCMILLAN
 	P ("\tUsing McMillan order<br align=\"left\"/>\n");
 #else
-	P ("\tUsing Esparza/Romer/Volger order<br align=\"left\"/>\n");
+	P ("\tUsing Esparza/Romer/Vogler order<br align=\"left\"/>\n");
 #endif
 	P ("\t>];\n");
 	P ("}\n");
