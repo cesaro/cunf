@@ -107,7 +107,7 @@ void db_h (struct h *h)
 /*
  h12/e34:T123; depth 5; size 7; e123:T12, e3:T12, e0:__t0
 */
-	PRINT ("h%d/e%d:%s; depth %d; size %d; ",
+	PRINT ("  h%d/e%d:%s; depth %d; size %d; ",
 			h->id, h->e->id, h->e->origin->name, h->depth, s);
 	for (n = l.next; n; n = n->next) {
 		hp = dls_i (struct h, n, debugnod);
@@ -138,7 +138,7 @@ void db_c (struct cond *c)
 	struct event *e;
 	int i;
 
-	PRINT ("c%d:%s  pre e%d:%s;  post ",
+	PRINT ("  c%d:%s  pre e%d:%s;  post ",
 			c->id,
 			c->origin->name,
 			c->pre->id,
@@ -162,7 +162,7 @@ void db_e (struct event *e)
 	struct cond *c;
 	int i;
 
-	PRINT ("e%d:%s  pre ",
+	PRINT ("  e%d:%s  pre ",
 			e->id,
 			e->origin->name);
 
@@ -185,3 +185,40 @@ void db_e (struct event *e)
 	PRINT ("\b;\n");
 }
 
+void db_h2dot (void)
+{
+	struct event *e;
+	struct h *h, *sh;
+	struct ls *n;
+	int i, j;
+	
+	printf ("\ndigraph h {\n");
+	for (n = u.unf.events.next; n; n = n->next) {
+		e = ls_i (struct event, n, nod);
+		printf (" \"%se%d:%s\" [shape=diamond style=filled fillcolor=gray90]\n",
+				e->iscutoff ? "*" : "",
+				e->id, e->origin->name);
+		for (i = e->hist.deg - 1; i >= 0; i--) {
+			h = dg_i (struct h, e->hist.adj[i], nod);
+			ASSERT (e == h->e);
+			printf (" \"%se%d:%s\" -> \"%sh%d/e%d:%s\" [arrowhead=dot]\n",
+					e->iscutoff ? "*" : "",
+					e->id, e->origin->name,
+					h->marking ? "" : "*",
+					h->id, e->id, e->origin->name);
+			for (j = h->nod.deg - 1; j >= 0; j--) {
+				sh = dg_i (struct h, h->nod.adj[j], nod);
+				ASSERT (sh->marking != 0);
+				printf (" \"%sh%d/e%d:%s\" -> \"h%d/e%d:%s\"\n",
+						h->marking ? "" : "*",
+						h->id,
+						h->e->id,
+						h->e->origin->name,
+						sh->id,
+						sh->e->id,
+						sh->e->origin->name);
+			}
+		}
+	}
+	printf ("}\n\n");
+}

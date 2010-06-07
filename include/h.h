@@ -22,6 +22,7 @@ struct h {
 	int size;
 	int depth;
 
+	struct h *corr;
 	struct nl *marking;
 	struct {
 		int size;
@@ -42,7 +43,6 @@ void h_add (struct h * h, struct h * hp);
 int h_isdup (struct h *h);
 void h_marking (struct h *h);
 
-int h_conflict (struct h *h1, struct h *h2);
 int h_conflict2 (struct h *h1, struct nl *cond1, struct h *h2,
 		struct nl *cond2);
 

@@ -7,7 +7,7 @@
 
 void marking_init (void);
 int marking_find (const struct h *h);
-int marking_add (struct h *h);
+void marking_add (struct h *h);
 void marking_print (const struct h *h);
 
 #endif

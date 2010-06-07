@@ -35,13 +35,15 @@ _e : $(TARGETS)
 	./src/main test/examples/norm/pep/parrow.ll_net
 	./src/main test/examples/small/asymcnfl.ll_net
 	./src/main test/examples/small/8readers.ll_net
+	./src/main test/examples/small/peupdate.ll_net
 
 	./src/main test/examples/cont/pep/do_od.ll_net
 	./src/main test/examples/cont/pep/peterson_pfa.ll_net
+	./src/main test/examples/cont/pep/peterson.ll_net
 	./src/main test/examples/cont/pep/mutual.ll_net
 
 e : $(TARGETS)
-	./src/main test/examples/small/peupdate.ll_net
+	./src/main test/examples/small/peupdate-bug.ll_net
 
 t : $(TARGETS)
 	time ./test/dg

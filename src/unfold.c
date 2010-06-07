@@ -72,7 +72,6 @@ static void _unfold_init (void)
 {
 	struct event *e0;
 	struct h *h0;
-	int ret;
 
 	/* allocate and initialize initial event */
 	e0 = gl_malloc (sizeof (struct event));
@@ -82,6 +81,7 @@ static void _unfold_init (void)
 	dg_init (&e0->cont);
 	dg_init (&e0->ac);
 	dg_init (&e0->hist);
+	nl_push (&u.net.t0->events, e0);
 	e0->origin = u.net.t0;
 	e0->id = u.unf.numev++;
 	e0->m = 0;
@@ -95,8 +95,8 @@ static void _unfold_init (void)
 
 	/* insert the initial marking in the marking table */
 	h_marking (h0);
-	ret = marking_add (h0);
-	ASSERT (ret == 0);
+	marking_add (h0);
+	ASSERT (h0->corr == 0);
 
 	/* build the postset of e0 */
 	_unfold_postset (e0);
@@ -111,7 +111,6 @@ void unfold (void)
 {
 	struct h *h0;
 	struct h *h;
-	int iscutoff;
 
 	/* 1. initialize structures (unfolding, mark. hash table and pe) */
 	nc_create_unfolding ();
@@ -123,8 +122,8 @@ void unfold (void)
 	PRINT ("  Using Esparza-Romer-Volger order\n");
 #endif
 
-	/* 2. insert initial transition t0 (in the net!!); insert the initial
-	 * event e0, the initial history h0 and build the postset of e0 */
+	/* 2. insert the initial event e0, the initial history h0 and build the
+	 * postset of e0 */
 	/* 3. insert the initial marking in the marking hash table */
 	_unfold_init ();
 
@@ -141,24 +140,32 @@ void unfold (void)
 		if (h == 0) break;
 
 		/* 6. insert in the marking table its marking and determine if
-		 * it is a cutoff */
-		iscutoff = marking_add (h);
-		PRINT ("\n- h%d/e%d:%s; size %d; is %s!\n",
+		 * it is a cutoff (set field h->corr to the corresponding event
+		 * or to null) */
+		marking_add (h);
+		PRINT ("\n- h%d/e%d:%s; size %d; is ",
 				h->id,
 				h->e->id,
 				h->e->origin->name,
-				h->size,
-				iscutoff ? "a cut-off" : "new");
+				h->size);
+		if (h->corr != 0) {
+			PRINT ("a cut-off! (corresponding h%d/e%d:%s)\n",
+					h->corr->id,
+					h->corr->e->id,
+					h->corr->e->origin->name);
+		} else {
+			PRINT ("new!\n");
+		}
+		db_h (h);
 
 		/* 7. build the postset of the maximal transition, if not
 		 * already present in the unfolding */
-		if (! iscutoff) h->e->iscutoff = 0;
+		if (h->corr == 0) h->e->iscutoff = 0;
 		_unfold_postset (h->e);
 
-		/* 8. update pe with this new history only if the the maximal
-		 * event is not a cutoff */
-		if (iscutoff) continue;
-		pe_update (h);
+		/* 8. update pe with this new history only if it is not a
+		 * cutoff */
+		if (h->corr == 0) pe_update (h);
 	}
 }
 

@@ -20,8 +20,6 @@ struct hash {
 };
 
 struct hash hash;
-struct nl *cutoffl;
-struct nl *corrl;
 
 static int _marking_hash (const struct nl *l)
 {
@@ -37,13 +35,6 @@ static int _marking_hash (const struct nl *l)
 	return val % hash.size;
 }
 
-static void _marking_cutoff (struct h *cutoffh, struct h *corrh)
-{
-	/* cutoffh is a cutoff of the history corrh */
-	nl_push (&cutoffl, cutoffh);
-	nl_push (&corrl, corrh);
-}
-
 void marking_init (void)
 {
 	int i;
@@ -55,9 +46,6 @@ void marking_init (void)
 	hash.size = 1 + u.net.numpl * 4;
 	hash.tab = gl_malloc (hash.size * sizeof (struct ls));
 	for (i = hash.size - 1; i >= 0; i--) ls_init (hash.tab + i);
-
-	cutoffl = 0;
-	corrl = 0;
 }
 
 int marking_find (const struct h *h)
@@ -81,7 +69,7 @@ int marking_find (const struct h *h)
 	return 0;
 }
 
-int marking_add (struct h *h)
+void marking_add (struct h *h)
 {
 	struct hash_entry *he, *nhe;
 	struct ls *buckl, *n;
@@ -89,6 +77,7 @@ int marking_add (struct h *h)
 
 	ASSERT (h);
 	ASSERT (h->marking);
+	ASSERT (h->corr != 0); /* histories always initialized as cutoffs */
 
 	/* add the marking h->marking to the hash table if there is no
 	 * other history h' such that h->marking = h'->marking; if such h'
@@ -118,17 +107,25 @@ int marking_add (struct h *h)
 		/* deallocate the marking and set history h as a cutoff, whose
 		 * corresponding history is he->h */
 		ASSERT (he);
-		nl_delete (h->marking); /* FIXME -- should this be done here ? */
+		nl_delete (h->marking);
 		h->marking = 0;
-		_marking_cutoff (h, he->h);
-		return 1;
+		h->corr = he->h;
+		PRINT ("  h%d/e%d:%s is cutoff of h%d/e%d:%s\n",
+				h->id,
+				h->e->id,
+				h->e->origin->name,
+				he->h->id,
+				he->h->e->id,
+				he->h->e->origin->name);
+		return;
 	}
 
 	/* otherwise, insert h into the table */
+	h->corr = 0;
 	nhe = gl_malloc (sizeof (struct hash_entry));
 	nhe->h = h;
 	ls_insert (buckl, &nhe->nod);
-	return 0;
+	return;
 }
 
 static void _marking_print (const struct nl *l)

@@ -40,6 +40,7 @@ void db_e (struct event *e);
 void db_c (struct cond *c);
 void db_h (struct h *h);
 void db_hgraph (void);
+void db_h2dot (void);
 
 #endif
 

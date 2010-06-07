@@ -59,11 +59,15 @@ STRIP:=$(CROSS)strip
 	@echo " N2D $<"
 	@test/net2dot $< > $@
 
-%.unf.dot : %.ll_net
+%.unf.dot : %
 	@echo " UNF $<"
 	@src/main $< > $@
 
 %.ll_net : %.xml
 	@echo " P2P $<"
 	@tools/pnml2pep.pl < $< > $@
+
+%.dot.r : %.dot
+	@echo " RST $<"
+	@tools/rs.pl $< > $@
 

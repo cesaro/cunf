@@ -31,6 +31,7 @@ struct trans {
 	struct dg pre;     /* unordered list of preset		    */
 	struct dg post;    /* unordered list of postset	    */
 	struct dg cont;    /* read arcs (unordered)    	    */
+	struct nl *events; /* events derived from this place */
 	int m;
 	int parikhcnt1;	   /* parikh count */
 	int parikhcnt2;	   /* parikh count */

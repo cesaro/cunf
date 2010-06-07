@@ -348,6 +348,11 @@ struct h * h_alloc (struct event * e)
 	h->parikh.tab = 0;
 	h->depth = 0;
 
+	/* set h->corr to something different to null, so that it looks like a
+	 * cutoff; this avoids that h is used to create a new history till it
+	 * gets out of the pe set */
+	h->corr = h;
+
 	/* size and parikh.size can still be garbage (see h_marking) */
 
 	/* also, add this history to the histories associated to the event */
@@ -366,6 +371,9 @@ struct h * h_dup (struct h * h)
 	nh->marking = 0;
 	nh->parikh.tab = 0;
 	nh->depth = h->depth;
+
+	/* see annotation in h_alloc */
+	nh->corr = nh;
 
 	/* size and parikh.size can still be garbage (see h_marking) */
 
@@ -391,29 +399,9 @@ void h_add (struct h * h, struct h * hp)
 	 * node hp */
 
 	ASSERT (h->e != hp->e);
+	ASSERT (hp->corr == 0); /* assert that hp is not a cutoff */
 	dg_add (&h->nod, &hp->nod);
 	if (hp->depth >= h->depth) h->depth = hp->depth + 1;
-}
-
-int h_conflict (struct h *h1, struct h *h2)
-{
-	struct dls l1, l2, l12;
-	int m1, m2, m12;
-
-	/* return the logical condition of history h1 being in conflict to h2
-	 */
-
-	/* generate three different marks */
-	m1 = ++u.mark;
-	m2 = ++u.mark;
-	m12 = ++u.mark;
-
-	/* build l1, the list of events in only in h1, l2, the list of evets
-	 * only in h2 and l12, the list of events in both h1 and h2 */
-	_h_lists (h1, h2, &l1, &l2, &l12, m1, m2, m12);
-
-	if (_h_confl_check (&l1, &l2, &l12)) return 1;
-	return _h_confl_check (&l2, &l1, &l12);
 }
 
 int h_conflict2 (struct h *h1, struct nl *cond1, struct h *h2,
@@ -423,11 +411,15 @@ int h_conflict2 (struct h *h1, struct nl *cond1, struct h *h2,
 	int m1, m2, m12;
 
 	/* return the logical value of the next boolean expression:
+	 * h1 or h2 is a cutoff, or
 	 * h1 is in conflict with h2, or
 	 * h2 is in conflict with h1, or
 	 * h1 consumes at least one condition in conds2, or
 	 * h2 consumes at least one condition in conds1
 	 */
+
+	/* display a conflict if one of the histories is a cutoff */
+	if (h1->corr != 0 || h2->corr != 0) return 1;
 
 	/* generate three different marks */
 	m1 = ++u.mark;

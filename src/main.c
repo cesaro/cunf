@@ -55,7 +55,7 @@ void write_dot (void)
 		c->m = m;
 	}
 
-	P ("digraph {\n\t/* events */\n");
+	P ("digraph unfolding {\n\t/* events */\n");
 	P ("\tnode    [shape=box style=filled fillcolor=grey60];\n");
 	enr = 0;
 	for (n = u.unf.events.next; n; n = n->next) {
@@ -130,7 +130,9 @@ void write_dot (void)
 		for (i = e->hist.deg - 1; i >= 0; i--) {
 			h = dg_i (struct h, e->hist.adj[i], nod);
 			hnr++;
-			P ("\th%-6d %5d %4d ", h->id, h->depth, h->size);
+			P ("\t%sh%-6d %5d %4d ",
+					h->corr ? "*" : " ", h->id,
+					h->depth, h->size);
 			h_list (&l, h);
 			for (ln = l.next; ln; ln = ln->next) {
 				hp = dls_i (struct h, ln, auxnod);
@@ -216,6 +218,7 @@ int main (int argc, char **argv)
 	nc_static_checks (sptr);
 	unfold ();
 	write_dot ();
+	// db_h2dot ();
 
 	return EXIT_SUCCESS;
 }

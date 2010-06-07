@@ -1,7 +1,5 @@
 #!/usr/bin/perl -w
 
-# The parser assumes the format produced by César's unfolder!
-
 @work = ();
 %mtab = ();
 read_unfolding($ARGV[0]);
@@ -12,11 +10,16 @@ while ($#work >= 0) {
 }
 
 my $i = 0;
-for my $m (sort (keys %mtab)) {
-	print join (" ", split (/#/, $m)), "\n";
+my $m;
+my $s;
+for $m (sort (keys %mtab)) {
+	$s = $mtab{$m};
+	$m =~ s/#/ /g;
+	#print "$m after $s\n";
+	print "$m\n";
 	$i++;
 }
-print STDERR " -- $i markings\n";
+print " -- $i markings\n";
 exit 0;
 
 sub find_initial_marking {
@@ -41,9 +44,11 @@ sub process {
 	my %i = %indeg;
 	my @fire = ();
 	my %marked = ();
+	my $opmark = join ("#", sort (map ({$label{$_}} @oco)));
 
 	#print join(" ",sort(map {$label{$_}} @oco))."\n";
 
+	#print " At $opmark ($ocmark)\n";
 	for my $c (@oco) {
 		$marked{$c} = "";
 		#print "Exploring $c, out is $out{$c}\n";
@@ -55,27 +60,32 @@ sub process {
 	}
 
 	for my $t (@fire) {
+		#print "Firing $t\n";
 		my %nmarked = %marked;
 		for my $c (split(/#/,$in{$t})) {
 			delete $nmarked{$c};
 		}
 		for my $c (split(/#/,$out{$t})) {
+			if (defined $nmarked{$c}) {
+				print "Firing $label{$t}:$t and marking ",
+						"$label{$c} over the marking ",
+						join (" ", sort (map ({$label{$_}} (keys (%nmarked))))), "\n";
+				exit 1;
+			}
 			$nmarked{$c} = "";
 		}
 		my @nco = keys %nmarked;
 		my $pmark = join("#",sort(map {$label{$_}} @nco));
 		#print "  From ", join (" ", sort (map {$label{$_}} @oco)), " firing $t ($label{$t}) to @nco ($pmark)\n";
+		if (defined($mtab{$pmark})) {
+			#print "Discarding firing of $label{$t}:$t from $opmark to $pmark, due existing marking with sequence $mtab{$pmark}\n";
+		}
 		next if defined($mtab{$pmark});
-		$mtab{$pmark} = "";
+		$mtab{$pmark} = "$mtab{$opmark} $t:$label{$t}";
+		#print "Fired $label{$t}:$t from $opmark to $pmark\n";
 		my $cmark = join("#",@nco);
 		push @work,($cmark);
 	}
-}
-
-sub error {
-	my ($msg) = @_;
-	print STDERR "$msg\n";
-	exit 1;
 }
 
 sub read_unfolding {
@@ -85,9 +95,11 @@ sub read_unfolding {
 	%out = ();
 	%indeg = ();
 	%init = ();
+	%cutoff = ();
 	open FD,$file;
 	while (<FD>) {
 		$init{"autodetect"} = 1 if /\* autodetect initial marking \*/;
+
 		next if /\be0\b/;
 		if (/^\s*([cp]\d*)\s*->\s*([et]\d*)/) {
 			my ($co,$ev) = ($1,$2);
