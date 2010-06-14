@@ -40,7 +40,6 @@ static void _unfold_postset (struct event *e)
 {
 	struct trans *t;
 	struct place *p;
-	struct cond *c;
 	int i;
 
 	ASSERT (e);
@@ -60,12 +59,15 @@ static void _unfold_postset (struct event *e)
 
 	ASSERT (e->post.deg == t->post.deg);
 
+#if 0
+	struct cond *c;
 	PRINT ("  Postset built for e%d:%s, ", e->id, e->origin->name);
 	for (i = e->post.deg - 1; i >= 0; i--) {
 		c = dg_i (struct cond, e->post.adj[i], post);
 		PRINT (" c%d:%s", c->id, c->origin->name);
 	}
 	PRINT ("\n");
+#endif
 }
 
 static void _unfold_init (void)
@@ -107,6 +109,34 @@ static void _unfold_init (void)
 	/* return the initial history */
 }
 
+static void _unfold_progress (struct h *h)
+{
+#ifdef CONFIG_DEBUG
+	PRINT ("- h%d/e%d:%s; size %d; is ",
+			h->id,
+			h->e->id,
+			h->e->origin->name,
+			h->size);
+	if (h->corr != 0) {
+		PRINT ("a cut-off! (corr. h%d/e%d:%s)\n",
+				h->corr->id,
+				h->corr->e->id,
+				h->corr->e->origin->name);
+	} else {
+		PRINT ("new!\n");
+	}
+	db_h (h);
+
+#else
+	static int i = 0;
+	
+	i++;
+	if ((i & 0xff) == 0) {
+		printf ("At size %6d, %d histories\n", h->size, i);
+	}
+#endif
+}
+
 void unfold (void)
 {
 	struct h *h0;
@@ -136,27 +166,15 @@ void unfold (void)
 	/* 5. loop, extract a history from pe */
 	while (1) {
 
+		/* extract one history from pe */
 		h = pe_pop ();
 		if (h == 0) break;
 
 		/* 6. insert in the marking table its marking and determine if
 		 * it is a cutoff (set field h->corr to the corresponding event
-		 * or to null) */
+		 * or to null); print progress */
 		marking_add (h);
-		PRINT ("\n- h%d/e%d:%s; size %d; is ",
-				h->id,
-				h->e->id,
-				h->e->origin->name,
-				h->size);
-		if (h->corr != 0) {
-			PRINT ("a cut-off! (corresponding h%d/e%d:%s)\n",
-					h->corr->id,
-					h->corr->e->id,
-					h->corr->e->origin->name);
-		} else {
-			PRINT ("new!\n");
-		}
-		db_h (h);
+		_unfold_progress (h);
 
 		/* 7. build the postset of the maximal transition, if not
 		 * already present in the unfolding */

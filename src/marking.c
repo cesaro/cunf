@@ -110,13 +110,6 @@ void marking_add (struct h *h)
 		nl_delete (h->marking);
 		h->marking = 0;
 		h->corr = he->h;
-		PRINT ("  h%d/e%d:%s is cutoff of h%d/e%d:%s\n",
-				h->id,
-				h->e->id,
-				h->e->origin->name,
-				he->h->id,
-				he->h->e->id,
-				he->h->e->origin->name);
 		return;
 	}
 

@@ -448,6 +448,7 @@ static struct event * _pe_new_event (struct trans * t)
 	/* update the asymmetric conflict relation with this event */
 	ac_add (e);
 
+//#if 0
 	PRINT ("+ Event e%d:%s; pre {", e->id, e->origin->name);
 	for (i = e->pre.deg - 1; i >= 0; i--) {
 		c = dg_i (struct cond, e->pre.adj[i], pre);
@@ -459,6 +460,7 @@ static struct event * _pe_new_event (struct trans * t)
 		PRINT (" c%d:%s", c->id, c->origin->name);
 	}
 	PRINT ("}\n");
+//#endif
 	/* therefore, at this the moment the event has no postset */
 	return e;
 }
@@ -473,7 +475,7 @@ static struct h * _pe_update_build (void)
 	/* create a new enriched event (a pair event, history) and insert it
 	 * into pe */
 	ASSERT (pe.comb.t);
-	if (pe.comb.ep) ASSERT (pe.comb.t == pe.comb.ep->origin);
+	if (pe.comb.ep) { ASSERT (pe.comb.t == pe.comb.ep->origin); }
 
 	/* if pe.comb.ep is null, we have to create a new event; otherwise we
 	 * have to determine if the conditions in the comb are all marked with

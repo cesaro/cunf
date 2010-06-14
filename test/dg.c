@@ -22,6 +22,7 @@ void db_adj2 (struct dg * n, struct mynode *p)
 	int i;
 	struct mynode * mn;
 
+	p += 0;
 	mn = dg_i (struct mynode, n, nod);
 	PRINT (" ** nr %d node %p deg %d\n", mn - p, n, n->deg);
 	if (n->deg == 0) return;

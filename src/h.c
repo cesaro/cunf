@@ -77,6 +77,7 @@ static void _h_lists (struct h * h1, struct h * h2, struct dls * l1,
 		}
 	}
 
+#ifdef CONFIG_DEBUG
 	/* PRINT ("H1 : "); db_h (h1);
 	PRINT ("H2 : "); db_h (h2);
 	PRINT ("l1 : "); */
@@ -101,6 +102,7 @@ static void _h_lists (struct h * h1, struct h * h2, struct dls * l1,
 		// PRINT ("e%d:%s ", h->e->id, h->e->origin->name);
 	}
 	// PRINT ("\n");
+#endif
 }
 
 static int _h_t_cmp (void *n1, void *n2)
@@ -142,7 +144,7 @@ static void _h_parikh_trans2vector (struct h *h, struct nl *l)
 	/* mallocates the parikh vector in h->parikh.tab, sets up the entries
 	 * to the observed transitions and clears the count in each transition
 	 */
-	
+
 	ASSERT (h->parikh.size >= 1);
 	h->parikh.tab = gl_malloc (h->parikh.size * sizeof (struct parikh));
 
@@ -333,6 +335,33 @@ static int _h_confl_cnd_check (struct nl *conds, struct dls *l, int m)
 	return 0;
 }
 
+void _h_list (struct dls *l, struct h *h, int m, int mexcl)
+{
+	struct dls *n;
+	struct h *hp, *hpp;
+	int i;
+
+	/* explore history h and, excluding events marked with mexcl, mark
+	 * events with m and insert in the list l */
+	ASSERT (m > 0);
+
+	dls_init (l);
+	if (h->m != mexcl) {
+		h->m = m;
+		dls_append (l, &h->auxnod);
+	}
+	for (n = l->next; n; n = n->next) {
+		hp = dls_i (struct h, n, auxnod);
+		ASSERT (hp->m == m);
+		for (i = hp->nod.deg - 1; i >= 0; i--) {
+			hpp = dg_i (struct h, hp->nod.adj[i], nod);
+			if (hpp->m == m || hpp->m == mexcl) continue;
+			hpp->m = m;
+			dls_append (l, &hpp->auxnod);
+		}
+	}
+}
+
 struct h * h_alloc (struct event * e)
 {
 	struct h * h;
@@ -418,6 +447,17 @@ int h_conflict2 (struct h *h1, struct nl *cond1, struct h *h2,
 	 * h2 consumes at least one condition in conds1
 	 */
 
+#if 0
+	static int i = 0;
+
+	i++;
+	if (h1->id < h2->id) {
+		PRINT ("  xxx %d %d\n", h1->id, h2->id);
+	} else {
+		PRINT ("  xxx %d %d\n", h2->id, h1->id);
+	}
+#endif
+
 	/* display a conflict if one of the histories is a cutoff */
 	if (h1->corr != 0 || h2->corr != 0) return 1;
 
@@ -435,6 +475,33 @@ int h_conflict2 (struct h *h1, struct nl *cond1, struct h *h2,
 	/* h1 (h2) is in conflict with h2 (h1) */
 	if (_h_confl_check (&l1, &l2, &l12)) return 1;
 	return _h_confl_check (&l2, &l1, &l12);
+}
+
+int ___h_conflict (struct h *h1, struct nl *cond1, struct h *h2,
+		struct nl *cond2)
+{
+	int m1, m2;
+	struct dls l1;
+
+	/* return the logical value of the next boolean expression:
+	 * h1 or h2 is a cutoff, or
+	 * h1 is in conflict with h2, or
+	 * h2 is in conflict with h1, or
+	 * h1 consumes at least one condition in conds2, or
+	 * h2 consumes at least one condition in conds1
+	 */
+
+	/* display a conflict if one of the histories is a cutoff */
+	if (h1->corr != 0 || h2->corr != 0) return 1;
+
+	/* generate two marks */
+	m1 = ++u.mark;
+	m2 = ++u.mark;
+
+	/* build a list of events in h1 */
+	_h_list (&l1, h1, m1, m1);
+	cond1 = cond2 = 0;
+	return 0;
 }
 
 void h_marking (struct h *h)
@@ -512,10 +579,11 @@ void h_marking (struct h *h)
 	/* store the marking associated to the history h, and the number of
 	 * events in the history in h->marking and h->size */
 	ASSERT (s >= 1);
-	if (h->id != 0) ASSERT (s >= 2);
+	if (h->id != 0) { ASSERT (s >= 2); }
 	h->marking = l;
 	h->size = s;
 
+//#if 0
 	PRINT ("+ History h%d/e%d:%s; size %d; depth %d; marking ",
 			h->id,
 			h->e->id,
@@ -524,6 +592,7 @@ void h_marking (struct h *h)
 			h->depth);
 	marking_print (h);
 	PRINT ("\n");
+//#endif
 }
 
 int h_isdup (struct h *h)
@@ -540,15 +609,16 @@ int h_isdup (struct h *h)
 	ASSERT (h);
 	ASSERT (h->e);
 
-	/* generate three different marks */
-	m1 = ++u.mark;
-	m2 = ++u.mark;
-	m12 = ++u.mark;
-
 	/* check that every history pointed by h->e->hist is different to h */
 	for (i = h->e->hist.deg - 1; i >= 0; i--) {
 		hp = dg_i (struct h, h->e->hist.adj[i], nod);
 		if (h == hp) continue;
+
+		/* generate three different marks */
+		m1 = ++u.mark;
+		m2 = ++u.mark;
+		m12 = ++u.mark;
+
 		_h_lists (h, hp, &l1, &l2, &l12, m1, m2, m12); /* very expensive! */
 		if (l1.next == l1.prev && l2.next == l2.prev) {
 			if (dls_i (struct h, l1.next, auxnod) == h &&
@@ -599,29 +669,13 @@ int h_isdup (struct h *h)
 
 void h_list (struct dls *l, struct h *h)
 {
-	struct dls *n;
-	struct h *hp, *hpp;
-	int m, i;
-
-	/* explore history h, mark events with m and insert in the list l */
+	int m;
 
 	m = ++u.mark;
-	h->m = m;
-	dls_init (l);
-	dls_append (l, &h->auxnod);
-	for (n = l->next; n; n = n->next) {
-		hp = dls_i (struct h, n, auxnod);
-		ASSERT (hp->m == m);
-		for (i = hp->nod.deg - 1; i >= 0; i--) {
-			hpp = dg_i (struct h, hp->nod.adj[i], nod);
-			if (hpp->m == m) continue;
-			hpp->m = m;
-			dls_append (l, &hpp->auxnod);
-		}
-	}
+	_h_list (l, h, m, m);
 }
 
-static int _h_cmp (struct h *h1, struct h *h2)
+int h_cmp (struct h *h1, struct h *h2)
 {
 	int i, min;
 
@@ -662,6 +716,7 @@ static int _h_cmp (struct h *h1, struct h *h2)
 	return _h_cmp_foata (h1, h2);
 }
 
+#if 0
 int h_cmp (struct h *h1, struct h *h2)
 {
 	int ret;
@@ -673,4 +728,5 @@ int h_cmp (struct h *h1, struct h *h2)
 	PRINT (" returns %d\n", ret);
 	return ret;
 }
+#endif
 

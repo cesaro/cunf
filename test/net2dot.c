@@ -38,7 +38,7 @@ static void write_net_dot (void)
 	P ("\tnode    [shape=box style=filled fillcolor=grey60];\n");
 	for (n = u.net.trans.next; n; n = n->next) {
 		t = ls_i (struct trans, n, nod);
-		if (t->id == 0) ASSERT (strcmp (t->name, "_t0_") == 0);
+		if (t->id == 0) { ASSERT (strcmp (t->name, "_t0_") == 0); }
 		if (t->id == 0) continue;
 		P ("\tt%-6d [label=\"%s\"];\n", t->id, t->name);
 	}

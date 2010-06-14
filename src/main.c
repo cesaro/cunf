@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #include "glue.h"
 #include "debug.h"
@@ -37,9 +38,7 @@ void usage (const char *myname)
 	exit (EXIT_SUCCESS);
 }
 
-#define P printf
-
-void write_dot (void)
+void write_dot (const char * filename)
 {
 	int i, m, enr, hnr;
 	struct dls l, *ln;
@@ -47,6 +46,15 @@ void write_dot (void)
 	struct event *e;
 	struct cond *c;
 	struct ls *n;
+	FILE *f;
+
+#define P(args...) fprintf (f, ##args)
+
+	f = fopen (filename, "w");
+	if (f == 0) {
+		gl_err ("'%s': %s", filename, strerror (errno));
+		return;
+	}
 
 	m = ++u.mark;
 	ASSERT (m > 0);
@@ -164,12 +172,20 @@ void write_dot (void)
 #endif
 	P ("\t>];\n");
 	P ("}\n");
+
+	i = fclose (f);
+	if (i == EOF) gl_err ("'%s': %s", filename, strerror (errno));
+
+#ifndef CONFIG_DEBUG
+	printf ("%d events, %d conditions, %d histories\n",
+			u.unf.numev - 1, u.unf.numco, hnr);
+#endif
 }
 
 int main (int argc, char **argv)
 {
 	int	 i;
-	char    *llnet = NULL, *mcifile;
+	char    *llnet = NULL, *dotfile;
 	char    **dptr = &llnet;
 	char	*tmpname, *idx, *sptr;
 
@@ -184,7 +200,7 @@ int main (int argc, char **argv)
 	sptr = 0;
 	for (i = 1; i < argc; i++)
 		if (!strcmp(argv[i],"-m"))
-			dptr = &mcifile;
+			dptr = &dotfile;
 		else if (!strcmp(argv[i],"-T"))
 			sptr = argv[++i];
 		else if (!strcmp(argv[i],"-d"))
@@ -196,7 +212,7 @@ int main (int argc, char **argv)
 			if (!dptr) usage(argv[0]);
 			*dptr = argv[i];
 
-			tmpname = gl_malloc (strlen(argv[i])+5);
+			tmpname = gl_malloc (strlen(argv[i]) + 16);
 			strcpy(tmpname,argv[i]);
 			idx = strrchr(tmpname,'.');
 			if (!idx) strcat(tmpname,".");
@@ -204,8 +220,8 @@ int main (int argc, char **argv)
 
 			if (dptr == &llnet)
 			{
-				strcpy(idx,".mci");
-				mcifile = gl_strdup (tmpname);
+				strcpy(idx,".unf.dot");
+				dotfile = gl_strdup (tmpname);
 			}
 
 			dptr = NULL;
@@ -217,8 +233,10 @@ int main (int argc, char **argv)
 	read_pep_net (llnet);
 	nc_static_checks (sptr);
 	unfold ();
-	write_dot ();
+	PRINT ("  Done, writing unfolding to '%s'\n", dotfile);
+	write_dot (dotfile);
 	// db_h2dot ();
+	PRINT ("  Have a nice day!\n");
 
 	return EXIT_SUCCESS;
 }

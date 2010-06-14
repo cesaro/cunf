@@ -578,8 +578,12 @@ static void _insert_t0 (void)
 	dg_init (&t0->pre);
 	dg_init (&t0->post);
 	dg_init (&t0->cont);
+	t0->events = 0;
 	t0->id = 0;
 	t0->name = "_t0_";
+	t0->parikhcnt1 = 0;
+	t0->parikhcnt2 = 0;
+	t0->m = 0;
 
 	/* the postset of t0 consist on all marked places */
 	for (n = u.net.places.next; n; n = n->next) {

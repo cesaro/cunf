@@ -75,6 +75,7 @@ void db_net (void)
 
 }
 
+#ifdef CONFIG_DEBUG
 void db_h (struct h *h)
 {
 	static int m = 1;
@@ -132,6 +133,7 @@ void db_hgraph (void)
 	}
 	PRINT ("\n");
 }
+#endif
 
 void db_c (struct cond *c)
 {
