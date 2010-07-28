@@ -36,6 +36,7 @@
 \newcommand{\rlem}[1]{Lemma~\ref{lem:#1}}
 \newcommand{\rdef}[1]{Definition~\ref{def:#1}}
 \newcommand{\rpro}[1]{Proposition~\ref{pro:#1}}
+\newcommand{\rrmk}[1]{Remark~\ref{rmk:#1}}
 \newcommand{\rsec}[1]{section~\ref{sec:#1}}
 \newcommand{\Rsec}[1]{Section~\ref{sec:#1}}
 \newcommand{\ralg}[1]{algorithm~\ref{alg:#1}}
@@ -46,6 +47,8 @@
 \def\R{\mathbb{R}}
 \newcommand{\lsem}{[\![}
 \newcommand{\rsem}{]\!]}
+\newcommand{\sem}[1]{\lsem#1\rsem}
+\newcommand{\bydef}[1]{\stackrel{def}{#1}}
 
 % CTL* operators
 \def\E{\mathsf{ E }}
@@ -57,6 +60,10 @@
 
 % petri nets
 \newcommand{\unf}[1]{\mathcal{U}(#1)}
+\newcommand{\trunc}[1]{\mathcal{T}(#1)}
 \newcommand{\pre}[1]{{}^\bullet#1}
 \newcommand{\post}[1]{#1^\bullet}
 \newcommand{\cont}[1]{\underline{#1}}
+\newcommand{\cut}[1]{\mathsf{cut }{(#1)}}
+\newcommand{\marking}[1]{\mathsf{mark }{(#1)}}
+

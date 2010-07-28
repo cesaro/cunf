@@ -1,11 +1,12 @@
 
-%\documentclass[twocolumn,12pt]{article}
-\documentclass[]{article}
+%\documentclass[twocolumn]{article}
+\documentclass[11pt]{article}
 
 \usepackage[utf8]{inputenc}
 \usepackage{algorithm}
 \usepackage{algorithmic}
 \usepackage{mydefs}
+\usepackage{proof}
 \usepackage{amsmath}
 \usepackage{amsthm}
 \usepackage{amsfonts}
@@ -29,6 +30,8 @@
 \newcommand{\peupdatecont}{{\sc PE-Update-Context}}
 \newcommand{\peupdatepostexisting}{{\sc PE-Update-Postset-Existing}}
 \newcommand{\peupdatepostnew}{{\sc PE-Update-Postset-New}}
+\newcommand{\pehistdup}{{\sc PE-History-Duplicated}}
+\newcommand{\peeventdup}{{\sc PE-Event-Duplicated}}
 
 \title{\pe{} update procedure}
 \author{César Rodríguez}
@@ -40,24 +43,25 @@
 \section{Update procedure for the \pe{} set}
 
 We consider a contextual 1-safe Petri Net $N = (P, T, F, C, m_0)$ (definition
-omitted; $F \subseteq P \cup T \rightarrow P \cup T$ is the \emph{flow
-relation} while $C \subseteq P \cup T \rightarrow P \cup T$ is the
-\emph{context relation}) and its unfolding $\unf{N} = (P', T', F', C', m_0')$.
-Conditions in $P'$ are labeled with places in $P$, and events in $T'$ are
-labeled with transitions in $T$.  We write $p = \origin{c}$ if place $p$ labels
-condition $c$ and $t = \origin{e}$ if transition $t$ labels event $e$.  As
-usual, we write $\pre{x}$, $\post{x}$ and $\cont{x}$ for the \emph{preset},
-\emph{postset} and \emph{context}, respectively, of some place, transition,
-condition or event $x \in P \cup T \cup P' \cup T'$.
+omitted; $F \subseteq P \times T \cup P \times T$ is the \emph{flow relation}
+while $C \subseteq P \times T$ is the \emph{context relation}) and its
+\emph{full} unfolding $\unf{N} = (P', T', F', C', m_0')$.  Conditions in $P'$
+are labeled with places in $P$, and events in $T'$ are labeled with transitions
+in $T$.  We write $y = \origin{n}$ if place (resp. transition) $y$ labels
+condition (resp. event) $n$.  As usual, we write $\pre{x}$, $\post{x}$ and
+$\cont{x}$ for the \emph{preset}, \emph{postset} and \emph{context},
+respectively, of some place, transition, condition or event $x \in P \cup T
+\cup P' \cup T'$.
 
 \paragraph{History graph} Let $e \in T'$ be an event of $\unf{N}$.  A
 \emph{history of $e$} is a set $H_e \subseteq T'$ verifying some particular
 constraints (definition omitted).  For any history $H_e$ we have that $e \in
 H_e$, and we write $\event{H_e}$ to to denote the maximal event of $H_e$ w.r.t.
 the \emph{asymmetric conflict} relation $\nearrow$ (it's easy to see that this
-event is always $e$).  We extend the definition of $\event$ to sets of events
-in the natural way.  We denote by $\hist{e}$ the set of histories of $e$ and we
-extend this definition for subsets of $T'$.
+event is always $e$).  We extend the definition of $\event$ to sets of
+histories in the natural way.  We denote by $\hist{e}$ the set of histories of
+$e$ \emph{currently present in the computed prefix of the unfolding}.  The
+definition of $\hist{e}$ is also extended to subsets of $T'$.
 
 Storage of the histories associated to every event is done thanks to a directed
 graph, so called the \emph{history graph}.  Each node of the graph (indirectly)
@@ -68,77 +72,117 @@ histories for that event.
 
 \begin{definition}
 
-A \emph{history graph} is a graph $\h = (V, E)$ whose set of vertices
-$V$ coincides with the set of histories associated to every event in the
-unfolding, formally $V = \hist{T'}$, and whose set of edges $E \subseteq V
-\times V$ is the smallest set verifying the next rule:
+A \emph{history graph} is a graph $\h = (V, E)$ whose set of vertices $V$
+coincides with the set of histories present in the unfolding, formally $V =
+\hist{T'}$, and whose set of edges $E \subseteq V \times V$ is the smallest set
+verifying the next inference rule:
 
-Let $H_e \in V$ be some node representing a history for event $e$.  Let $P
-\subseteq V$ and $C \subseteq V$ be two sets of nodes such that (1) $\event{P}
-= \pre{\pre{e}} \cup \pre{\cont{e}}$ and $\event{C} \subseteq \cont{\pre{e}}$,
-and (2) for each pair of histories $H_{e'}$, $H_{e''} \in P \cup C$ we have $e'
-\neq e''$ and $\neg (H \# H')$.  Then $(H_e, H) \in E$ for any $H \in P \cup
-C$.
+\begin{center}
+\infer{(H_e, H) \in E$ for any $H \in P \cup C}
+	{P, C \subseteq V &
+	\event{P} = \pre{\pre{e}} \cup \pre{\cont{e}} &
+	\event{C} \subseteq \cont{\pre{e}} &
+	\forall H_{e'} H_{e''} \in P \cup C, \ e' \neq e'' \land \neg (H_{e'} \# H_{e''})
+	}
+\end{center}
 
 \end{definition}
 
-\paragraph{Procedure \peupdate{} and friends} The \pe{} set is updated with new
-histories after the addition of each new history $H_e$ to $\unf{N}$.
-\Ralg{pe.update} is currently used for this task.  This procedure receives as
-input a new history $H_e$ and generates all new histories for events $e'$ such
-that $e \nearrow e'$.  Note that the existence of a new history $H_e$ may
-trigger the creation of new histories for every event $e''$ such that $e
-\nearrow^* e''$.  Our procedure operates step by step, adding new histories
-just for events $e'$ with $e \nearrow e'$.  If new histories appear for $e'$,
-then the procedure will be executed again, recursively triggering the discovery
-of all new histories appearing due to the addition of $H_e$.
+%Let $H_e \in V$ be some node representing a history for an event $e$.  Let $P
+%\subseteq V$ and $C \subseteq V$ be two sets of nodes such that (1) $\event{P}
+%= \pre{\pre{e}} \cup \pre{\cont{e}}$ and $\event{C} \subseteq \cont{\pre{e}}$,
+%and (2) for each pair of histories $H_{e'}$, $H_{e''} \in P \cup C$ we have $e'
+%\neq e''$ and $\neg (H_{e'} \# H_{e''})$.  Then $(H_e, H) \in E$ for any $H \in P \cup
+%C$.
+
+\paragraph{Conflict relation between histories}  We define the conflict
+relation between histories as $H_1 \# H_2 $ iff
+\begin{itemize}
+\item $H_1$ or $H_2$ is a cutoff, or 
+\item $H_1$ or $H_2$ is in \pe{}, or
+\item there exists $e_1 \in H_1$ and $e_2 \in H_2 \setminus H_1$ with $e_2
+\nearrow e_1$
+\item there exists $e_2 \in H_2$ and $e_1 \in H_1 \setminus H_2$ with $e_1
+\nearrow e_2$
+\end{itemize}
+
+\paragraph{Procedure \peupdate{}}  The \pe{} set is updated with new histories
+after the addition of each new history $H_e$ to $\unf{N}$.  \Ralg{pe.update} is
+currently used for this task.  This procedure receives as input a new history
+$H_e$ and generates all new histories for events $e'$ such that $e \nearrow
+e'$.  Note that the existence of a new history $H_e$ may trigger the creation
+of new histories for every event $e''$ such that $e \nearrow^* e''$.  Our
+procedure operates step by step, adding new histories just for events $e'$ with
+$e \nearrow e'$.  If new histories appear for $e'$, then the procedure will be
+executed again, recursively triggering the discovery of all new histories
+appearing due to the addition of $H_e$.
 
 Procedure \peupdate{} operates in three steps.  First, we generate histories
-for events $e'$ such that $\cont{e} \cap \pre{e'} \neq \emptyset$.  Clearly, in
-this situation, $e \nearrow e'$.  Let $\hist{e'} = \{H_1, \ldots, H_n\}$ be the
-set of histories associated to $e'$.  It's easy to see that all histories that
-one can build for $e'$ using the new history $H_e$ are in the set $\{H_1
+for events $e'$ such that $\cont{e} \cap \pre{e'} \neq \emptyset$ and $\post{e}
+\cap \pre{e'} = \emptyset$.  Clearly, in this situation, $e \nearrow e'$.  Let
+$\hist{e'} = \{H_1, \ldots, H_n\}$ be the set of histories associated to $e'$
+when calling \ralg{pe.update} for $H_e$.  It's easy to see that all histories
+that one can build for $e'$ using the new history $H_e$ are in the set $\{H_1
 \cup H_e, \ldots, H_n \cup H_e\}$.  Procedure \peupdatecont{}, in
 \ralg{pe.update.cont}, filters this set and updates \pe{} with only consistent
-histories from it.
+histories from it.  Briefly, there is a new history $H$ for event $e'$ if
+$H_i$, for $1 \le i \le n$, has edges in the graph $\h$ to histories $H_{i,1},
+\ldots, H_{i,m}$, and $\lnot H \# H_{i,j}$, for $1 \le j \le m$, and $H$ doesn't
+consume conditions in the preset or context of $e'$.  If this is the case, then
+the history $H \cup H_i$ is new for $e'$.
 
-Procedures \peupdatepostexisting{} and \peupdatepostnew{} deal with the
-discovery of both (1) histories for existing events $e'$ with $\post{e} \cap
-(\pre{e'} \cup \cont{e'}) \neq \emptyset$ as well as (2) the creation of new
-events not currently present in the unfolding (the addition of one new event
-always coincides with the addition of its first history).
+It can also be the case that the history $H \cup H_i$ already exists in the
+unfolding \FIXME{search for an example}.  In this case, we just discard the
+history.  We use procedure \pehistdup{} to know when a history has already been
+computed.
 
 Procedure \peupdatepostexisting{} (\ralg{pe.update.post.existing}) searches for
 new histories for events $e'$ such that $\post{e} \cap (\pre{e'} \cup
-\cont{e'}) \neq \emptyset$.  Such an event $e'$ has a new history if it is
-possible to find a combination of histories for the events in its preset and
-context that is free of conflicts and that includes $H_e$.  This procedure also
-searches for new occurrences (new events) of the transition $\origin{e'}$.
-Addition of a new event to the \pe{} set is done in a similar way: we have to
-discover a set of histories that includes $H_e$ and is free of conflicts, and
-that generates a set of conditions including the preset and context of
-$\origin{e'}$\footnote{Actually, a set of conditions whose original places
-includes the preset and context of $\origin{e'}$.}.
+\cont{e'}) \neq \emptyset$ and $e'$ is already present in the current state of
+the unfolding.  Such an event $e'$ has a new history if it is possible to find
+a combination of histories for the events generating its preset and context
+that is free of conflicts and includes $H_e$.  More formally, let $\{c_1,
+\ldots, c_n\} = \pre{e'} \cup \cont{e'}$ be the set of conditions defining the
+preset and context of $e'$.  Now assume that $\{e_1, \ldots, e_m\} =
+\pre{\{c_1, \ldots, c_n\}}$ are the events generating $\{c_1, \ldots, c_n\}$.
+Finally, wlog, assume that $e = e_1 = \pre{c_1}$.  Notice that $H_e$ could also
+generate other conditions $c_i$ different from $c_1$.  Then, there exists a new
+history for $e'$ if there exist histories $H_{e_1}, \ldots, H_{e_m}$ for events
+$e_1, \ldots, e_m$ such that $H_{e_1} = H_e$ and for $1 \le i \le m$ and $1 \le
+j < i$ we have that
 
-Finally, procedure \peupdatepostnew{} (\ralg{pe.update.post.new}) explores all
-transitions from the original net that has not been explored in the
-\peupdatepostexisting{}, namely transitions $t$ such that $\origin{\post{e}}
-\cap (\pre{t} \cup \cont{t}) \neq \emptyset$.  For these $t$, it checks if a
-new occurrence (a new event) of $t$ can be appended to \pe{}.
+\begin{itemize}
+\item $H_{e_i}$ does not consume any condition from $c_1, \ldots, c_n$, and
+\item $\lnot H_{e_j} \# H_{e_i}$
+\end{itemize}
+
+In that situation, $e'$ has a new history consisting on the union of all
+$H_{e_i}$ for $1 \le i \le m$ and $\{e'\}$.  Notice that it is possible to
+generate several times the same history \FIXME{search for an example}.  For
+this reason, we use procedure \pehistdup{} to determine if this history already
+exists in the current state of the unfolding, or it's really new.  We only
+append it to the unfolding in the latter case.
+
+Finally, procedure \peupdatepostnew{} (\ralg{pe.update.post.new}) tries to
+append to \pe{} histories for events still not present neither in the unfolding
+nor \pe{}.  For that, it explores the possibility of adding events $e'$ reading
+or consuming conditions in the post-set of $e$, formally $\post{e} \cap
+(\pre{e'} \cup \cont{e'}) \neq \emptyset$.
+
+\FIXME{finish the description and the algorithm}
 
 \begin{algorithm}
 \caption{Procedure \peupdate}
 \label{alg:pe.update}
 
 \begin{algorithmic}
-\REQUIRE $H_e$, a new history immediately appended to $\unf{N}$
-\ENSURE \pe{} is updated with all new histories for events $e'$, with $e \nearrow
-e'$
+\REQUIRE $H_e$, the last history appended to $\unf{N}$
+\ENSURE \pe{} is updated with all new histories for events $e'$, with $e
+\nearrow e'$
 
 \STATE \peupdatecont ($H_e$)
 
-\STATE Generate a new, unused, mark $m$
-\STATE \peupdatepostexisting ($H_e$, $m$)
+\STATE \peupdatepostexisting ($H_e$)
 \STATE \peupdatepostnew ($H_e$, $m$)
 
 \end{algorithmic}
@@ -152,24 +196,27 @@ e'$
 \begin{algorithmic}
 \REQUIRE A new history $H_e$
 \ENSURE \pe{} is updated with all new histories for events $e'$, with $\cont{e}
-\cap \pre{e'} \neq \emptyset$.
+\cap \pre{e'} \neq \emptyset$ and $\post{e} \cap \pre{e'} = \emptyset$
 
-\STATE $e \leftarrow \event{H_e}$
-\FORALL{$e'$ such that $\cont{e} \cap \pre{e'} \neq \emptyset$}
-\FORALL{$H_{e'} \in \hist{e'}$}
-%\IF{$\neg (H_e \# H_{e''})$ for all $H_{e''}$ such that $(H_{e'}, H_{e''})$ is
-%an edge of $\h$ and $e \neq e''$}
+\FORALL {$e'$ such that $\cont{e} \cap \pre{e'} \neq \emptyset$ and $\post{e}
+\cap \pre{e'} = \emptyset$}
+\FORALL {$H_{e'} \in \hist{e'}$}
 
-\IF{$\forall H_{e''} \in T',\ (H_{e'}, H_{e''}) \in \h \Rightarrow e \neq e''
-\land \neg (H_e \# H_{e''})$}
+\STATE $f \leftarrow $ \TRUE
+\FORALL {$H_{e''}$ such that $(H_{e'}, H_{e''})$ is an edge of $\h$ and $e \neq
+e''$}
+\STATE $f \leftarrow f \land \lnot H_e \# H_{e''}$
+\ENDFOR
 
+\STATE $H \leftarrow H_e \cup H_{e'}$
+\IF{$f$ and not $\text{\pehistdup{}} (H)$}
 \STATE Append to $\h$ a new node $H$, labeled by $e'$
-\STATE Append to $\h$ edges $(H, H')$ for any $H'$ such that there exists some
-edge $(H_{e'}, H')$ already present in $\h$
+\STATE Append to $\h$ edges $(H, H_{e''})$ for any $H_{e''}$ such that there
+exists some edge $(H_{e'}, H_{e''})$ already present in $\h$
 \STATE Append to $\h$ the edge $(H, H_e)$
 \STATE Append to \pe{} the new history $H$
-
 \ENDIF
+
 \ENDFOR
 \ENDFOR
 
@@ -181,42 +228,36 @@ edge $(H_{e'}, H')$ already present in $\h$
 \label{alg:pe.update.post.existing}
 
 \begin{algorithmic}
-\REQUIRE A new history $H_e$ and a mark $m$
+\REQUIRE A new history $H_e$
 \ENSURE \pe{} is updated with all new histories for events $e'$, with $\post{e}
-\cap (\pre{e'} \cup \cont{e'}) \neq \emptyset$.
+\cap (\pre{e'} \cup \cont{e'}) \neq \emptyset$ and $e'$ is already present in
+the unfolding.
 
-\STATE $e \leftarrow \event{H_e}$
-\FORALL{$c \in \post{e}$}
-\STATE $p \leftarrow \origin{c}$
-\FORALL{$e' \in (\post{c} \cup \cont{c})$}
-\IF{$e'$ is not marked with $m$}
-\STATE Mark $e'$ with $m$
-\STATE $t \leftarrow \origin{e'}$
-\STATE Mark $t$ with $m$
-\STATE Generate a new mark $m'$
-\STATE Mark all conditions $c' \in \pre{e'} \cup \cont{e'}$ with $m'$
+\FORALL {$e'$ such that $\post{e} \cap (\pre{e'} \cup \cont{e'}) \neq
+\emptyset$}
 
-\STATE $\{p_1, \ldots, p_n\} \leftarrow \pre{t} \cup \cont{t}$ and assure that
-$p_1 = p$
-\FORALL{$\{c_1, \ldots, c_n\} \subseteq P'$ such that $c_1 = c$ and for $1 \le
-i \le n$ we have $p_i = \origin{c_i}$}
+\STATE $\{c_1, \ldots, c_n\} \leftarrow \pre{e'} \cup \cont{e'}$, assuming that
+$e = \pre{c_1}$
+\STATE $\{e_1, \ldots, e_m\} \leftarrow \pre{\{c_1, \ldots, c_n\}}$, assuming
+that $e = e_1$.
 
-\STATE $\{e_1, \ldots, e_n\} \leftarrow \{\pre{c_1}, \ldots, \pre{c_n}\}$
-\FORALL{$\{H_1, \ldots, H_n\} \subseteq 2^{T'}$ such that $H_1 = H_e$ and for
-$1 \le i \le n$ we have $H_i \in \hist{e_i}$}
-
-\IF{$\neg (H_i \# H_j)$ for $1 \le i, j \le n$ and $i \neq j$}
-\STATE $e'' \leftarrow $ $e'$ if all $c_i$ are marked with $m'$, or a \emph{new
-event $e'''$} such that $e''' = \origin{t}$
-\STATE Append to $\h$ a new node $H$, labeled by $e''$
-\STATE Append to $\h$ new edges $(H, H_i)$ for $1 \le i \le n$
-\STATE Append to \pe{} the history $H$ (and possibly the event $e''$)
-\ENDIF
-
+\FORALL {histories $H_{e_1}, \ldots, H_{e_m}$ for events $e_1, \ldots, e_m$
+such that $H_{e_1} = H_e$}
+\STATE $f \leftarrow \TRUE$
+\FOR {$i = 1$ to $m$}
+\STATE $f \leftarrow f \land H_{e_i} \text{ doesn't consume any condition from
+} c_1, \ldots, c_n$
+\FOR {$j = 1$ to $i - 1$}
+\STATE $f \leftarrow f \land \lnot H_{e_j} \# H_{e_i}$
 \ENDFOR
 \ENDFOR
-\ENDIF
 
+\STATE $H = \{e'\} \cup H_{e_1} \cup \ldots \cup H_{e_m}$
+\IF {$f$ and not $\text{\pehistdup{}} (H)$}
+\STATE Append to $\h$ a new node $H$, labeled by $e'$
+\STATE Append to $\h$ new edges $(H, H_{e_i})$ for $1 \le i \le m$
+\STATE Append to \pe{} the history $H$
+\ENDIF
 \ENDFOR
 \ENDFOR
 
@@ -228,42 +269,55 @@ event $e'''$} such that $e''' = \origin{t}$
 \label{alg:pe.update.post.new}
 
 \begin{algorithmic}
-\REQUIRE A new history $H_e$ and a mark $m$
+\REQUIRE A new history $H_e$
 \ENSURE \pe{} is updated with all new events $e'$ such that $t = \origin{e'}$
 and $(\pre{t} \cup \cont{t}) \cap \origin{\post{e}} \neq \emptyset$ and $e'$
-was still not present in $\unf{N}$
+was still not present in the unfolding.
 
-\STATE $e \leftarrow \event{H_e}$
-\FORALL{$c \in \post{e}$}
-\STATE $p \leftarrow \origin{c}$
-\FORALL{$t$ such that $p \in (\pre{t} \cup \cont{t})$}
-\IF{$t$ not marked with $m$}
-\STATE Mark $t$ with $m$
-
-\STATE $\{p_1, \ldots, p_n\} \leftarrow \pre{t} \cup \cont{t}$
-\FORALL{$\{c_1, \ldots, c_n\} \subseteq P'$ such that $c_1 = c$ and for $1 \le
-i \le n$ we have $p_i = \origin{c_i}$}
-
-\STATE $\{e_1, \ldots, e_n\} \leftarrow \{\pre{c_1}, \ldots, \pre{c_n}\}$
-\FORALL{$\{H_1, \ldots, H_n\} \subseteq 2^{T'}$ such that $H_1 = H_e$ and for
-$1 \le i \le n$ we have $H_i \in \hist{e_i}$}
-
-\IF{$\neg (H_i \# H_j)$ for $1 \le i, j \le n$ and $i \neq j$}
-\STATE $e''$ is a new event associated to $t$, i.e. such that $t =
-\origin{e''}$
-\STATE Append to $\h$ a new node $H$, labeled by $e''$
-\STATE Append to $\h$ new edges $(H, H_i)$ for $1 \le i \le n$
-\STATE Append to \pe{} the history $H$ and event $e''$
-\ENDIF
-
-\ENDFOR
-\ENDFOR
-\ENDIF
-\ENDFOR
-\ENDFOR
+\STATE \FIXME{}
 
 \end{algorithmic}
 \end{algorithm}
+
+
+\begin{algorithm}
+\caption{Procedure \pehistdup}
+\label{alg:pe.hist.dup}
+
+\begin{algorithmic}
+\REQUIRE A new history $H$ and the event $e$ to which $H$ is associated
+\ENSURE Returns \TRUE{} if the history is already present in the current state
+of the unfolding or \pe{}; otherwise returns \FALSE{}
+
+\IF {$H$ is associated to $e$ and present in the unfolding or in \pe{}}
+\RETURN \TRUE
+\ELSE
+\RETURN \FALSE
+\ENDIF
+
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{Procedure \peeventdup}
+\label{alg:pe.event.dup}
+
+\begin{algorithmic}
+\REQUIRE A presumably new event $e$
+\ENSURE Returns \TRUE{} the event is a duplicate in the current state of the
+unfolding; \FALSE{} otherwise
+
+\IF {there exists $e'$ in the unfolding or \pe{}  such that $\origin{e'} =
+\origin{e}$ and $\pre{e'} = \pre{e}$ and $\cont{e'} = \cont{e}$}
+\RETURN \TRUE
+\ELSE
+\RETURN \FALSE
+\ENDIF
+
+\end{algorithmic}
+\end{algorithm}
+
+
 \end{document}
 
  % vim:syn=tex:spell:
