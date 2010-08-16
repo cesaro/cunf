@@ -1,6 +1,5 @@
 
-%\documentclass[twocolumn]{article}
-\documentclass{article}
+\documentclass[11pt,a4paper]{article}
 
 \usepackage[utf8]{inputenc}
 \usepackage{algorithm}
@@ -13,7 +12,8 @@
 \usepackage{graphicx}
 \usepackage{figlatex}
 \usepackage{enumerate}
-\usepackage[a4paper]{geometry}
+%\usepackage[a4paper]{geometry}
+\usepackage{a4wide}
 %\usepackage[right=3.4cm,left=3.4cm]{geometry}
 
 \newtheorem{definition}{Definition}
@@ -23,1019 +23,943 @@
 \newtheorem{remark}{Remark}
 
 \newcommand{\event}[1]{\ensuremath{\mathsf{event}(#1)}}
-\newcommand{\hist}[1]{\ensuremath{\mathsf{hist}(#1)}}
+\newcommand{\hist}[1]{\ensuremath{\mathsf{Hist}(#1)}}
 \newcommand{\origin}[1]{\ensuremath{\mathsf{origin}(#1)}}
 \newcommand{\conf}[1]{\ensuremath{\mathsf{Conf}(#1)}}
 \newcommand{\conds}[1]{\ensuremath{\mathsf{Conds}(#1)}}
 \newcommand{\events}[1]{\ensuremath{\mathsf{Events}(#1)}}
 \newcommand{\confl}{\ensuremath{\mathord{\#}}}
-%\newcommand{\conc}[2]{\ensuremath{#1 \parallel #2}}
+\newcommand{\evolves}{{\ensuremath{\ \sqsubseteq \ }}}
+
+\newcommand{\peupdate}{\mbox{\sf pe\_update}}
+\newcommand{\iscutoff}{\mbox{\sf is\_cutoff}}
 
 \newcommand{\h}{\ensuremath{\mathcal{H}}}
 \newcommand{\pe}{{\sc PE}}
-\newcommand{\evolves}{{\sqsubseteq}}
-\newcommand{\peupdate}{{\sc PE-Update}}
 \newcommand{\peupdatecont}{{\sc PE-Update-Context}}
 \newcommand{\peupdatepostexisting}{{\sc PE-Update-Postset-Existing}}
 \newcommand{\peupdatepostnew}{{\sc PE-Update-Postset-New}}
 \newcommand{\pehistdup}{{\sc PE-History-Duplicated}}
 \newcommand{\peeventdup}{{\sc PE-Event-Duplicated}}
 
-\title{\pe{} update procedure}
-\author{César Rodríguez}
-%\date{May 2010}
-
+%\setlength{\parskip}{0.3\baselineskip}
 \begin{document}
+
+%\title{Implementation of an unfolder for the McMillan's complete prefix for contextual nets}
+
+\title{Implementation of a complete prefix unfolder for contextual nets}
+
+\author{César Rodríguez\\Stefan Schwoon\\LSV -- ENS Cachan}
+\date{July 2010}
+
 \maketitle
+\pagestyle{empty} %
+\thispagestyle{empty}
 
-% Introduccion de dos parrafos sobre que es un desenrollado
-% Que es una red contextual
-% Formas de construir el desenrollado de la red contextual
-% Motivacion para construir un desenrollado contextual: es mas pequeño
-% Retos: la computacion de conc(S) es mas compleja, hay cambios fundamentales
-% en el algoritmo de computo; no tiene mucho sentido reutilizar el codigo de la
-% herramienta vieja
+%% Attention: pas plus d'un recto-verso!
+% Ne conservez pas les questions
 
+\subsection*{General context}
+
+De quoi s'agit-il ? 
+D'où vient-il ? 
+Quels sont les travaux déjà accomplis dans ce domaine dans le monde ?
+
+\subsection*{The problem}
+
+Quelle est la question que vous avez abordée ? 
+Pourquoi est-elle importante, à quoi cela sert-il d'y répondre ?  
+Est-ce un nouveau problème ?
+Si oui, pourquoi êtes-vous le premier chercheur de l'univers à l'avoir posée ?
+Si non, pourquoi pensiez-vous pouvoir apporter une contribution originale ?
+
+\subsection*{The contributions}
+
+Qu'avez vous proposé comme solution à cette question ? 
+Attention, pas de technique, seulement les grandes idées ! 
+Soignez particulièrement la description de la démarche \emph{scientifique}.
+
+\subsection*{Validity of the contributions}
+
+Qu'est-ce qui montre que cette solution est une bonne solution ?
+Des expériences, des corollaires ? 
+Commentez la \emph{robustesse} de votre proposition : 
+comment la validité de la solution dépend-elle des hypothèses de travail ?
+
+\subsection*{Evaluation and perspectives}
+
+Et après ? En quoi votre approche est-elle générale ? 
+Qu'est-ce que votre contribution a apporté au domaine ? 
+Que faudrait-il faire maintenant ? 
+Quelle est la bonne \emph{prochaine} question ?
+
+\newpage
 \section{Introduction}
-\section{Contextual Petri nets}
 
-\begin{definition} A \emph{contextual Petri net} is a tuple $N = (P, T, F, C,
-m_0)$ \FIXME{...}
-\end{definition}
+ - 1 / 2 pages; they already know what a PN is
+ - what an unfolding is; McMillan
+ - for what it can be used; McMillan
+ 	. planning
+	. encoding asynchronous circuits
+	. safety properties on finite state systems can be reduced to
+	reachability analysis 
+ - contextual nets
+ - PR encoding, other encodings; Baldan
+ - contextual unfoldings
+ 	. are smaller than unfolding of the PR encoding
+ 	. motivate this with 1 or 2 examples,
+ - motivation and goals
+ 	. histories instead of local configurations
+	. there is 'meet enough' to write a new tool
+	. remark that the goal is to obtain a correct tool
+ - contributions
+ 	. to the theory
+		+ fill the gaps in Baldan
+		+ adequate orders
+ 	. to the implementation
+		+ implementation, 4kloc, from scratch
+ - outline
 
-In this work we consider contextual 1-safe nets.  $N$ is finite, $P$ and $T$ is
-finite :)
+\section{Contextual unfoldings}
 
-\section{Occurrence nets and contextual unfoldings}
+We introduce in this section the definitions of contextual net, unfolding and
+provide the motivations to \FIXME{ocuparse} of the implementation of a new
+unfolder for contextual nets.
 
-\begin{definition} A \emph{contextual occurrence net} is a 1-safe contextual
-Petri net $N = (P, T, F, C, m_0)$ \FIXME{...}
-\end{definition}
+\subsection{Contextual nets}
+
+% - def: contextual net; of Baldan
+% 	- example
+% - when no read arcs: PN
+%
+% - marking
+% - enabled transition
+% - firing
+% - run
+% - 1 safe; we restrict our interest to only 1-safe nets
+%
+% - 3 paragraphs: contextual unfolding; from McMillan
+% - in general infinite, so we are interesting in a finite prefix that is
+%   complete for some meaning of completeness; start with theory!
+% - causality
+% - asymmetric conflict
+% - conflict relation, with example
+% - configuration
+% - marking associated to a run/configuration
+% - some configurations are histories; history of a event in a config.
+%
+% - enriched event; enriched prefix
+% - we search for a complete finite prefix; define completeness criterion
+% - motivate why we need cutoffs, example, and definition of cutoff
+% - truncation
+% - finiteness and completeness of truncation
+%
+% - motivations why to write from scratch a new unfolder; what is challenging
+% 	. remark what is challenging; there are fundamental changes; cannot be
+%	an extension of the previous implementation
+%	. conflict relation on events
+%	. histories
+%	. concurrency between conditions
+%	. computation order; no longer $\subseteq$
+%	. to know if a set is a configuration, it doesn't suffice to find a
+%	pair of conflicting events
+
+
+A \emph{contextual net} is a tuple $N = \langle P, T, F, C, m_0 \rangle$, where
+$P$ and $T$ are disjoint sets respectively called \emph{places} and
+\emph{transitions}, $F \subseteq P \times T \cup T \times P$ is the \emph{flow
+relation}, $C \subseteq P \times T$ is the \emph{context relation} and $m_0 : P
+\to \N$ is the \emph{initial marking}.  For $x \in P \cup T$, we denote by
+$\pre x$ the \emph{preset} of $x$, defined as $\{y \in P \cup T \mid (y, x) \in
+F\}$.  Similarly, the \emph{postset} of $x$, written $\post x$, is defined by
+$\{y \in P \cup T \mid (x, y) \in F\}$.  Finally, for a transition $t \in T$ we
+write $\cont t$ to denote the \emph{context} of $t$, defined as $\{p \in P \mid
+(p, t) \in C\}$.  The same notation is used to denote the context of a place $p
+\in P$, that is, the set $\{t \in T \mid (p, t) \in C\}$.
+
+Note that contextual nets are an extension of traditional Petri Nets.
+Precisely, Petri Nets are the class of contextual nets whose context relation
+is empty.
+
+A \emph{marking} $m$ is a function $m : P \to \N$ that maps every place of $P$
+to a natural number, including 0. If for a marking $m$ and place $p$, $m(p) =
+n$, then we say that $m$ marks $p$ with $n$ tokens.  If a marking $m$ has the
+set $\{0, \ldots, n\}$ for image, we say that $m$ is $n$-safe.  We will
+associate, without further comment, every 1-safe marking to to a subset of $P$.
+
+A transition $t \in T$ is said to be \emph{enabled} at a marking $m$ if $m$
+marks every place of the preset and context of $t$ with at least one token,
+i.e.,  if we have $m(p) > 0$ for $p \in \pre t \cup \cont t$.  Any transition
+enabled at a marking can \emph{fire} (\emph{occur} or \emph{be executed}),
+leading to a new marking.  Specifically, if $t$ is enabled at $m$, the
+execution of $t$ at $m$ produces the new marking $$m'(p) = 
+\begin{cases}
+m(p) - 1 & \mbox{if } p \in \pre t \setminus \post t \\
+m(p) + 1 & \mbox{if } p \in \post t \setminus \pre t \\
+m(p) & \mbox{otherwise}
+\end{cases}$$
+
+A sequence of transitions that can fire one after the other starting at the
+initial marking $m_0$ is called a \emph{run}.  Formally, a finite sequence of
+transitions $\sigma = t_1 \ldots t_n \in T^*$ is a run if there exist markings
+$m_1, \ldots, m_n$ such that $t_1$ is enabled at the initial marking $m_0$ and
+produces $m_1$ when fired at $m_0$, and for $2 \le i \le n$, transition $t_i$
+is enabled at $m_{i-1}$ and produces $m_i$ when fired at $m_{i-1}$.  Marking
+$m_n$ is said to be the marking reached by $\sigma$.  Conversely, a marking is
+said \emph{reachable} if there exists some run in the contextual net that
+reaches it.  \FIXME{definir Runs(N) ?? Markings(N)??}
+
+By extension, a contextual net $N$ is said to be $n$-safe if every reachable
+marking of $N$ is $n$-safe; it is said \emph{safe} if it is $n$-safe for some
+natural $n \in \N$.
 
 \begin{figure}
-%\centering{\includegraphics{fig/FIXME.fig}
-\FIXME{Fig. 4 in McMillan's Complete}
-\caption{Inductive definition of the full unfolding $\unf{N}$}
-\label{fig:inductive.definition}
+\centering{\includegraphics{fig/a-1safe.fig}}
+\caption{A 1-safe contextual net (a), a prefix of its full unfolding (b), the
+folding morphism (c).}
+\label{fig:a.1safe}
 \end{figure}
 
-\begin{definition} The \emph{full unfolding} of a contextual \FIXME{bounded,
-check definitions} Petri net $N$, denoted $\unf{N}$, is the contextual
-occurrence net $(P', T', F', C', m'_0)$ defined by the induction rules of
-\rfig{inductive.definition}. \FIXME{}
+\rfig{a.1safe} (a) depicts a contextual net that is 1-safe.  Read arcs are
+represented by means of undirected lines.  For $t_2$, we have that $\{p_1\} =
+\pre{t_2}$, $\{p_3\} = \cont{t_2}$ and $\{p_4\} = \post{t_2}$.  The initial
+marking is $\{p_1, p_2\}$ and $t_1, t_2, t_3$ is a run that reaches marking
+$\{p_2, p_4\}$.  Marking $\{p_3, p_4\}$ is reachable because it is the marking
+reached by the run $t_1, t_2$.
+
+\FIXME{General assumptions: (0) Input nets are always finite, $P$, $T$, $F$ and
+$C$ are finite. (1) we restrict our interest to 1-safe nets, because they are
+the more interesting. (2) We assume that no transition has an empty preset in N
+(3) restriction about context and preset on transitions, search for it in the
+notebook...}
+
+\subsection{Unfolding contextual nets}
+
+\FIXME{Decir que $\unf N$ is 1-safe!!}
+
+\FIXME{Let us start with some intuitive ideas.}  Consider a directed graph $G$
+and one node $v$ from $G$.  It is well known that one can unfold $G$ into a
+labelled tree $U$ whose paths from the root node are in one to one
+correspondence to the paths in $G$ starting from $v$.  A labelling $f$,
+associating each node of $U$ to a node of $G$, implicitly provides this
+correspondence.  Due to the tree-like structure of $U$, there is a natural well
+founded precedence order on its nodes ($a$ precedes $b$ if so does in some path
+from the root).
+
+Construction of the tree is made recursively.  We start by appending to $U$ a
+new node $u$ and updating $f$ with a new binding $f(u) = v$.  Then we regard
+all nodes $v_1, \ldots, v_n$ in $G$ pointed by outgoing edges from $v$ and
+append to $U$ new nodes $u_1, \ldots, u_n$, as well as the corresponding edges
+from $u$.  The mapping $f$ is also updated with new bindings $f(u_1) = v_1,
+\ldots, f(u_n) = v_n$.  This construction is next applied recursively to every
+new node appended to $U$ in the previous step.  For this reason, the unfolding
+operation naturally stops when no new node can be unfolded.  The resulting tree
+$U$ is called the \emph{full} unfolding of $G$, and it is usually infinite.
+The algorithm can also be stopped at an arbitrary point, yielding a finite
+\emph{prefix} of the full unfolding.  \rfig{a.directed} illustrates a directed
+graph (a) and a prefix of its full unfolding (b).
+
+%\Ralg{directed.graph} describes with more detail this procedure.  Notice that
+%the mapping $f$ is implicitly encoded the node set of $U$.  \Rfig{} illustrates
+%its operation with a small graph its
+%
+%\begin{algorithm}
+%\caption{Directed graph unfolding procedure}
+%\label{alg:directed.graph}
+%
+%\begin{algorithmic}
+%\REQUIRE $G = (V, E)$ and a node $v \in V$
+%\ENSURE $U = (V', E')$, where $V' \subseteq V \times \N$
+%
+%\STATE $n = 1$ 
+%\STATE $W = \emptyset$
+%\STATE Add $\langle v, 0 \rangle$ to $W$
+%\WHILE {$W \not= \emptyset$}
+%\STATE Remove some $s = \langle u, n' \rangle$ from $W$
+%\STATE Add $s$ to $V'$
+%\FORALL {$(u, w) \in E$}
+%\STATE Create new node $t = \langle w, n \rangle$
+%\STATE $n := n + 1$
+%\STATE Add $(s, t)$ to $E'$
+%\STATE Add $t$ to $W$
+%\ENDFOR
+%\ENDWHILE
+%\end{algorithmic}
+%\end{algorithm}
+
+\begin{figure}
+\centering{\includegraphics{fig/a-directed.fig}}
+\caption{A directed graph (a) together with an arbitrary prefix of its full
+unfolding (b).}
+\label{fig:a.directed}
+\end{figure}
+
+Following the same idea, a contextual net $N$ can also be unfolded into a
+labelled \emph{contextual occurrence net} $\unf N$, that is, another contextual
+net whose runs are in in one to one correspondence to the runs of the original
+net.  A labelling, or folding morphism, consist on a pair of functions $\langle
+f_T, f_P \rangle$ that associates each transition in $\unf N$ to a transition
+in $N$ (through $f_T$) and each place of $\unf N$ to a place in $N$ (through
+$f_P$).  Again, due to the acyclic and rooted structure of the contextual
+occurrence net, there is a natural precedence (or causal) order on its
+transitions and places.
+
+Provided $N$, construction of $\unf N$ (as well as the folding morphisms $f_T$
+and $f_P$) proceeds incrementally, adding a new transition together with the
+places in its postset at each step.  We start by appending to $\unf N$ a copy
+of the initial marking of $N$, and updating $f_P$ to reflect this copy.  Then,
+we consider any reachable marking $m'$ of $\unf N$ and compute its image $m$
+though $f_P$ (that is, $m$ is a marking in $N$).  If any transition $t$ from
+$N$ is enabled at $m$ and no copy of $t$ firing from\footnote{To be precise, we
+should say 'firing from the places in $\unf N$ whose image through $f_P$
+conforms exactly the set $\pre t$' in $N$, instead of 'firing from $m'$'.} $m'$
+is still present in $\unf N$, then a new copy of $t$ can be appended, as well
+as new copies of places in $\post t$.  The folding morphisms are subsequently
+updated to reflect the new transition and places in $\unf N$.  Mapping $f_T$ is
+updated with a binding from the copy of $t$ to $t$, while mapping $f_P$ is
+updated to reflect the copy of the postset of $t$.  The same procedure is
+repeated until no new transition can be appended.  The resulting contextual net
+$\unf N$ is called the \emph{full unfolding}, and it is usually infinite.
+Nevertheless, the procedure can be stopped at any point, yielding a finite
+\emph{prefix} of the full unfolding.
+
+The full unfolding $\unf N$, or any prefix of it, is a contextual occurrence
+net.  Runs of $\unf N$ corresponds to runs of $N$.  \FIXME{We will examine
+later on some other relevant properties of contextual occurrence nets.}
+Transitions of any contextual occurrence net will, from now, be called
+\emph{events}, while its places will be called \emph{conditions}.
+\rfig{a.1safe} illustrates a contextual net (a) together with an arbitrary
+prefix of its full unfolding (b).  The folding morphism (c) is also given on
+the right side of the figure.
+
+The full unfolding $\unf N$ is infinite even for trivial examples (see
+\rfig{a.1safe} (b)).  For this reason, we are interested in a prefix of $\unf
+N$ large enough to be \emph{complete}, for some meaning of completeness.  In
+particular, we are interested in computing a prefix whose reachable markings
+are in one to one correspondence to the reachable markings of $N$.  In order to
+define this prefix, we need to introduce some technical notions.  
+
+\FIXME{For the reminder of this document}, we consider a 1-safe contextual net
+$N = \langle P, T, F, C, m_0 \rangle$ and its full unfolding $\unf N = \langle
+P', T', F', C', m'_0 \rangle$, together with the folding morphism $f_T : T' \to
+T$ and $f_P : P' \to P$.  We let variable $t$ to range transitions in $T$,
+variable $p$ for places in $P$, variable $e$ for events in $T'$ and variable
+$c$ for conditions in $P'$.
+
+\begin{definition}
+\label{def:causality.relation}
+The \emph{causality relation} in $\unf N$ is the least transitive relation $<$
+on $P' \cup T'$ verifying
+
+\begin{enumerate}
+\item if $c \in \pre e$, then $c < e$;
+\item if $c \in \post e$, then $e < c$;
+\item if $\post e \cap \cont{e'}$, then $e < e'$.
+\end{enumerate}
 \end{definition}
 
-\begin{proposition} The full unfolding $\unf{N}$ of a contextual net $N$ is
-complete. \FIXME{define completeness}
+Intuitively, the causality relation captures the notion of \textit{what must
+occur first in \emph{any} run of $\unf N$ that fires or marks some transition
+or place}.  For instance, regarding \rfig{a.1safe} (b), we have $c_3 < e_3$
+since \emph{any} run firing $e_3$ will first mark $c_3$ (notice that all the
+runs that fire $e_3$ are $e_1, e_3$ and $e_1, e_2, e_3$).  We also have $c_2 <
+e_1$ and also $e_1 < e_2$.
+
+For any condition or event $x \in P' \cup T'$, we denote by $[x]$ the set of
+\emph{causes} of $x$, that is, the set $\{e \in T' \mid e \le x\}$, where $\le$
+is the reflexive closure of $<$.  For instance, $[c_4] = \{e_1, e_2\}$ and
+$[e_3] = \{e_1, e_3\}$.
+
+Consider now events $e_2$ and $e_3$.  We cannot say that \emph{any} run that
+fires $e_3$ first fires $e_2$ (as $e_1, e_3$ is a run).  However, we can assure
+that \emph{if some run fires $e_2$ and $e_3$, then it will fire $e_2$ before
+$e_3$} (since once fired $e_3$, condition $c_3$ cannot be read).  This
+situation arises due to the existence of read arcs and is \FIXME{the cause to
+the existence of several causal histories for some events}.  We characterize
+this relation in the next definition
+
+\begin{definition}
+\label{def:asymmetric.conflict}
+We say that two events $e, e' \in T'$ are in \emph{asymmetric conflict}, and
+write $e \nearrow e'$, iff either (1) $e < e'$, or (2) $\cont e \cap \pre{e'}
+\not= \emptyset$, or (3) $e \not= e' \land \pre e \cap \pre{e'} \not=
+\emptyset$.
+\end{definition}
+
+Let us see why the intuition in the previous paragraph holds in the three
+sub-cases.  If $e < e'$, clearly any run that fires both events also fires
+first $e$.  If $\cont e \cap \pre{e'} \not = \emptyset$ (the case of $e_2$ and
+$e_3$ in \rfig{a.1safe} (b)), then if both $e$ and $e'$ are present in the same
+run, $e$ must read its context before $e'$ consumes at least one place of it.
+Finally, observe that if $e \not = e'$ and $\pre e \cap \pre{e'} \not =
+\emptyset$, then $e$ and $e'$ cannot be present in the same run, and the
+intuition vacuously holds.  This allows us to capture symmetric
+conflicts\footnote{In a 1-safe Petri Net (without read arcs), two transitions
+are said to be in \emph{symmetric conflict} if they are different and share
+some place in its respective presets.} by means of a loop of length two in the
+asymmetric conflict relation.
+
+For any set of events $X \subseteq T'$, we write $\nearrow_X$ to mean the
+restriction of $\nearrow$ to $X$, that is, the relation $\nearrow \cap \ X
+\times X$.  The next important notion is that one of configuration:
+
+\begin{definition}
+A finite set of events $C \subseteq T'$ is a \emph{configuration} of $\unf N$
+iff (1) $\nearrow_C$ is acyclic and (2) $C$ is causally closed, that is, for
+all $e' < e$ with $e \in C$, we have $e' \in C$.
+\end{definition}
+
+Configurations characterizes (concurrent) runs of $\unf N$.  A set of events is
+a configuration iff all its events can be ordered to form a run.  Furthermore,
+any ordering of the events of a configuration that conforms a run is compatible
+with the asymmetric conflict relation $\nearrow$, hence the requirement that
+$\nearrow_C$ is acyclic in the previous definition.  In \rfig{a.1safe} (b), the
+set $\{e_1, e_2, e_3\}$ is a configuration, while the set $\{e_2\}$ is not,
+since it is not causally closed.  We let $\conf{\unf N}$ denote the set of all
+configurations of $\unf N$.
+
+\FIXME{Present here $\evolves$ and $\confl$}
+
+As any configuration $C$ is a run of $\unf N$, we can naturally associate to
+$C$ the marking reached by that run.  We call that marking the \emph{cut} of
+$C$.  In turn, any marking in $\unf N$ corresponds, via $f_P$, to a marking in
+$N$.  We call this marking \emph{the marking} of $C$. For instance, the
+marking of configuration $\{e_1, e_2\}$ in \rfig{a.1safe} (b) is $\{p_3,
+p_4\}$, while its cut is $\{c_3, c_4\}$.
+
+\begin{definition}
+Let $C \in \conf{\unf N}$ be a configuration of the full unfolding.  We define
+the \emph{cut} of $C$, written $\cut C$, and the \emph{marking} of $C$, written
+$\marking C$ as $$\cut C \: = \: m \: \cup \: \bigcup_{e \in C} \post e \:
+\setminus \: \bigcup_{e \in C} \pre e \qquad \mbox{ as well as } \qquad
+\marking C \: = \: \bigcup_{c \in \cut C} f_P (c)$$
+\end{definition}
+
+Some configurations are called \emph{histories}.  Intuitively, given a
+configuration $C$ and some event $e \in C$, the history of $e$ in $C$ is the
+subset of $C$ that contains all events $e'$ that must fire before $e$ in $C$,
+i.e., for which $e' (\nearrow_C)^* e$ holds.
+
+\begin{definition}
+Let $C \in \conf{\unf N}$ be a configuration of the $\unf N$ and $e \in C$ some
+event of $C$.  The \emph{history} of $e$ in $C$, written $C \sem e$, is the set
+$\{e' \in C \mid e' (\nearrow_C)^* e\}$.  Additionally, the set of all
+histories for any event $e \in T'$, written $\hist e$, is defined to be the set
+$\{C \sem e \mid C \in \conf{\unf N} \land e \in C\}$.
+\end{definition}
+
+We use the notation $H_e$ to denote any history $H_e \in \hist e$ of $e$.
+Similarly, we set the notation $\event H$ to denote the event $e$ if $H \in
+\hist e$.  Every history $H_e$ is a configuration.  To see this, let $C$ be a
+configuration and $e \in C$ some event such that $H_e = C \sem e$.  As $H_e
+\subseteq C$, it is clear that $\nearrow_{H_e}$ is acyclic.  To show that $H_e$
+is causally closed, assume that $e' \in H_e$ is some event of $H_e$ and that
+$e'' < e'$.  Then we have $e'' \nearrow e' (\nearrow_C)^* e$.  As $e'' \in C$,
+we have $e'' (\nearrow_C)^* e$ and therefore $e'' \in H_e$.
+
+In the unfolding of a Petri Net (without read arcs), any event $e$ can only
+have one history (the so called \emph{local configuration} $[e]$, see
+\FIXME{ref}).  The presence of read arcs gives rise to the existence of
+multiple histories, or runs, per event, possibly infinite.  In \rfig{a.1safe}
+(b), event $e_3$ have two histories, namely, $\{e_1, e_3\}$ (which coincides
+with $[e_3]$) and $\{e_1, e_2, e_3\}$.
+
+
+\subsection{FIXME Search for a title!!}
+
+\FIXME{Remark that all? the notions presented till here are applicable to
+$\pref N$}
+
+Due to the fact that $\unf N$ is frequently infinite, we would like to define,
+and then construct, a finite \emph{prefix} of $\unf N$ that is still
+\emph{useful}.  A finite prefix of $\unf N$ is any 1-safe contextual net $\pref
+N$ that results from stopping the unfolding algorithm of \FIXME{section x} at
+an arbitrary point.  Useful, or \emph{complete}, will mean in this work that
+the prefix is large enough to represent exactly the same reachable markings as
+$N$, that is, such that $$\markings N = \bigcup_{C \in \conf{\pref N}}
+\marking{C}$$ Other definitions are possible, for instance, we could require in
+addition that all runs of $N$ are present in $\pref N$ \FIXME{ref}.  Under our
+definition, it is clear that $\unf N$ is complete by construction.
+
+\begin{proposition}
+$\unf N$ is complete.
 \end{proposition}
 
-\section{A complete and finite prefix}
+In order to construct a finite and complete prefix for Petri Net (without read
+arcs) unfoldings, McMillan suggested \FIXME{ref} to define certain events of
+$\unf N$ as \emph{cutoff} events, and let the unfolding algorithm to stop
+either when no new event can be added or when any new event is a cutoff.  Then
+he proved that, for a proper definition of cutoff events, his prefix was finite
+and complete.  Roughly, cutoff events were defined to be those whose
+corresponding run (history, causal closure or \emph{local configuration})
+produces a marking that is reachable by a shorter run (firing less events).
+His definition of cutoff relies on the fact each event has \emph{only one}
+history and cannot be adapted without changes to the framework of contextual
+nets.
 
-\begin{definition} An \emph{enriched occurrence net} is a pair $E = (N, \chi)$
-where $N = (P, T, F, C, m_0)$ is an occurrence net and $\chi : T \to X$
-\FIXME{...}.  An enriched occurrence net is called \emph{closed} if
-\FIXME{...}.
-\end{definition}
+The natural generalization of this idea is to consider that cutoffs are, not
+events, but \emph{enriched events}, that is, pairs $\langle e, H_e \rangle$
+where $e$ is an event and $H_e \in \hist e$.  The unfolding algorithm has also
+to be modified to compute, not a prefix of $\unf N$, but an \emph{enriched
+prefix}, that is, a pair $\langle \pref N, \chi \rangle$ such that $\pref N$ is
+a prefix of $\unf N$ and $\chi : T' \to 2^{\conf{\unf N}}$ associates to all
+events $e$ of $\pref N$ a non empty set of histories of $e$ (that is,
+$\emptyset \not = \chi(e) \subseteq \hist{e}$), additionally
+verifying\footnote{We impose this constrain on $\chi$ to conform the definition
+of \emph{closed occurrence net} of \FIXME{baldan}.  Intuitively, this
+constraint forces the enriched prefix to be such that the history of any event
+$e$ present in the prefix is the union of the histories associated events $e'$
+in asymmetric conflict to $e$.  Due to space constrains, we skip providing a
+detailed motivation of this additional constraint and point the reader to
+review Definition 12 of \FIXME{baldan}.} $H \in \chi (e)$ and $e' \in H$
+implies $H \sem{e'} \in \chi (e')$.
 
-\FIXME{Define here configuration of an enriched occurrence net}
-
-\begin{definition} An \emph{enriched event} is a pair $(e, H_e)$, where $e$ is
-\FIXME{...}.
-\end{definition}
-
-\begin{definition} An \emph{enriched prefix} of the unfolding $\unf{N}$ is any
-\emph{closed} enriched occurrence net $E$ such that $N_E$ \FIXME{...}.
-\end{definition}
-
-\begin{definition} Given two enriched prefixes, $E_1 = (N_1, \chi_1)$ and $E_2
-= (N_2, \chi_2)$, we say that $E_1$ is \emph{a prefix} of $E_2$, and write $E_1
-\unlhd E_2$, iff $N_1$ is a prefix of $N_2$ and for all $e \in T_1$ we have
-$\chi_1 (e) \subseteq \chi_2 (e)$.
-\end{definition}
-
-%\begin{lemma} Complete lattice.  \FIXME{We really need it?}
-%\end{lemma}
-
-\FIXME{Define the order $C_1 \sqsubset C_2$}
-
-\subsection{Adequate orders}
-
-\begin{definition} \label{def:adequate} A partial order $\prec$ on the finite
-configurations of the full unfolding is called \emph{adequate} if
-\begin{itemize} \item $\prec$ is well founded, \item $C_1 \sqsubset C_2$
-implies $C_1 \prec C_2$, and \item $\prec$ is preserved by finite extensions,
-that is,  if $C_1 \prec C_2$, and $\marking{C_1} = \marking{C_2}$, and $C_1
-\sqsubset C_1 \cup E$ for some extension $E$, and $C_2 \sqsubset C_2 \cup E'$
-for some extension $E'$ isomorphic to $E$, then $C_1 \cup E \prec C_2 \cup E'$.
-\end{itemize}
-\end{definition}
-
-This definition is more general than the one in \FIXME{make, of course, some
-clarifications here} ERVpaper, as every adequate order according to that
-definition is also an adequate order according to this definition, but not in
-the other way round.
-
-From now on, we fix a partial order $\prec$ on the finite configurations
-$\unf{N}$ for some n-bounded net $N$.
-
-\begin{definition} An enriched event $(E, H_e)$ of the full unfolding $\unf{N}$
-is called \emph{cut-off} if either $\marking{H_e} = m$ with $m$ the initial
-marking of $N$ or there exists another enriched event $(e', H_{e'})$ verifying
-\begin{itemize} \item $\marking{H_e} = \marking{H_{e'}}$, and \item $H_e' \prec
-H_e$ \end{itemize}
-\end{definition}
-
-\begin{definition} The \emph{truncation} $\trunc{N}$ of the full unfolding is
-an enriched occurrence net defined as the greatest enriched prefix (w.r.t to
-the prefix ordering $\unlhd$) of the full unfolding which does not contain
-cut-offs.
-\end{definition}
-
-\begin{theorem} $\trunc{N}$ is finite.
-\end{theorem}
-
-\begin{proof}
-We want to prove that the number of enriched events in $\trunc{N}$ is finite.
-By contradiction, assume this number is infinite. As any history of an enriched
-event is a configuration, and, in particular, a \emph{finite} configuration, we
-also know that the number of finite configurations of $\trunc{N}$ is infinite.
-In the sequel, we see that under these assumptions we can use K\"{o}nig's lemma
-to find an infinite sequence of configurations $C_1, C_2, \ldots$ with $C_i
-\sqsubset C_{i+1}$ and $\marking{C_1} = \marking{C_i}$ for $i \ge 1$, yielding
-to the fact that $C_2$ is a cutoff, which is a contradiction to the definition
-of $\trunc{N}$.
-
-We define a graph $G = (V, E)$ whose set of vertices $V$ is the set of finite
-configurations of $\trunc{N}$ plus the \textit{empty configuration}
-$\emptyset$, and whose set of edges is a subset of the computational order
-relation $\sqsubseteq$:
-
-\begin{itemize}
-\item $V = \conf{\trunc{N}} \cup \{\emptyset\}$ \FIXME{only finite ones!}
-\item $E = \{(C_1, C_2) \in V \times V \mid C_1 \sqsubseteq C_2 \text{ and }
-|C_1| + 1 = |C_2|\}$
-\end{itemize}
-
-We write $C_1 \to C_2$ for $(C_1, C_2) \in E$.  We now prove three properties
-of $G$:
-
-\begin{description}
-\item[] \emph{G has finite degree.}  We show that for any $C_1$ there is only a
-finite number of configurations $C_2$ such that $C_1 \to C_2$.
-
-Consider any pair of configurations $C_1$, $C_2$ with $C_1 \to C_2$.  Then $C_1
-\sqsubseteq C_2$ and $|C_1| + 1 = |C_2|$.  By definition, $C_1 \sqsubseteq C_2$
-implies $C_1 \subseteq C_2$.  Then we can write $C_2 = C_1 \cup \{e\}$ for some
-$e \notin C_1$.  From the fact that $C_1 \sqsubseteq C_2$ we also know that
-$\lnot (e_2 \nearrow e_1)$ for all $e_1 \in C_1$ and all $e_2 \in C_2 \setminus
-C_1$.  In particular $\lnot (e \nearrow e_1)$ for all $e_1 \in C_1$, so $e$ can
-fire after any event $e_1$ of $C_1$.  This, together with the fact that $C_2$
-is a configuration, implies that $\pre{e} \subseteq \cut{C_1}$. From this, it
-follows that $e \in \post{\cut{C_1}}$.
-
-Now notice that $\post{\cut{C_1}}$ is finite, because $C_1$ is finite (by
-definition) and the preset and postset of each event in $\trunc{N}$ is finite.
-So there is, at most, a finite number of \emph{different} events $e \in
-\post{\cut{C_1}}$ and hence a finite number of different sets $C_1 \cup \{e\}$.
-As we saw previously, any $C_2$ such that $C_1 \to C_2$ is one of these $C_1
-\cup \{e\}$ for $e \in \post{\cut{C_1}}$.  Hence, for a given $C_1$, there is
-at most a finite number of different edges $C_1 \to C_2$ in $G$.
-
-\item[] \emph{G is connected.}  We show by induction on the size of a
-configuration $C$ that there exists a path from the empty configuration
-$\emptyset$ to $C$.  In the base case, $|C| = 0$ and consequently $C =
-\emptyset$.  The statement is trivially true.  For the step case, assume that
-we can find a path for configurations of up to size $n$, or more formally, that
-$\emptyset \to^* C$ if $|C| \le n$ and let $C'$ be a configuration of size
-$n+1$.  From $C'$ we can extract a event $e$ maximal w.r.t. the relation
-$\nearrow$.  This is always possible because $C'$ is finite and there is no
-loops in $\nearrow$ restricted to $C'$.  As there exists no other $e' \in C'$
-with $e \nearrow e'$, we can assure that $C' \setminus \{e\}$ is a
-configuration.  Furthermore, it is a configuration of size $n$ for which the
-induction hypothesis applies.  Finally, notice that $C' \setminus \{e\}
-\sqsubseteq C'$, because $C' \setminus \{e\} \subseteq C'$ and the maximality
-of $e$.  Consequently, $C' \setminus \{e\} \to C'$.
-
-\item[] \emph{$G$ has an infinite number of vertices}.  By hypothesis, we know
-that there is an infinite number of finite configurations in $\trunc{N}$.  Each
-finite configuration is a vertex in $G$.
-\end{description}
-
-In the light of these properties, K\"{o}nig's lemma guarantees the existence in
-$G$ of an infinite sequence of configurations $(C_i)_{i \ge 1}$ such that $C_1
-= \emptyset$ and $C_i \to C_{i+1}$.  By hypothesis, $N$ is n-bounded, so the
-number of reachable markings in $N$ is finite.  As each configuration $C_i$ has
-an associated marking $\marking{C_i}$, this implies that from $(C_i)_{i \ge 1}$
-we can extract a infinite subsequence of configurations $C_{i_1}, C_{i_2},
-\ldots$ marked with the same marking, that is, verifying:
-
-\begin{itemize}
-\item (subsequence) $i_j < i_{j+1}$ for $j \ge 1$, and
-\item (same marking) $\marking{C_{i_1}} = \marking{C_{i_j}}$ for $j \ge 2$, and
-\end{itemize}
-
-Consider now the configurations $C_{i_1}$ and $C_{i_2}$.  By construction, we
-know that $C_{i_1} \to^* C_{i_2}$.  This, together with the fact that relation
-$\sqsubseteq$ is transitive, implies that $C_{i_1} \sqsubseteq C_{i_2}$ and by
-\rdef{adequate}, that $C_{i_1} \prec C_{i_2}$.  But, by construction, we know
-that $\marking{C_{i_1}} = \marking{C_{i_2}}$, so $C_{i_2}$ is a cutoff.  This
-is a contradiction to the fact that $\trunc{N}$ is free of cutoffs.
-
-Hence, the number of enriched events in $\trunc{N}$ is finite.
-\end{proof}
-
-%\begin{proof} By contradiction, assume that $\trunc{N}$ is infinite. We can
-%show that there is an infinite computation in $\trunc{N}$ (Konig's lemma and
-%finite preset and postset of every event).  In this computation, consider the
-%infinite sequence of markings reached after the firing of each event. As there
-%is a finite number of markings, one marking is repeated.  Consider now the
-%first repetition.  That enriched event is a cutoff, and it is present in the
-%net, because $\trunc{N}$ is closed.  This is a contradiction.
-%\end{proof}
-
-\FIXME{Move this definition and the next proposition to other place}
-\begin{definition}  Given a n-bounded net $N$, an enriched prefix $E = (N_E,
-\chi_E)$ of its full unfolding is called \emph{complete} if for every reachable
-marking $m$ in $N$ we can find a configuration $C$ in $E$ such that
-$\marking{C} = m$.
-\end{definition}
-
-\begin{proposition} \label{pro:unfolding.complete} Let $N$ be a contextual net.
-Then, the full unfolding $\unf{N}$ is complete.
-\end{proposition} 
-
-\begin{lemma}
-\label{lem:cutoff.elimination}
-Consider the full unfolding $\unf{N}$ of a n-bounded contextual net $N$.  If a
-finite configuration $C \in \conf{\unf{N}}$ contains at least one cutoff, then
-there exists another configuration $C'$ such that $\marking{C} = \marking{C'}$
-and $C' \prec C$.
-\end{lemma}
-
-\begin{proof}
-We say that a configuration $C$ \emph{contains} a cutoff if there exists an
-event $e \in C$ such that the enriched event $(e, C\sem{e})$ is a cutoff.
-Notice that, as the full unfolding is a closed prefix and $C$ is a
-configuration, the enriched event $(e, C\sem{e})$ is always contained in it.
-
-Assume that $C$ contains the cutoff $(e, H_e)$, for some $e \in C$.  Then, by
-definition, we know that either $\marking{H_e} = m$ with $m$ the initial
-marking of $N$ or there exists another enriched event $(e', H_{e'})$ such that
-$\marking{H_e} = \marking{H_{e'}}$ and $H_{e'} \prec H_e$.  In both cases,
-we regard the history $H$ defined as $H \bydef{=} \emptyset$ in the first case
-and $H \bydef{=} H_{e'}$ in the second case.  Notice that in any case, $H \prec
-H_e$ (if $H = \emptyset$, then $H \sqsubset H_e$ and, by definition, $H \prec
-H_e$).
-
-As $\marking{H_e} = \marking{H}$, it is possible to find an extension of $H$
-firing exactly the same transitions as those labeling the set $C \setminus
-H_e$.  In other words, it must be possible to find an extension $E$ of $H$
-isomorphic to $C \setminus H_e$, such that $\marking{H_e \cup (C \setminus
-H_e)} = \marking{H \cup E}$.  This follows from the fact that $\unf{N}$ unfolds
-\emph{as much as possible} and can be proved by induction on the size of the
-set $C \setminus H_e$:
-
-\begin{itemize}
-\item{Base}.  $|C \setminus H_e| = 1$.  Assume that $C \setminus H_e =
-\{e'\}$.  As $\marking{H_e} = \marking{H}$, then the transition $t$ labeling
-$e'$ is enabled at $\marking{H}$ and, by the definition of full unfolding,
-there exists an event $e''$ labeled by $t$ such that $H \cup \{e''\}$ is a
-configuration.  Hence, $\{e''\}$ is an extension of $H$ isomorphic to $C
-\setminus H_e$.
-
-\item{Step}.  Assume we can find extensions of $H$ isomorphic to $C \setminus
-H_e$ up to size $n$.  We show that it is also possible for size $n+1$.  Assume
-that $|C \setminus H_e| = n + 1$ and consider any maximal event $e'$ of $C
-\setminus H_e$ w.r.t. the relation $\nearrow$ (it must exists because
-$\nearrow$ is acyclic in $C$).  As $e'$ can fire after any event in $C
-\setminus H_e$, and therefore any event in $C$, we know that $C \setminus
-\{e'\}$ is a configuration and that the set $(C \setminus H_e) \setminus
-\{e'\}$ is an extension of $H_e$ of size $n$.  Then, the induction hypothesis
-applies and says that we can find an extension $E$ of $H$, isomorphic to $(C
-\setminus H_e) \setminus \{e'\}$ such that $\marking{C \setminus \{e'\}} =
-\marking{H \cup E}$.  But now notice that the transition $t$ labeling $e'$ is
-enabled at $\marking{H \cup E}$ and, hence, there exists an event $e''$ labeled
-by $t$ such that $H \cup E \cup \{e''\}$ is a configuration and $E \cup
-\{e''\}$ is an extension of $H$ isomorphic to $C \setminus H_e$.  \end{itemize}
-
-We claim now that $C' \bydef{=} H \cup E$ is the configuration we are searching
-for.  To see this, we just have to verify that $C' \prec C$.  We do it using
-the third condition of \rdef{adequate}.  Indeed, $H_e$ and $H$ are
-configurations with the same marking; by hypothesis $H_e \sqsubset C$ and by
-construction $H \sqsubset H \cup E$ and $E$ is isomorphic to $C \setminus H_e$.
-Hence $H \cup E \prec C$.
-\end{proof}
-
-\begin{theorem} Let $N$ be a n-bounded net.  Then, $\trunc{N}$ is complete.
-\end{theorem}
-
-\begin{proof}
-We know after \rpro{unfolding.complete} that the full unfolding of $N$ is a
-complete enriched prefix.  Therefore, for any marking $M$ of $N$ we can find a
-configuration $C \in \conf{\unf{N}}$ with $\marking{C} = M$.  We show now that
-for such configuration $C$ we can find another configuration $C'$ with the same
-marking and free of cutoffs that, consequently, belongs to $\trunc{N}$.
-
-Let $C \in \conf{\unf{N}}$ be a configuration of the full unfolding.  If $C$ is
-free of cutoffs, then all enriched events $(e, C\sem{e})$ are enriched events
-of $\trunc{N}$ and therefore $C$ is a configuration of $\trunc{N}$.
-
-So, let us assume that $C$ contains a cutoff. By \rlem{cutoff.elimination} we
-can find another configuration $C_1 \in \conf{\unf{N}}$ with $\marking{C} =
-\marking{C_1}$ and $C_1 \prec C$.  If $C_1$ still contains cutoffs, we can
-apply again \rlem{cutoff.elimination} and find another configuration $C_2 \prec
-C_1$ with $\marking{C_2} = \marking{C}$.  Furthermore, as $\prec$ is well
-founded, the number of times we have to apply \rlem{cutoff.elimination} in
-order to find a configuration $C_n$ free of cutoffs is finite,  otherwise we
-would either have an infinite decreasing sequence of configurations w.r.t. the
-order $\prec$, or a counterexample for \rlem{cutoff.elimination}.
-\end{proof}
-
-
-\newpage
-\section{Update procedure for the \pe{} set}
-
-We consider a contextual 1-safe Petri net $N = (P, T, F, C, m_0)$ (definition
-omitted; $F \subseteq P \times T \cup P \times T$ is the \emph{flow relation}
-while $C \subseteq P \times T$ is the \emph{context relation}) and its
-\emph{full} unfolding $\unf{N} = (P', T', F', C', m_0')$.  Conditions in $P'$
-are labeled with places in $P$, and events in $T'$ are labeled with transitions
-in $T$.  We write $y = \origin{n}$ if place (resp. transition) $y$ labels
-condition (resp. event) $n$.  As usual, we write $\pre{x}$, $\post{x}$ and
-$\cont{x}$ for the \emph{preset}, \emph{postset} and \emph{context},
-respectively, of some place, transition, condition or event $x \in P \cup T
-\cup P' \cup T'$.
-
-\paragraph{History graph} Let $e \in T'$ be an event of $\unf{N}$.  A
-\emph{history of $e$} is a set $H_e \subseteq T'$ verifying some particular
-constraints (definition omitted).  For any history $H_e$ we have that $e \in
-H_e$, and we write $\event{H_e}$ to to denote the maximal event of $H_e$ w.r.t.
-the \emph{asymmetric conflict} relation $\nearrow$ (it is easy to see that this
-event is always $e$).  We extend the definition of $\event$ to sets of
-histories in the natural way.  We denote by $\hist{e}$ the set of histories of
-$e$ \emph{currently present in the computed prefix of the unfolding}.  The
-definition of $\hist{e}$ is also extended to subsets of $T'$.
-
-Storage of the histories associated to every event is done thanks to a directed
-graph, so called the \emph{history graph}.  Each node of the graph (indirectly)
-represents one history.  Nodes are labeled with events, in such a way that a
-node representing some history of $e$ is labeled with $e$.  Different graph
-nodes can be labeled with the same event, provided they represent different
-histories for that event.
+Let us set some additional definitions. First, given an enriched prefix $\enr N
+= \langle \pref N, \chi \rangle$, we set that a configuration $C$ of $\enr N$
+is any configuration $C \in \conf{\pref N}$ that verifies $C \sem e \in \chi
+(e)$ for all $e \in C$.  The set of configurations of $\enr N$ is denoted by
+$\conf{\enr N}$.  Second, we consider by extension that $\unf N$ \emph{is} the
+enriched prefix $\langle \unf N, \chi \rangle$ such that $\chi (e) = \hist{e}$
+for $e \in T'$.  Finally, we say that $\langle e, H_e \rangle$ is an enriched
+event \emph{of} a given enriched prefix $\langle \pref N, \chi \rangle$ if $e$
+is an event of $\pref N$ and $H_e \in \chi (e)$.  We let variable $\varepsilon$
+to range enriched events of any other enriched prefix.  Now we can define a
+suitable generalization of cutoffs for contextual nets.
 
 \begin{definition}
-
-A \emph{history graph} is a graph $\h = (V, E)$ whose set of vertices $V$
-coincides with the set of histories present in the unfolding, formally $V =
-\hist{T'}$, and whose set of edges $E \subseteq V \times V$ is the smallest set
-verifying the next inference rule:
-
-\begin{center}
-\infer{(H_e, H) \in E$ for any $H \in P \cup C}
-	{P, C \subseteq V &
-	\event{P} = \pre{\pre{e}} \cup \pre{\cont{e}} &
-	\event{C} \subseteq \cont{\pre{e}} &
-	\forall H_{e'} H_{e''} \in P \cup C, \ e' \neq e'' \land \neg (H_{e'} \# H_{e''})
-	}
-\end{center}
-
+An enriched event $\langle e, H_e \rangle$ of $\unf N$ is called \emph{cutoff}
+if either $\marking{H_e} = m_0$, the initial marking of $N$, or there exists
+another enriched event $\langle e', H_{e'} \rangle$ of $\unf N$ verifying
+$\marking{H_e} = \marking{H_{e'}}$ and $|H_e| < |H_{e'}|$.
 \end{definition}
 
-%Let $H_e \in V$ be some node representing a history for an event $e$.  Let $P
-%\subseteq V$ and $C \subseteq V$ be two sets of nodes such that (1) $\event{P}
-%= \pre{\pre{e}} \cup \pre{\cont{e}}$ and $\event{C} \subseteq \cont{\pre{e}}$,
-%and (2) for each pair of histories $H_{e'}$, $H_{e''} \in P \cup C$ we have $e'
-%\neq e''$ and $\neg (H_{e'} \# H_{e''})$.  Then $(H_e, H) \in E$ for any $H \in P \cup
-%C$.
+\rfig{a.complete} illustrates two enriched prefixes of the full unfolding of
+\rfig{a.1safe} (a).  Histories associated to each event are depicted as sets
+near the event.  The pair $\langle e_3, \{e_1, e_3\} \rangle$ is a enriched
+event of (b), while it is not an enriched event of (a).  Regarding the enriched
+prefix (b), imagine we remove history $\{e_1, e_2\}$ from $\chi (e_2)$.  The
+resulting prefix would not conform the definition of enriched prefix, since,
+setting $H = \{e_1, e_2, e_3\}$, we would have that $H \in \chi (e_3)$ and $e_2
+\in H$ and not $H \sem{e_2} \in \chi (e_2)$, violating the condition stated on
+$\chi$ in the definition of enriched prefix.  Finally, note that the enriched
+prefix (b) is complete, while (a) is not.  Indeed, the marking $\{p_2, p_4\}$
+is reachable in the original net, reachable in (b) through configuration
+$\{e_1, e_2, e_3\}$ but unreachable in (a).  The two enriched events whose
+event is $e'_1$ (depicted in gray in (b)) are cutoffs.  Precisely, enriched
+event $\langle e'_1, \{e_1, e_3, e'_1\} \rangle$ is a cutoff because its
+associated marking is the initial marking $\{p_1, p_2\}$.  Enriched event
+$\langle e'_1, \{e_1, e_2, e_3, e'_1\} \rangle$ is a cutoff because its
+associated marking $\{p_3, p_4\}$ is reachable by means of the smaller history
+$\{e_1, e_2\}$.
 
-\paragraph{Conflict relation between histories}  We define the conflict
-relation between histories as $H_1 \# H_2 $ iff
-\begin{itemize}
-\item $H_1$ or $H_2$ is a cutoff, or 
-\item $H_1$ or $H_2$ is in \pe{}, or
-\item there exists $e_1 \in H_1$ and $e_2 \in H_2 \setminus H_1$ with $e_2
-\nearrow e_1$
-\item there exists $e_2 \in H_2$ and $e_1 \in H_1 \setminus H_2$ with $e_1
-\nearrow e_2$
-\end{itemize}
+\begin{figure}
+\centering{\includegraphics{fig/a-complete.fig}}
+\caption{A complete enriched prefix (b) of \rfig{a.1safe} (a), together with an
+incomplete one (a).}
+\label{fig:a.complete}
+\end{figure}
 
-\paragraph{Procedure \peupdate{}}  The \pe{} set is updated with new histories
-after the addition of each new history $H_e$ to $\unf{N}$.  \Ralg{pe.update} is
-currently used for this task.  This procedure receives as input a new history
-$H_e$ and generates all new histories for events $e'$ such that $e \nearrow
-e'$.  Note that the existence of a new history $H_e$ may trigger the creation
-of new histories for every event $e''$ such that $e \nearrow^* e''$.  Our
-procedure operates step by step, adding new histories just for events $e'$ with
-$e \nearrow e'$.  If new histories appear for $e'$, then the procedure will be
-executed again, recursively triggering the discovery of all new histories
-appearing due to the addition of $H_e$.
+The set of enriched prefixes of the full unfolding $\unf N$ is naturally
+equipped with with an ordering.  Intuitively, enriched prefix $\enr N$ is a
+\emph{prefix} of $\enr{N}'$ if the unfolding algorithm can append enriched
+events to $\enr N$ to reach $\enr{N}'$.  Formally, enriched prefix $\enr N =
+\langle \pref N, \chi \rangle$ is a prefix of $\enr{N}' = \langle \pref{N}',
+\chi' \rangle$, written $\enr N \unlhd \enr{N}'$, iff $\pref N$ is a prefix of
+$\pref{N}'$ and for all events $e$ in $\pref N$  we have $\chi (e) \subseteq
+\chi' (e)$.
 
-Procedure \peupdate{} operates in three steps.  First, we generate histories
-for events $e'$ such that $\cont{e} \cap \pre{e'} \neq \emptyset$ and $\post{e}
-\cap \pre{e'} = \emptyset$.  Clearly, in this situation, $e \nearrow e'$.  Let
-$\hist{e'} = \{H_1, \ldots, H_n\}$ be the set of histories associated to $e'$
-when calling \ralg{pe.update} for $H_e$.  It is easy to see that all histories
-that one can build for $e'$ using the new history $H_e$ are in the set $\{H_1
-\cup H_e, \ldots, H_n \cup H_e\}$.  Procedure \peupdatecont{}, in
-\ralg{pe.update.cont}, filters this set and updates \pe{} with only consistent
-histories from it.  Briefly, there is a new history $H$ for event $e'$ if
-$H_i$, for $1 \le i \le n$, has edges in the graph $\h$ to histories $H_{i,1},
-\ldots, H_{i,m}$, and $\lnot H \# H_{i,j}$, for $1 \le j \le m$, and $H$ doesn't
-consume conditions in the preset or context of $e'$.  If this is the case, then
-the history $H \cup H_i$ is new for $e'$.
-
-It can also be the case that the history $H \cup H_i$ already exists in the
-unfolding \FIXME{search for an example}.  In this case, we just discard the
-history.  We use procedure \pehistdup{} to know when a history has already been
-computed.
-
-Procedure \peupdatepostexisting{} (\ralg{pe.update.post.existing}) searches for
-new histories for events $e'$ such that $\post{e} \cap (\pre{e'} \cup
-\cont{e'}) \neq \emptyset$ and $e'$ is already present in the current state of
-the unfolding.  Such an event $e'$ has a new history if it is possible to find
-a combination of histories for the events generating its preset and context
-that is free of conflicts and includes $H_e$.  More formally, let $\{c_1,
-\ldots, c_n\} = \pre{e'} \cup \cont{e'}$ be the set of conditions defining the
-preset and context of $e'$.  Now assume that $\{e_1, \ldots, e_m\} =
-\pre{\{c_1, \ldots, c_n\}}$ are the events generating $\{c_1, \ldots, c_n\}$.
-Finally, wlog, assume that $e = e_1 = \pre{c_1}$.  Notice that $H_e$ could also
-generate other conditions $c_i$ different from $c_1$.  Then, there exists a new
-history for $e'$ if there exist histories $H_{e_1}, \ldots, H_{e_m}$ for events
-$e_1, \ldots, e_m$ such that $H_{e_1} = H_e$ and for $1 \le i \le m$ and $1 \le
-j < i$ we have that
-
-\begin{itemize}
-\item $H_{e_i}$ does not consume any condition from $c_1, \ldots, c_n$, and
-\item $\lnot H_{e_j} \# H_{e_i}$
-\end{itemize}
-
-In that situation, $e'$ has a new history consisting on the union of all
-$H_{e_i}$ for $1 \le i \le m$ and $\{e'\}$.  Notice that it is possible to
-generate several times the same history \FIXME{search for an example}.  For
-this reason, we use procedure \pehistdup{} to determine if this history already
-exists in the current state of the unfolding, or it is really new.  We only
-append it to the unfolding in the latter case.
-
-Finally, procedure \peupdatepostnew{} (\ralg{pe.update.post.new}) tries to
-append to \pe{} histories for events still not present neither in the unfolding
-nor \pe{}.  For that, it explores the possibility of adding events $e'$ reading
-or consuming conditions in the post-set of $e$, formally $\post{e} \cap
-(\pre{e'} \cup \cont{e'}) \neq \emptyset$.
-
-\FIXME{finish the description and the algorithm}
-
-\begin{algorithm}
-\caption{Procedure \peupdate}
-\label{alg:pe.update}
-
-\begin{algorithmic}
-\REQUIRE $H_e$, the last history appended to $\unf{N}$
-\ENSURE \pe{} is updated with all new histories for events $e'$, with $e
-\nearrow e'$
-
-\STATE \peupdatecont ($H_e$)
-
-\STATE \peupdatepostexisting ($H_e$)
-\STATE \peupdatepostnew ($H_e$, $m$)
-
-\end{algorithmic}
-\end{algorithm}
-
-
-\begin{algorithm}
-\caption{Procedure \peupdatecont}
-\label{alg:pe.update.cont}
-
-\begin{algorithmic}
-\REQUIRE A new history $H_e$
-\ENSURE \pe{} is updated with all new histories for events $e'$, with $\cont{e}
-\cap \pre{e'} \neq \emptyset$ and $\post{e} \cap \pre{e'} = \emptyset$
-
-\FORALL {$e'$ such that $\cont{e} \cap \pre{e'} \neq \emptyset$ and $\post{e}
-\cap \pre{e'} = \emptyset$}
-\FORALL {$H_{e'} \in \hist{e'}$}
-
-\STATE $f \leftarrow $ \TRUE
-\FORALL {$H_{e''}$ such that $(H_{e'}, H_{e''})$ is an edge of $\h$ and $e \neq
-e''$}
-\STATE $f \leftarrow f \land \lnot H_e \# H_{e''}$
-\ENDFOR
-
-\STATE $H \leftarrow H_e \cup H_{e'}$
-\IF{$f$ and not $\text{\pehistdup{}} (H)$}
-\STATE Append to $\h$ a new node $H$, labeled by $e'$
-\STATE Append to $\h$ edges $(H, H_{e''})$ for any $H_{e''}$ such that there
-exists some edge $(H_{e'}, H_{e''})$ already present in $\h$
-\STATE Append to $\h$ the edge $(H, H_e)$
-\STATE Append to \pe{} the new history $H$
-\ENDIF
-
-\ENDFOR
-\ENDFOR
-
-\end{algorithmic}
-\end{algorithm}
-
-\begin{algorithm}
-\caption{Procedure \peupdatepostexisting}
-\label{alg:pe.update.post.existing}
-
-\begin{algorithmic}
-\REQUIRE A new history $H_e$
-\ENSURE \pe{} is updated with all new histories for events $e'$, with $\post{e}
-\cap (\pre{e'} \cup \cont{e'}) \neq \emptyset$ and $e'$ is already present in
-the unfolding.
-
-\FORALL {$e'$ such that $\post{e} \cap (\pre{e'} \cup \cont{e'}) \neq
-\emptyset$}
-
-\STATE $\{c_1, \ldots, c_n\} \leftarrow \pre{e'} \cup \cont{e'}$, assuming that
-$e = \pre{c_1}$
-\STATE $\{e_1, \ldots, e_m\} \leftarrow \pre{\{c_1, \ldots, c_n\}}$, assuming
-that $e = e_1$.
-
-\FORALL {histories $H_{e_1}, \ldots, H_{e_m}$ for events $e_1, \ldots, e_m$
-such that $H_{e_1} = H_e$}
-\STATE $f \leftarrow \TRUE$
-\FOR {$i = 1$ to $m$}
-\STATE $f \leftarrow f \land H_{e_i} \text{ doesn't consume any condition from
-} c_1, \ldots, c_n$
-\FOR {$j = 1$ to $i - 1$}
-\STATE $f \leftarrow f \land \lnot H_{e_j} \# H_{e_i}$
-\ENDFOR
-\ENDFOR
-
-\STATE $H = \{e'\} \cup H_{e_1} \cup \ldots \cup H_{e_m}$
-\IF {$f$ and not $\text{\pehistdup{}} (H)$}
-\STATE Append to $\h$ a new node $H$, labeled by $e'$
-\STATE Append to $\h$ new edges $(H, H_{e_i})$ for $1 \le i \le m$
-\STATE Append to \pe{} the history $H$
-\ENDIF
-\ENDFOR
-\ENDFOR
-
-\end{algorithmic}
-\end{algorithm}
-
-\begin{algorithm}
-\caption{Procedure \peupdatepostnew}
-\label{alg:pe.update.post.new}
-
-\begin{algorithmic}
-\REQUIRE A new history $H_e$
-\ENSURE \pe{} is updated with all new events $e'$ such that $t = \origin{e'}$
-and $(\pre{t} \cup \cont{t}) \cap \origin{\post{e}} \neq \emptyset$ and $e'$
-was still not present in the unfolding.
-
-\STATE \FIXME{}
-
-\end{algorithmic}
-\end{algorithm}
-
-
-\begin{algorithm}
-\caption{Procedure \pehistdup}
-\label{alg:pe.hist.dup}
-
-\begin{algorithmic}
-\REQUIRE A new history $H$ and the event $e$ to which $H$ is associated
-\ENSURE Returns \TRUE{} if the history is already present in the current state
-of the unfolding or \pe{}; otherwise returns \FALSE{}
-
-\IF {$H$ is associated to $e$ and present in the unfolding or in \pe{}}
-\RETURN \TRUE
-\ELSE
-\RETURN \FALSE
-\ENDIF
-
-\end{algorithmic}
-\end{algorithm}
-
-\begin{algorithm}
-\caption{Procedure \peeventdup}
-\label{alg:pe.event.dup}
-
-\begin{algorithmic}
-\REQUIRE A presumably new event $e$
-\ENSURE Returns \TRUE{} the event is a duplicate in the current state of the
-unfolding; \FALSE{} otherwise
-
-\IF {there exists $e'$ in the unfolding or \pe{} such that $\origin{e'} =
-\origin{e}$ and $\pre{e'} = \pre{e}$ and $\cont{e'} = \cont{e}$}
-\RETURN \TRUE
-\ELSE
-\RETURN \FALSE
-\ENDIF
-
-\end{algorithmic}
-\end{algorithm}
-
-\newpage
+At this point, we can properly define the \emph{truncation} of the full
+unfolding, that is, the greatest enriched prefix free of cutoffs, and state its
+finiteness and completeness.
 
 \begin{definition}
-Given two configurations $C_1, C_2 \in \conf{\unf{N}}$, we say that $C_1$ can
-\emph{evolve} to $C_2$, written $C_1 \evolves C_2$, iff $C_1 \subseteq C_2$ and
-for all $e_1 \in C_1$ and all $e_2 \in C_2 \setminus C_1$ we have $\lnot (e_2
-\nearrow e_1)$.
+The \emph{truncation} of the full unfolding, denoted $\trunc N$, is the
+greatest enriched prefix of $\unf N$, w.r.t. the $\unlhd$ ordering, which does
+not contain any enriched event that is a cutoff.
 \end{definition}
-
-\begin{definition}
-Let $C_1, C_2 \in \conf{\unf{N}}$ be two configurations of the full unfolding.
-We say that both configurations are \emph{in conflict}, written $C_1 \# C_2$,
-iff $\lnot (C_1 \evolves C_1 \cup C_2)$ or $\lnot (C_2 \evolves C_1 \cup C_2)$.
-\end{definition}
-
-Another characterization of the conflict relation between configurations is to
-say that $C_1 \# \, C_2$ if and only if there exists $e_1 \in C_1$ and $e_2 \in
-C_2 \setminus C_1$ with $e_2 \nearrow e_1$ or the symmetric condition holds.
-We will make extensive use of this equivalence in the sequel.
-
-\begin{definition}
-Let $C$ be a configuration of the full unfolding $\unf{N} = (S', T', F', C',
-m')$.  We define the \emph{cut} of $C$ as $$\cut{C} \: = \: m \: \cup \:
-\bigcup_{e \in C} \post{e} \: \setminus \: \bigcup_{e \in C} \pre{e}$$.
-\end{definition}
-
-\begin{definition}
-Let $\unf{N} = (S', T', F', C', m')$ be the full unfolding of some net $N$.  We
-say that a pair $(H, c)$ is an \emph{enriched condition} if either for some
-event $e \in T'$, we have $H \in \hist{e}$ and $c \in \post{e}$, or $H =
-\emptyset$ and $c \in m'$.  Additionally, we write $\conds{\unf{N}}$ to denote
-the set of enriched conditions of $\unf{N}$, that is, the set of enriched
-conditions $(H_e, c)$ for any $e \in T'$ plus all enriched conditions
-$(\emptyset, c$ for $c \in m'$.
-\end{definition}
-
-Enriched events are defined similarly:
-
-\begin{definition}
-Let $\unf{N} = (S', T', F', C', m')$ be the full unfolding of some net $N$.  We
-say that a pair $(H, e)$ is an \emph{enriched event} if for some event $e \in
-T'$, we have $H \in \hist{e}$.  Additionally, we write $\events{\unf{N}}$ to
-denote the set of enriched events of $\unf{N}$, that is, the set of enriched
-events $(H_e, e)$ for any $e \in T'$.
-\end{definition}
-
-We will let $\varepsilon$ to range over enriched events and $\rho, \sigma,
-\ldots$ to range over enriched conditions.  If $\varepsilon = (H, e)$, we will
-write $\varepsilon^H$ to denote $H$ and $\varepsilon^e$ to denote $e$.  In a
-similar way, if $\rho = (H, c)$, we will write $\rho^H$ to denote $H$ and
-$\rho^c$ to denote $c$.
-
-\FIXME{Define (and comment) $H \sem c$ as $\emptyset$ if $\pre c = \emptyset$
-or as $H \sem e$ if $\{e\} = \pre c$.}  We extend now the notation for preset,
-postset and context of events and conditions to enriched events and enriched
-conditions.
-
-\begin{definition}
-Let $\unf N = (S', T', F', C', m')$ be the full unfolding of some net $N$.  We
-define the \emph{preset}, \emph{postset} and \emph{context} of an enriched
-event $(H_e, e) \in \events{\unf N}$ and an enriched condition $(H_e, c) \in
-\conds{\unf N}$:
-
-\begin{align*}
-\post{(H, e)} & \; \bydef = \; \{ (H, c) \in \conds{\unf N} \mid c \in \post e
-\} \\
-\pre{(H, e)} & \; \bydef = \; \{ (H', c) \in \conds{\unf N} \mid c \in \pre e
-\land H' = H \sem c \} \\
-\cont{(H, e)} & \; \bydef = \; \{ (H', c) \in \conds{\unf N} \mid c \in \cont e
-\land H' = H \sem c \} \\
-\post{(H, c)} & \; \bydef = \; \{ (H', e) \in \events{\unf N} \mid (H, c) \in
-\pre{(H', e)} \} \\
-\pre{(H, c)} & \; \bydef = \; \{ (H, e) \in \events{\unf N} \mid e \in \pre c
-\} \\
-\cont{(H, c)} & \; \bydef = \; \{ (H', e) \in \events{\unf N} \mid (H, c) \in
-\cont{(H', e)} \} \\
-\end{align*}
-\end{definition}
-
-We are now ready to define the concurrency relation between enriched
-conditions.
-
-\begin{definition}
-The \emph{concurrency relation} $\mathord\parallel \subseteq \conds{\unf N} \times
-\conds{\unf N}$ between extended conditions is defined as: $$ (H, c) \parallel
-(H', c') \iff \lnot (H \confl H') \land \{c, c'\} \subseteq \cut{H \cup H'}$$
-\end{definition}
-
-For the sake of simplicity in the following developments, we characterize the
-concurrency relation in terms of \FIXME{...}
-
-\begin{remark}
-\label{rmk:the.statement}
-The statement $(H, c) \parallel (H', c')$ is equivalent to the conjunction of
-the next four statements:
-\begin{enumerate}
-\item $\lnot (\exists e_1 \in H,\, \exists e_2 \in H' \setminus H,\, e_2
-\nearrow e_1)$
-\item $\lnot (\exists e_1 \in H',\, \exists e_2 \in H \setminus H',\, e_2
-\nearrow e_1)$
-\item $\lnot (\exists e_1 \in H,\, c' \in \pre{e_1})$
-\item $\lnot (\exists e_1 \in H',\, c \in \pre{e_1})$
-\end{enumerate}
-\end{remark}
-
-In other words, \rrmk{the.statement} establishes that $(H, c) \parallel (H',
-c')$ if and only if $H$ can evolve to $H \cup H'$ (1), $H'$ can evolve to $H
-\cup H'$ (2) and none of any histories consumes the condition generated by the
-other history (3 and 4).  Note that the conjunction of conditions 1 and 2 is
-equivalent to $\lnot (H \confl H')$ while the conjunction of conditions 3 and 4
-is equivalent to $c, c' \in \cut{H \cup H'}$.
-
-\begin{lemma}
-\label{lem:let.H}
-Let $H, H' \in \hist{e}$ be two histories of some event $e$.  If $H \not= H'$,
-then $H \confl H'$.
-\end{lemma}
-
-\begin{proof}
-\FIXME{Are we using this lemma? Copy from the notebook!}
-\end{proof}
-
-\begin{lemma}
-\label{lem:two.histories}
-Let $H, H'$ be two histories with $H' \prec H$, $e = \event{H}$ and $e \in H'$.
-Then $H \confl H'$.
-\end{lemma}
-
-\begin{proof}
-We claim that $H \not\sqsubseteq H'$.  Indeed, if it were the case that $H
-\sqsubseteq H'$, and provided that $\prec$ is antisymmetric, we would have $H
-\prec H'$, a contradiction to the hypothesis $H' \prec H$.  So $H
-\not\sqsubseteq H'$ holds.  Making use of \FIXME{def $\sqsubseteq$}, one can
-write the next equivalence: $$H \not\sqsubseteq H' \iff H \not\subseteq H' \lor
-\exists e_1 \in H,\, \exists e_2 \in H' \setminus H,\, e_2 \nearrow e_1$$  As
-$H \not\sqsubseteq H'$ holds, the right-hand side also holds.  We show that
-both sides of the disjunction in the right-hand size implies $H \confl H'$.
-
-Clearly, $\exists e_1 \in H,\, \exists e_2 \in H' \setminus H,\, e_2 \nearrow
-e_1$ implies $H \confl H'$.  On the other hand, $H \not\subseteq H'$ implies
-that we can find some event $e'' \in H \setminus H'$.  Now notice that, as $e''
-\in H$, it holds that $e'' \nearrow^*_H e$.  Event $e$ and $e''$ must be
-different because $e \in H'$ by hypothesis and $e'' \notin H'$.  Consequently
-it also holds that $e'' \nearrow^+_H e$.  This means that we can find a finite
-number of events $e_1, \ldots, e_n \in H$ with $e'' = e_1 \nearrow e_2 \nearrow
-\ldots \nearrow e_n = e$.  It is easy to see that there must exist some pair of
-events $e_l, e_{l+1}$ for some $1 \le l < k$ with $e_l \in H \setminus H'$ and
-$e_{l+1} \in H'$.  By construction, $e_l \nearrow e_{l+1}$ and hence $H \confl
-H'$.
-\end{proof}
-
-
-\FIXME{Give motivation to state this theorem}
 
 \begin{theorem}
-Let $\rho = (H, c)$, $\rho' = (H', c')$ be two different enriched conditions
-such that $\event{H} = e$, $\event{H'} = e'$ and $H' \prec H$ for an adequate
-order $\prec$.  Then, we have that $$\rho \parallel \rho' \iff
-\bigwedge_{\rho_i \in \pre{\pre\rho}} \rho_i \parallel \rho' \; \land \;
-\bigwedge_{\sigma_j \in \cont{\pre\rho}} \sigma_j \parallel \rho' \; \land \;
-(\rho' \notin \pre{\pre \rho}) \; \land \; \lnot \exists e'' \in H' \setminus
-H,\, \cont{e''} \cap \pre e \not= \emptyset$$
+$\trunc N$ has a finite number of enriched events and is complete.
 \end{theorem}
 
-\begin{proof}
-Let $\pre{\pre\rho} = \{\rho_1, \ldots, \rho_n\}$ and $\cont{\pre\rho} =
-\{\sigma_1, \ldots, \sigma_m\}$.  We let variable $\rho_i = (H_i, c_i)$ to
-range the set $\pre{\pre \rho}$ and variable $\sigma_j = (H_j, c_j)$ to range
-the set $\cont{\pre \rho}$, with $1 \le i \le n$ and $1 \le j \le m$.  For any
-$\rho_i$ and $\sigma_j$, we let $e_i = \event{H_i}$ and $e_j = \event{H_j}$.
-Note also that, by definition, $H_i = H\sem{e_i} = H\sem{c_i}$ and that $H_j =
-H\sem{e_j} = H\sem{c_j}$.  It is easy also to see that for any pair $\rho_1,
-\rho_2 \in \pre{\pre\rho} \cup \cont{\pre\rho}$ we have $\rho_1 \parallel
-\rho_2$.  Finally note that, also by construction, $H = \{e\} \cup
-\bigcup_{\rho_i \in \pre{\pre\rho}} \rho^H_i \cup \bigcup_{\sigma_j \in
-\cont{\pre\rho}} \sigma^H_j$.
+\begin{proof} (Sketch, see theorems 1 and 2 of \FIXME{baldan}.)
+By assumption, $N$ is finite and 1-safe net, and has finite reachable markings.
+\FIXME{Observe} that the number of configurations of $\trunc N$ must be finite,
+since if it were infinite, considering the fact that every configuration is
+associated to one marking in $N$, we would have infinite cutoffs in $\trunc N$,
+a contradiction.  As the number of configurations is finite, the number of
+enriched events must be finite.
 
-We prove in the sequel both directions of the co-implication. \FIXME{Give
-outline of the proof}
-
-\begin{enumerate}[(a)]
-\item $\rho \parallel \rho' \implies \bigwedge_{\rho_i \in \pre{\pre
-\rho}} \rho_i \parallel \rho'$  It is enough to prove that $\rho \parallel
-\rho' \implies \rho_i \parallel \rho'$ for \emph{some} $\rho_i$.  As we do not
-make any assumption on $\rho_i$, the proof will be valid for \emph{all}
-$\rho_i$.
-
-Assume that $\rho \parallel \rho'$ and that, for a proof by contradiction,
-$\lnot (\rho_i \parallel \rho')$ for some $\rho_i \in \pre{\pre\rho}$.  Then we
-know that at least one of the four statements in \rrmk{the.statement} must be
-false when regarding $\rho_i$ and $\rho'$.  We proceed by cases:
-
-\begin{enumerate}[1.]
-\item Assume that there exist events $e_1 \in H_i$ and $e_2 \in H' \setminus
-H_i$ with $e_2 \nearrow e_1$.  Two cases are possible: either $e_2 \in H$ or
-$e_2 \notin H$.  If $e_2 \notin H$, as $H_i \subseteq H$, we have that $e_1 \in
-H$, $e_2 \in H' \setminus H$ and $e_2 \nearrow e_1$, which implies $H \confl
-H'$.  This is a contradiction to $\rho \parallel \rho'$.  So, let us assume
-that $e_2 \in H$.  As $H = \{e\} \cup \bigcup_{\rho_i \in \pre{\pre\rho}}
-\rho^H_i \cup \bigcup_{\rho_j \in \cont{\pre \rho}} \rho^H_j$, several
-sub-cases are possible:
-
-\begin{itemize}
-\item $e_2 \in \rho^H_{i'}$ for some $\rho_{i'} \in \pre{\pre\rho}$ with $i'
-\not= i$.  Again, we have $e_1 \in H_i$, $e_2 \in \rho^H_{i'} \setminus H_i$
-and $e_2 \nearrow e_1$.  This implies $\rho^H_{i'} \confl H_i$, which is a
-contradiction to $\rho_i \parallel \rho_{i'}$.
-
-\item $e_2 \in \sigma^H_j$ for some $\sigma_j \in \cont{\pre\rho}$.  Likewise,
-we have $e_1 \in H_i$, $e_2 \in \sigma^H_j \setminus H_i$, $e_2 \nearrow e_1$
-and $\sigma^H_j \confl H_i$, which is a contradiction to $\rho_i \parallel
-\sigma_j$.
-
-\item $e_2 = e$.  By definition \FIXME{history} we have $e_1 \nearrow^*_{H_i}
-e_i$ (recall that $e_i = \event{H_i}$).  By construction of $H$, we have $e_i
-\nearrow e$.  By hypothesis, we have $e_2 = e$ and also by hypothesis we have
-$e_2 \nearrow e_1$.  This leads to the cycle $e_1 \nearrow^*_{H_i} e_i \nearrow
-e = e_2 \nearrow e_1$ in the asymmetric conflict relation.  Now notice that
-$e_1, e_i, e \in H$, and that $H_i \subseteq H$.  Therefore, we have a loop in
-the asymmetric conflict relation restricted to the history $H$, which is a
-contradiction to the fact that $H$ is a history.
-\end{itemize}
-
-\item Assume that there exist $e_1 \in H'$ and $e_2 \in H_i \setminus H'$ with
-$e_2 \nearrow e_1$.  Then, as $H_i \subseteq H$, we have that $e_2 \in H
-\setminus H'$.  This together with $e_1 \in H'$ and $e_2 \nearrow e_1$ implies
-$H \confl H'$, which is a contradiction to $\rho \parallel \rho'$.
-
-\item Assume that there exists $e_1 \in H_i$ such that $c' \in \pre{e_1}$.
-Intuitively, this means that $H_i$ consumes $c'$.  As $H_i \subseteq H$, also
-$H$ consumes $c'$, which leads to a contradiction of $\rho \parallel \rho'$.
-
-\item Assume that there exists $e_1 \in H'$ such that $c_i \in \pre{e_1}$.  We
-have two cases, either $e_1 = e$ or $e_1 \not= e$.  If we assume that $e_1
-\not= e$, then we have that $\pre e \cap \pre{e_1} \not= \emptyset$.  This
-implies that $e \nearrow e_1$ and that $e_1 \nearrow e$.  In turn, it implies
-that $e_1 \notin H$ (otherwise we would have a loop in the relation $\nearrow$
-restricted to $H$).  So assuming that $e_1 \not= e$ would lead to conclude that
-$e_1 \in H' \setminus H$ and that $e_1 \nearrow e$, with $e \in H$, which
-implies that $H \confl H'$, a contradiction to $\rho \parallel \rho'$.
-
-Therefore, let us assume that $e_1 = e$ and, consequently, that $e \in H'$.
-As, by hypothesis $H' \prec H$, we can apply \rlem{two.histories} and conclude
-that $H \confl H'$, a contradiction to $\rho \parallel \rho'$.
-\end{enumerate}
-
-\item $\rho \parallel \rho' \implies \bigwedge_{\sigma_j \in \cont{\pre\rho}}
-\sigma_j \parallel \rho'$  As in (a), it is still enough to prove that the
-statement holds for just one $\sigma_j$.  In particular, we will prove that
-$\rho \parallel \rho' \implies \sigma_j \parallel \rho'$ for some $\rho_j \in
-\cont{\pre\rho}$.  As we make no assumption about $\sigma_j$, the argument will be
-valid for \emph{all} $\sigma_j$.
-
-We reason by contradiction.  Assume that both $\rho \parallel \rho'$ and $\lnot
-(\sigma_j \parallel \rho')$ hold, for some $\sigma_j \in \cont{\pre\rho}$.  As
-$\lnot (\sigma_j \parallel \rho')$, we know that at least one of the four
-statements in \rrmk{the.statement} must not hold.  In the following, we see
-that we can find a contradiction in each case.
-
-\begin{enumerate}[1.]
-\item Assume that there exist events $e_1 \in H_j$ and $e_2 \in H' \setminus
-H_j$ with $e_2 \nearrow e_1$.  As in (a.1), two cases are possible: either $e_2
-\in H$ or $e_2 \notin H$.  If $e_2 \notin H$, as $H_j \subseteq H$, we have
-that $e_1 \in H$, $e_2 \in H' \setminus H$ and $e_2 \nearrow e_1$, which
-implies $H \confl H'$.  This is a contradiction to $\rho \parallel \rho'$.  So,
-let us assume that $e_2 \in H$.  As $H = \{e\} \cup \bigcup_{\rho_i \in
-\pre{\pre\rho}} \rho^H_i \cup \bigcup_{\sigma_j \in \cont{\pre \rho}}
-\sigma^H_j$, several sub-cases are possible:
-
-\begin{enumerate}
-\item $e_2 \in \sigma^H_{j'}$ for some $\sigma_{j'} \in \cont{\pre\rho}$ with
-$j' \not= j$.  Again, we have $e_1 \in H_j$, $e_2 \in \sigma^H_{j'} \setminus
-H_j$ and $e_2 \nearrow e_1$.  This implies $\sigma^H_{j'} \confl H_j$, which is
-a contradiction to $\sigma_j \parallel \sigma_{j'}$.
-
-\item $e_2 \in \rho^H_i$ for some $\rho_i \in \pre{\pre\rho}$.  Likewise, we
-have $e_1 \in H_j$, $e_2 \in \rho^H_i \setminus H_j$, $e_2 \nearrow e_1$ and
-$\rho^H_i \confl H_j$, which is a contradiction to $\sigma_j \parallel \rho_i$.
-
-\item $e_2 = e$.  Recall that $e_j = \event{H_j}$.  By definition
-\FIXME{history} we have $e_1 \nearrow^*_{H_j} e_j$.  By construction of $H$, we
-have $e_j \nearrow e$.  By hypothesis, we have $e_2 = e$ and also by hypothesis
-we have $e_2 \nearrow e_1$.  This leads to the cycle $e_1 \nearrow^*_{H_j} e_j
-\nearrow e = e_2 \nearrow e_1$ in the asymmetric conflict relation.  Now notice
-that $e_1, e_j, e \in H$, and that $H_j \subseteq H$.  Therefore, we have a
-loop in the asymmetric conflict relation restricted to the history $H$, which
-is a contradiction to the fact that $H$ is a history.
-\end{enumerate}
-
-\item Assume that there exist $e_1 \in H'$ and $e_2 \in H_j \setminus H'$ with
-$e_2 \nearrow e_1$.  The same argument as in (a.2) is still applicable here,
-changing $H_i$ by $H_j$.
-
-\item Assume that there exists $e_1 \in H_j$ such that $c' \in \pre{e_1}$.
-Same argument as in (a.3), substituting $H_i$ by $H_j$.
-
-\item Assume that there exists $e_1 \in H'$ such that $c_j \in \pre{e_1}$.  We
-then know that $\cont{e} \cap \pre{e_1} \not= \emptyset$.  \FIXME{As we deal
-with nets in which for any event $e''$ it is not the case that $\cont{e''} \cap
-\pre{e''} \not= \emptyset$, we have to assume that $e \not= e_1$.} Notice also
-that $e \nearrow e_1$.  We claim now that $e \in H'$.  By contradiction, if it
-were the case that $e \notin H'$, we would have that $e \in H \setminus H'$,
-$e_1 \in H'$ and $e \nearrow e_1$, and consequently $H \confl H'$.
-
-Therefore we know that $e \in H'$.  By hypothesis we also know that $H' \prec
-H$.  Under this assumptions we can apply \rlem{two.histories} and conclude that
-$H \confl H'$, a contradiction to $\rho \parallel H'$.
-\end{enumerate}
-
-\item $\rho \parallel \rho' \implies \rho' \notin \pre{\pre\rho}$  It is easy
-to see that it cannot be the case that $\rho' \in \pre{\pre\rho}$ holds if we
-assume $\rho \parallel \rho'$.  Indeed, if $\rho' \in \pre{\pre\rho}$ we have
-that $\rho' = \rho_i = (H_i, c_i)$ for some $\rho_i \in \pre{\pre\rho}$.  But
-notice that event $c_i \in \pre e$, that is, event $e$ consumes $c_i$.  This
-implies that the third statement of \rrmk{the.statement} doesn't hold with
-regard to $\rho$ and $\rho'$ and we have $\lnot (\rho \parallel \rho')$, a
-contradiction.
-
-\item $\rho \parallel \rho' \implies \lnot \exists e'' \in H' \setminus
-H,\, \cont{e''} \cap \pre e \not= \emptyset$  Assume, for an argument by
-contradiction, that it is the case that there exists $e'' \in H' \setminus H$
-such that $\cont{e''} \cap \pre e \not= \emptyset$.  In consequence, we have
-$e'' \nearrow e$, with $e \in H$ and $e'' \in H' \setminus H$, which implies $H
-\confl H'$, a contradiction to $\rho \parallel \rho'$.
-
-\item $\rho \parallel \rho' \Longleftarrow \bigwedge_{\rho_i \in \pre{\pre
-\rho}} \rho_i \parallel \rho' \land \bigwedge_{\rho_j \in \cont{\pre \rho}}
-\rho_j \parallel \rho' \land (\rho' \notin \pre{\pre \rho}) \land \lnot \exists
-e'' \in H' \setminus H,\, \cont{e''} \cap \pre e \not= \emptyset$  We prove now
-the opposite direction of the theorem.  We assume the right-hand side of the
-implication and the negation of the left-hand side.  As $\lnot (\rho \parallel
-\rho')$, one of the statements of \rrmk{the.statement} must be false:
-
-\begin{enumerate}[1.]
-\item Assume that there exist events $e_1 \in H$ and $e_2 \in H' \setminus H$
-with $e_2 \nearrow e_1$.  Recall that $H = \{e\} \cup \bigcup_{\rho_i \in
-\pre{\pre\rho}} \rho^H_i \cup \bigcup_{\sigma_j \in \cont{\pre\rho}}
-\sigma^H_j$.  We regard $e_1$ and reason by cases:
-
-\begin{itemize}
-\item Assume that $e_1 \in H_i$ for some $\rho_i \in \pre{\pre\rho}$. As $H_i
-\subseteq H$, we still have $e_2 \in H' \setminus H_i$, and hence $H_i \confl
-H'$, a contradiction to $\rho_i \parallel \rho'$.
-
-\item Assume that $e_1 \in H_j$ for some $\sigma_j \in \cont{\pre\rho}$.  In
-the same, way we can see that $H_j \confl H'$, a contradiction.
-
-\item Finally, assume that $e_1 = e$ and, consequently, $e_2 \nearrow e$.
-\FIXME{Definition $\nearrow$} provides three cases:
-
-\begin{itemize}
-\item Assume that $\pre{e_2} \cap \pre e \not= \emptyset$.  Under this
-assumption, $e_2 \in H'$ clearly consumes $c_i$ for one $\rho_i \in
-\pre{\pre\rho}$, which implies that $\lnot (\rho' \parallel \rho_i)$, a
-contradiction.
-
-\item Assume that $e_2 < e$.  We know that $H$ is a history, and by definition
-contains all events $e'' < e$.  As $e_2$ is one such event, we have $e_2 \in
-H$, which is a contradiction to the assumption $e_2 \in H' \setminus H$.
-
-\item Assume that $\cont{e_2} \cap \pre e \not= \emptyset$.  This is a
-contradiction to the last conjunction in hypothesis of the statement that we
-are proving.
-\end{itemize}
-\end{itemize}
-
-\item Assume that there exist events $e_1 \in H'$ and $e_2 \in H \setminus H'$
-with $e_2 \nearrow e_1$.  Using the same arguments as in (e.1), we can
-immediately discard the cases where $e_2 \in H_i$ for some $\rho_i \in
-\pre{\pre\rho}$ or $e_2 \in H_j$ for some $\sigma_j \in \cont{\pre\rho}$.  We
-assume, hence, that $e_2 = e$.  Definition of \FIXME{$\nearrow$} gives us three
-cases to examine in the relation $e \nearrow e_1$:
-
-\begin{itemize}
-\item Assume that $\pre{e} \cap \pre{e_1} \not= \emptyset$.  Then event $e_1
-\in H'$ consumes $c_i$ for some $\rho_i \in \pre{\pre\rho}$, which leads to the
-contradiction $\lnot (\rho_i \parallel \rho)$.
-
-\item Assume that $e < e_1$.  As $e_1 \in H'$ and $H'$ is a history, we should
-have $e \in H'$, while by hypothesis $e = e_2 \in H \setminus H'$ and hence $e
-\notin H'$.
-
-\item Assume that $\cont e \cap \pre{e_1} \not= \emptyset$.  Then $c_j \in
-\pre{e_1}$ for some $\sigma_j \in \cont{\pre\rho}$.  As $e_1 \in H'$, we have
-that $\lnot (\sigma_j \parallel \rho')$.  This is a contradiction.
-\end{itemize}
-
-\item Assume that there exists $e_1 \in H$ such that $c' \in \pre{e_1}$.  If we
-assume $e_1 \in H_i$ for some $\rho_i \in \pre{\pre\rho}$, we will find the
-contradiction $\lnot (\rho_i \parallel \rho')$.  Similarly, if we assume $e_1
-\in H_j$ for some $\sigma_j \in \cont{\pre\rho}$ we will reach the
-contradiction $\lnot (\sigma_j \parallel \rho')$.  So the only case that we
-examine is when $e_1 = e$.  If $c' \in \pre e$, we have that $c' = c_i$ for
-some $\rho_i \in \pre{\pre\rho}$.  As $|\pre{c''}| = 1$ for any $c''$, we have
-that $\event{H_i} = \event{H'}$.  Intuitively, this means that $H_i$ and $H'$
-are histories for the same event.  Furthermore, they are different by
-hypothesis ($\rho' \notin \pre{\pre\rho}$ is one of the hypothesis).  Under
-this assumptions, we can apply \rlem{let.H} and conclude that $H' \confl H_i$,
-which is a contradiction.
-
-\item Assume that there exists $e_1 \in H'$ such that $c \in \pre{e_1}$.  Then
-$e \in H'$, and $H'$ consumes any $c_i$ for $\rho_i \in \pre{\pre\rho}$, which
-is a contradiction.
-\end{enumerate}
-\end{enumerate}
+It is possible to prove that, for any configuration of $\unf N$ we can find a
+configuration free of cutoffs\footnote{We say that a configuration $C$
+\emph{contains} an enriched event $\langle e, H_e \rangle$ if $e \in C$ and
+$H_e = C \sem e$.}.  That configuration must be present in $\trunc N$.  Since
+$\unf N$ is complete, we can conclude that $\trunc N$ is also complete.
 \end{proof}
+
+\subsection{Challenging aspects of contextual vs Petri net unfoldings}
+
+The main goal of this work is to provide an implementation of the unfolding
+algorithm for contextual nets, as presented in \FIXME{baldan}.  The Mole
+unfolder \FIXME{ref} served as inspiration for the implementation of the
+contextual unfolder, but almost\footnote{Only the routines to read the
+description of the contextual net from a file could be reused, as the
+contextual unfolder uses almost the same input format than Mole.} no code could
+be reused from Mole.  In this section, we justify why our implementation is not
+just an extension of Mole, but a new 4700LOC\footnote{\textit{Lines Of Code}.}
+tool written from scratch, by presenting the challenging aspects that arises
+when unfolding contextual nets instead of Petri Nets.
+
+\begin{figure}
+\centering{\includegraphics{fig/read-arcs.fig}}
+\caption{Read arcs can lead to loops of arbitrary length in the $\nearrow$
+relation.}
+\label{fig:read.arcs}
+\end{figure}
+
+\paragraph{Conflict relation on events.}  A set of events are in
+\emph{conflict} iff no configuration (or run) fires all them together.  Hence,
+determining if a set is a configuration amounts to check that there is no
+subset of events in conflict.  In Petri Net unfoldings, this reduces to a
+number of pairwise checks of events, relying on the fact that the (symmetric)
+conflict relation is \emph{binary}.  In contextual net unfoldings, this is no
+longer the case, as we have to check for a loop of \emph{any length} in the
+(asymmetric) conflict relation.  \rfig{read.arcs} depicts a contextual net that
+is equal to its own unfolding, in which we have the loop $e_1 \nearrow e_2
+\nearrow e_3 \nearrow e_1$.  Events $e_1, e_2$ and $e_3$ are hence in conflict,
+while any set of two events is free of conflict (and conforms a configuration).
+Checking whether a set of events is a configuration is a central task of the
+unfolding algorithm (see \FIXME{PE algorithm}) and can no longer be made by
+checking for binary conflicts, as it is done in Mole.
+
+\paragraph{Management of histories.}  While in the unfolding of a Petri Net,
+each event conceptually represents only one run (or history) of the original
+net, in the unfolding of a contextual net, events correspond to sets of
+different runs in the original net.  As the unfolding algorithm used in this
+work explicitly keeps track of the set of histories associated to each event,
+we need to implement data structures an algorithms to deal with certain
+operations performed on histories (for instance duplicate test, or conflict
+test).  There is no explicit notion (data structure or algorithm) of history in
+Mole that we could reuse or extend.
+
+\paragraph{Concurrency relation on conditions.}  In the unfolding of a Petri
+Net, each pair of conditions is either in \emph{causal} or \emph{concurrent} or
+\emph{conflict} relation \FIXME{ref ERV, pag} but never in two relations at the
+same time.  In a contextual net unfolding, two conditions can be in
+(asymmetric) conflict and still be marked by some marking (be concurrent).
+Conceptually, this \FIXME{imposibilita} the definition of a concurrency
+relation between conditions.  Existence of such relation is successfully
+exploited in Mole to speed up the computation.  For contextual unfoldings, we
+can still define a concurrency relation on \emph{enriched conditions} (see
+\FIXME{section}), but, again, we have to \FIXME{renunciar} to make an extension
+of Mole and rather implement from scratch such relation.
+
+\paragraph{Computational order $\evolves$ and asymmetric conflicts.} Given two
+configurations $C_1, C_2$ we say that $C_1$ \emph{evolves to} $C_2$, and write
+$C_1 \evolves C_2$, iff $C_1 \subseteq C_2$ and $\lnot (e_2 \nearrow e_1)$ for
+all $e_1 \in C_1$ and $e_2 \in C_2 \setminus C_1$.  Intuitively, $C_1$ evolves
+to $C_2$ if events in $C_2 \setminus C_1$ can be appended to the end of any
+run of $C_1$ to build a run of $C_2$.  The contextual unfolder needs to compute
+the relation $\evolves$ between histories each time it extends the unfolding by
+one enriched event.  This requires to explicitly store (a simplified version
+of) the asymmetric conflict relation between events (see \FIXME{section}).  No
+need to store the symmetric conflict relation is present in Mole.
+
+\section{Computing the unfolding}
+
+In the previous section, we defined a finite and complete enriched prefix of
+the full unfolding $\unf N$ of a 1-safe contextual net $N$.  In this section,
+we provide an algorithm to compute a possibly larger enriched prefix $\enr N$
+that is still finite and complete.
+
+\FIXME{ref baldan} provides an abstract algorithm to compute such prefix.  In
+the sequel, we detail the data structures and algorithms used to transform this
+abstract algorithm into a concrete one that can be directly implemented.  Let
+us first introduce the data structure used to store the output enriched prefix.
+The unfolding procedure in \ralg{unfolding.procedure} outputs an enriched
+prefix $\enr N = \langle \pref N, \chi \rangle$, with $\pref N = \langle P',
+T', F', C', m'_0 \rangle$ and $\chi : T' \to 2^{2^{T'}}$, by encoding the flow
+and context relations $F'$ and $C'$ in the data structures used for $P'$ and
+$T'$.  Each event $e$ is represented by means of a tuple $\langle M_p, M_c, t
+\rangle$, with $M_p, M_c \subseteq P'$ and $t \in T$.  Set $M_p$ is the preset
+of $e$, set $M_c$ is the context of $e$ and $t$ is the transition of $N$ to
+which $e$ corresponds.  Each condition $c$ is stored by means of a tuple
+$\langle e, p \rangle$, with $e \in T'$ being an event of $\pref N$ and $p \in
+P$ the place of $N$ to which $c$ corresponds.  Note that the folding morphisms
+$f_P$ and $f_T$ are also encoded in this data structure, \FIXME{and will be
+assumed to be defined for the current prefix as the algorithm advances.}
+Finally, notice that in order to simplify the algorithm, we make use of a
+special event $\bot$ that \textit{produces} the initial marking $m'_0$.  Event
+$\bot$ is not mapped through $f_T$ to $N$ and can be safely removed from $\enr
+N$ after the computation of the algorithm.
+
+\FIXME{Remark that any global cutoff is a local cutoff due to the order we use
+to extract events from $E$.} After reading \ralg{unfolding.procedure}, one sees
+that two procedures remain undefined, namely \peupdate{} and \iscutoff{}.  We
+define \peupdate{} in \rsec{computation.possible}, and \iscutoff{} here.
+Procedure $\iscutoff (e, H)$ takes an enriched event as argument and returns
+true if $\langle e, H \rangle$ is a cutoff, false otherwise.  Precisely,
+$\iscutoff (e, H)$ returns true if it can find an event $e' \in T'$ and $H' \in
+\chi (e')$ such that $\marking{H'} = \marking{H}$ and $|H'| < |H|$, false
+otherwise.  It can be implemented by means of an exhaustive
+search\footnote{Although we didn't implement it like that.  A more elaborated
+version of it can be as follows:  we store a hash table mapping $\marking{H_e}$
+to $\varepsilon = \langle e, H_e \rangle$ for every $\varepsilon$ of $\enr N$.
+\FIXME{continue}.} of such $H'$ in the image of $\chi$.
+
+\begin{algorithm}[b]
+\caption{Unfolding procedure, see the text.}
+\label{alg:unfolding.procedure}
+
+\begin{algorithmic}
+\REQUIRE A 1-safe contextual net $N = \langle P, T, F, C, m_0 \rangle$.
+\ENSURE A finite and complete enriched prefix $\enr N = \langle \pref N, \chi
+\rangle$ of the full unfolding of $N$, with $\pref N = \langle P', T', F', C',
+m'_0 \rangle$ and $\chi : T' \to 2^{2^{T'}}$.
+
+\vspace{1ex}
+\STATE $T' = \{\bot\}$
+\STATE $\chi (\bot) = \{\{\bot\}\}$
+\STATE $m'_0 = \emptyset$
+\STATE $m'_0 = m'_0 \cup \{\langle \bot, p \rangle\}$ for each $p \in m_0$
+\STATE $P' = m'_0$
+
+\STATE $E = \peupdate (\bot, \{\bot\})$
+\WHILE {$E \not = \emptyset$}
+\STATE Remove from $E$ some $\langle e, H \rangle$ minimal w.r.t $|H|$, and
+assume that $e$ is $\langle M_p, M_c, t \rangle$
+\IF{not $\iscutoff (e, H)$}
+\STATE $T' = T' \cup \{e\}$
+\STATE $\chi(e) = \chi(e) \cup \{H\}$
+\STATE $P' = P' \cup \{\langle e, p \rangle\}$ for each $p \in \post t$
+\STATE $E = E \cup \peupdate (e, H)$
+\ENDIF
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Computation of the possible extensions}
+\label{sec:computation.possible}
+
+\ralg{unfolding.procedure} builds $\enr N = \langle \pref N, \chi \rangle$ by
+starting from an empty enriched prefix and appending new enriched events to it,
+one at each iteration of its only loop.  Each enriched event that is a
+candidate to be appended to $\enr N$ at any point in the construction of $\enr
+N$ is called a \emph{possible extension}.  Intuitively, possible extensions are
+enriched events of $\unf N$, currently not present in $\enr N$, that are
+\emph{enabled} at the cut of some configuration of $\enr N$.
+
+%A set of events is called concurrent if all of them belong to the cut of some
+%configuration.
+
+\begin{definition}
+\label{def:possible.extension}
+Given an enriched prefix $\enr N = \langle \pref N, \chi \rangle$ of $\unf N$
+and some enriched event $\varepsilon = \langle e, H_e \rangle$ of $\unf N$ that
+is not an enriched event of $\enr N$, we call $\varepsilon$ a \emph{possible
+extension} of $\enr N$ if $e = \langle M_p, M_c, t \rangle$ and $\pre t = f_P
+(M_p)$ and $\cont t = f_P (M_c)$ and there is a configuration $C \in \conf{\enr
+N}$ verifying $M_p \cup M_c \subseteq \cut C$ and $H_e = (C \cup \{e\}) \sem
+e$.
+
+Additionally, given an enriched event $\varepsilon' = \langle e', H_{e'}
+\rangle$ of $\enr N$, a possible extension $\varepsilon = \langle e, H_e
+\rangle$ of $\enr N$ is said to be \emph{induced by} $\varepsilon'$ if $e'
+\nearrow e$ and $H_{e'} \subseteq H_e$.
+\end{definition}
+
+The set $E$ stores the possible extensions of $\enr N$.  Each new enriched
+event $\varepsilon$ being appended to $\enr N$ appends at least one new
+configuration to $\enr N$, possibly rendering $E$ out of date, as new enriched
+events may now be possible extensions enabled at the cut of such configuration.
+It is easy to see that any such possible extension is induced by $\varepsilon$.
+Procedure \peupdate{} returns the set of possible extensions to $\enr N$
+induced by the enriched event that takes as argument, and it is used to update
+$E$ after the addition of any new enriched event.  Due to the space
+constraints, we present here a declarative definition of \peupdate{}.  \FIXME{A
+version in pseudocode is presented in APPENDIX.}
+
+\begin{figure}[b]
+\centering{\includegraphics{fig/discovery-possible.fig}}
+\caption{(a) Possible extensions induced by $\langle e, H \rangle$. (b)
+Computation of new histories for $e'$.}
+\label{fig:discovery.possible}
+\end{figure}
+
+In order to compute the possible extensions induced by a given enriched event
+$\langle e, H \rangle$, we consider enriched events $\langle e', H' \rangle$
+with $e \nearrow e'$ (see \rfig{discovery.possible} (a)).  For such $e'$, we
+compute a history $H'$ as the union of $\{e'\}$ and a family of histories
+already present in $\enr N$.  That family, denoted by $\mathcal{F}_S$, will be
+a set of histories whose union defines a configuration such that the cut
+associated to that configuration marks the preset and context of $e'$.
+
+More precisely, we enumerate all the tuples $e' = \langle M_p, M_c, t \rangle$
+verifying that $f_P (M_p) = \pre t$, and $f_P (M_c) = \cont t$, and either
+$\cont e \cap M_p \ne \emptyset$ or $\post e \cap (M_p \cup M_c) \ne
+\emptyset$.  For each $e'$, we compute the sets of events $X = \pre{(M_p \cup
+M_c)}$ and $Y = \cont{M_p}$ (see \rfig{discovery.possible} (b)).  Now, we
+enumerate all subsets $S \subseteq Y$, and for each one we compute the set
+$\mathcal{F}_S$, defined as the \emph{only} family of histories of events $X
+\cup S \cup \{e\}$ that verifies $$ \{H\} \subseteq \mathcal{F}_S \subseteq
+\bigcup_{e'' \in X \cup S \cup \{e\}} \chi (e'') \qquad \mbox{and} \qquad
+|\mathcal{F}_S \cap \chi(e'')| = 1 \mbox{ for all } e'' \in X \cup S \cup
+\{e\}$$  In other words, $\mathcal{F}_S$ is a set of histories containing
+history $H$, one history for \emph{every} $e'' \in X$ and one history for
+\emph{some} $e'' \in Y$.  Finally, for each $\mathcal{F}_S$, we generate the
+enriched event $\langle e', H'_S \rangle$, with $$H'_S = \{e'\} \cup
+\bigcup_{H'' \in \mathcal{F}_S} H'' \qquad \mbox{if} \qquad \lnot (H_1 \confl
+H_2) \mbox{ for all } H_1, H_2 \in \mathcal{F}_S \quad \mbox{and} \quad
+\conc{M_p \cup M_c}$$  The fist condition, $\lnot (H_1 \confl H_2)$ for all
+$H_1, H_2$, assures that $H'_S \setminus \{e'\}$ is a configuration.  The
+second condition, $\conc{M_p \cup M_c}$, verifies that $e'$ is enabled at
+$\cut{H'_S \setminus \{e'\}}$, and can be easily computed by checking that no
+history $H'' \in \mathcal{F}_S$ consumes\footnote{We can say that a
+configuration (in particular, a history) \emph{consumes} a condition if any run
+associated to the configuration so does.} any condition of $M_p \cup M_c$.
+
+The abstract presentation of \FIXME{ref Baldan} subtly omitted to specify the
+second condition.  Led by this specification, our first version of the
+contextual unfolder was incorrect.  Only exhaustive testing discovered the bug
+in the \peupdate{} algorithm and led to a modification of the conditions being
+computed by that procedure, resulting in the addition of the test $\conc{M_p
+\cup M_c}$.  
+
+\FIXME{State that this is a contribution, and that the algorithm still
+generates duplicates}
+
+\subsection{Direct asymmetric conflict}
+
+According to \rdef{asymmetric.conflict}, any two events $e, e'$ of an arbitrary
+prefix $\pref N$ that are in causal relation, $e < e'$, are also in asymmetric
+conflict relation, $e \nearrow e'$.  If we were interested in computing and
+storing the $\nearrow$ relation this would become an issue, since $<$ is
+transitive.  Furthermore, the $\nearrow$ relation is currently needed by our
+contextual unfolder in order to compute the conflict relation $\confl$ between
+histories.  We show in the sequel how we can \FIXME{define, store and use} a
+simplified version of the asymmetric conflict relation that provides, for our
+purposes, as much information as $\nearrow$.
+
+\begin{definition}
+\label{def:direct.asymmetric}
+Given events $e$, $e'$ of $\unf N$, we say that $e$ is in \emph{direct
+asymmetric conflict} to $e'$, and write $e \uparrow e'$, iff either
+$\pre e \cap \pre{e'} \ne \emptyset$, or
+$\cont e \cap \pre{e'} \ne \emptyset$, or
+$\post e \cap \pre{e'} \ne \emptyset$ or
+$\post e \cap \cont{e'} \ne \emptyset$
+\end{definition}
+
+\rfig{FIXME} illustrates \rdef{direct.asymmetric}.  For any depicted $e'$, we
+have $e \uparrow e'$.  
+
+For two given events $e$, $e'$, computation of $e
+\uparrow e'$ only iterates through the preset and context of $e$ and $e'$,
+while computing $e \nearrow e'$ can fall into the computation of $e < e'$.
+
+
+ - uparrow es más pequeña que nearrow, esta contenida y es una restriccion
+ - no guarda una relacion transitiva
+ - Podemos probar el lemma:
+
+$C_1 \evolves_{\!\!\!\uparrow} \; C_2$ iff $C_1 \subseteq C_2$ and $\lnot (e_2
+\uparrow e_1)$ for all $e_1 \in C_1$ and $e_2 \in C_2 \setminus C_1$.
+
+\begin{lemma}
+For any pair of configurations $C_1, C_2 \in \conf{\unf N}$, we have $C_1
+\evolves C_2$ iff $C_1 \evolves_{\!\!\!\uparrow} C_2$.
+\end{lemma}
+
+ - grafo $\agr N$, vertices, edges; el grafo puede actualizarse facilmente cada
+   vez que se añade un evento al prefijo
+ - figurita, ejemplo de un desenrollado
+
+
+\subsection{History graph}
+
+Presentación intuitiva y de alto nivel, nada de detalles. Piensa en el tiempo
+que te queda.
+
+ - Purpose: data structure to store the histories for each event
+ - 
+
+\subsection{Exploration order}
+
+
+% - Baldan et al present the algorithm in an abstract way
+% - Contents of the section
+% - Brief explanation of data structures: events + conditions + encoding of fP,
+%   fT, F', C'
+% - Notation. Assume Pref N = P' T' F' C' m'0 is encoded by P', T' and m'0, as
+%   well as functions fP and fT; bottom is a new event not associated to any
+%   transition
+% - Algorithm
+% - \peupdate
+%	- Lemma stating what peupdate does
+%	- We need a way to avoid a systematic enumeration of all the
+%	  configurations of the prefix
+%	- Baldan proposes to define \#; two histories with no conflict
+%	  form a configuration; then you can use that check for configurations
+%	  using the histories of transitions generating Mp and Mc.  It is not
+%	  said in the article that transitions in Mp and Mc have to be in
+%	  the cut of the union of histories.
+%	- Initial implementation of the unfolder was incorrect due to this
+%	  subtlety.  Subsequent test discovered the bug and lead to a
+%	  modification of the criterion to uncover new histories:
+%	- We define enriched conditions and $\parallel$ on them as ...
+%	- Present the algorithms; this is a contribution
+%	- They still generate duplicate enriched events, we have to check for
+%	  it
+% - History graph
+%	[ . check what happens with the duplicates ]
+% 	. purpose
+%	. presentation
+%	. some lemma?
+% - Adequate order
+% 	. why it still works (wrt. the one proposed by Baldan), intuitions
+%	. termination and completeness
+% - Asymmetric conflict relation
+% 	. relation used instead of the asymmetric conflict relation
+%	. why it works (a lemma)
+% - Optimizations
+% 	. $\rho \parallel \rho'$; other lines of research (buscar esquema de
+%	posibles lineas que me hizo una vez)
+
+
+
+
+\section{Implementation issues}
+
+ - Why from scratch
+ - I/O formats
+ - (Particular design of some component, if it's of interest)
+ - Correction and testing
+	. some of the algorithms implement definitions 'as is', without further
+	optimizations
+	. tests performed to validate the tool: isomorphism, reachability
+
+\section{Conclusions and future work}
+
+ - Summary
+ - Still doesn't reach the performance of mole because we didn't have time?
+ - Search for applications
+ - Future work in phd
+ 	- More optimization
+ - Search for applications
+
+% Reservar para un apendice??
+%The \emph{computational order} $\evolves$ between configurations captures the
+%intuition that a configuration $C_1$ can evolve to a configuration $C_2$ if
+%$C_1 \subseteq C_2$ an all events $C_2 \setminus C_1$ can be fired after
+%$C_1$.  More formally, we define that $C_1 \evolves C_2$ holds iff $C_1
+%\subseteq C_2$ and $\lnot (e_2 \nearrow e_1)$ for all $e_1 \in C_1$ and $e_2
+%\in C_2 \setminus C_1$ holds.  Furthermore, two configurations are said to be
+%in \emph{conflict}, written $C_1 \confl C_2$, when either $C_1 \not\evolves
+%C_2$ or $C_2 \not\evolves C_1$.
+
+%Still in \rfig{a.1safe} (b), we have that $\{e_1, e_2\} \evolves \{e_1, e_2,
+%e_3\}$, while $\{e_1, e_3\} \not\evolves \{e_1, e_2, e_3\}$, since $e_2
+%\nearrow e_3$.  Therefore $\{e_1, e_3\} \confl \{e_1, e_2, e_3\}$.
 
 \end{document}
 

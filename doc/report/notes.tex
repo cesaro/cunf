@@ -1,0 +1,1043 @@
+
+%\documentclass[twocolumn]{article}
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{mydefs}
+\usepackage{proof}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\usepackage{figlatex}
+\usepackage{enumerate}
+\usepackage[a4paper]{geometry}
+%\usepackage[right=3.4cm,left=3.4cm]{geometry}
+
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}
+\newtheorem{remark}{Remark}
+
+\newcommand{\event}[1]{\ensuremath{\mathsf{event}(#1)}}
+\newcommand{\hist}[1]{\ensuremath{\mathsf{hist}(#1)}}
+\newcommand{\origin}[1]{\ensuremath{\mathsf{origin}(#1)}}
+\newcommand{\conf}[1]{\ensuremath{\mathsf{Conf}(#1)}}
+\newcommand{\conds}[1]{\ensuremath{\mathsf{Conds}(#1)}}
+\newcommand{\events}[1]{\ensuremath{\mathsf{Events}(#1)}}
+\newcommand{\confl}{\ensuremath{\mathord{\#}}}
+%\newcommand{\conc}[2]{\ensuremath{#1 \parallel #2}}
+
+\newcommand{\h}{\ensuremath{\mathcal{H}}}
+\newcommand{\pe}{{\sc PE}}
+\newcommand{\evolves}{{\sqsubseteq}}
+\newcommand{\peupdate}{{\sc PE-Update}}
+\newcommand{\peupdatecont}{{\sc PE-Update-Context}}
+\newcommand{\peupdatepostexisting}{{\sc PE-Update-Postset-Existing}}
+\newcommand{\peupdatepostnew}{{\sc PE-Update-Postset-New}}
+\newcommand{\pehistdup}{{\sc PE-History-Duplicated}}
+\newcommand{\peeventdup}{{\sc PE-Event-Duplicated}}
+
+\title{\pe{} update procedure}
+\author{César Rodríguez}
+%\date{May 2010}
+
+\begin{document}
+\maketitle
+
+% Introduccion de dos parrafos sobre que es un desenrollado
+% Que es una red contextual
+% Formas de construir el desenrollado de la red contextual
+% Motivacion para construir un desenrollado contextual: es mas pequeño
+% Retos: la computacion de conc(S) es mas compleja, hay cambios fundamentales
+% en el algoritmo de computo; no tiene mucho sentido reutilizar el codigo de la
+% herramienta vieja
+
+\section{Introduction}
+\section{Contextual Petri nets}
+
+\begin{definition} A \emph{contextual Petri net} is a tuple $N = (P, T, F, C,
+m_0)$ \FIXME{...}
+\end{definition}
+
+In this work we consider contextual 1-safe nets.  $N$ is finite, $P$ and $T$ is
+finite :)
+
+\section{Occurrence nets and contextual unfoldings}
+
+\begin{definition} A \emph{contextual occurrence net} is a 1-safe contextual
+Petri net $N = (P, T, F, C, m_0)$ \FIXME{...}
+\end{definition}
+
+\begin{figure}
+%\centering{\includegraphics{fig/FIXME.fig}
+\FIXME{Fig. 4 in McMillan's Complete}
+\caption{Inductive definition of the full unfolding $\unf{N}$}
+\label{fig:inductive.definition}
+\end{figure}
+
+\begin{definition} The \emph{full unfolding} of a contextual \FIXME{bounded,
+check definitions} Petri net $N$, denoted $\unf{N}$, is the contextual
+occurrence net $(P', T', F', C', m'_0)$ defined by the induction rules of
+\rfig{inductive.definition}. \FIXME{}
+\end{definition}
+
+\begin{proposition} The full unfolding $\unf{N}$ of a contextual net $N$ is
+complete. \FIXME{define completeness}
+\end{proposition}
+
+\section{A complete and finite prefix}
+
+\begin{definition} An \emph{enriched occurrence net} is a pair $E = (N, \chi)$
+where $N = (P, T, F, C, m_0)$ is an occurrence net and $\chi : T \to X$
+\FIXME{...}.  An enriched occurrence net is called \emph{closed} if
+\FIXME{...}.
+\end{definition}
+
+\FIXME{Define here configuration of an enriched occurrence net}
+
+\begin{definition} An \emph{enriched event} is a pair $(e, H_e)$, where $e$ is
+\FIXME{...}.
+\end{definition}
+
+\begin{definition} An \emph{enriched prefix} of the unfolding $\unf{N}$ is any
+\emph{closed} enriched occurrence net $E$ such that $N_E$ \FIXME{...}.
+\end{definition}
+
+\begin{definition} Given two enriched prefixes, $E_1 = (N_1, \chi_1)$ and $E_2
+= (N_2, \chi_2)$, we say that $E_1$ is \emph{a prefix} of $E_2$, and write $E_1
+\unlhd E_2$, iff $N_1$ is a prefix of $N_2$ and for all $e \in T_1$ we have
+$\chi_1 (e) \subseteq \chi_2 (e)$.
+\end{definition}
+
+%\begin{lemma} Complete lattice.  \FIXME{We really need it?}
+%\end{lemma}
+
+\FIXME{Define the order $C_1 \sqsubset C_2$}
+
+\subsection{Adequate orders}
+
+\begin{definition} \label{def:adequate} A partial order $\prec$ on the finite
+configurations of the full unfolding is called \emph{adequate} if
+\begin{itemize} \item $\prec$ is well founded, \item $C_1 \sqsubset C_2$
+implies $C_1 \prec C_2$, and \item $\prec$ is preserved by finite extensions,
+that is,  if $C_1 \prec C_2$, and $\marking{C_1} = \marking{C_2}$, and $C_1
+\sqsubset C_1 \cup E$ for some extension $E$, and $C_2 \sqsubset C_2 \cup E'$
+for some extension $E'$ isomorphic to $E$, then $C_1 \cup E \prec C_2 \cup E'$.
+\end{itemize}
+\end{definition}
+
+This definition is more general than the one in \FIXME{make, of course, some
+clarifications here} ERVpaper, as every adequate order according to that
+definition is also an adequate order according to this definition, but not in
+the other way round.
+
+From now on, we fix a partial order $\prec$ on the finite configurations
+$\unf{N}$ for some n-bounded net $N$.
+
+\begin{definition} An enriched event $(E, H_e)$ of the full unfolding $\unf{N}$
+is called \emph{cut-off} if either $\marking{H_e} = m$ with $m$ the initial
+marking of $N$ or there exists another enriched event $(e', H_{e'})$ verifying
+\begin{itemize} \item $\marking{H_e} = \marking{H_{e'}}$, and \item $H_e' \prec
+H_e$ \end{itemize}
+\end{definition}
+
+\begin{definition} The \emph{truncation} $\trunc{N}$ of the full unfolding is
+an enriched occurrence net defined as the greatest enriched prefix (w.r.t to
+the prefix ordering $\unlhd$) of the full unfolding which does not contain
+cut-offs.
+\end{definition}
+
+\begin{theorem} $\trunc{N}$ is finite.
+\end{theorem}
+
+\begin{proof}
+We want to prove that the number of enriched events in $\trunc{N}$ is finite.
+By contradiction, assume this number is infinite. As any history of an enriched
+event is a configuration, and, in particular, a \emph{finite} configuration, we
+also know that the number of finite configurations of $\trunc{N}$ is infinite.
+In the sequel, we see that under these assumptions we can use K\"{o}nig's lemma
+to find an infinite sequence of configurations $C_1, C_2, \ldots$ with $C_i
+\sqsubset C_{i+1}$ and $\marking{C_1} = \marking{C_i}$ for $i \ge 1$, yielding
+to the fact that $C_2$ is a cutoff, which is a contradiction to the definition
+of $\trunc{N}$.
+
+We define a graph $G = (V, E)$ whose set of vertices $V$ is the set of finite
+configurations of $\trunc{N}$ plus the \textit{empty configuration}
+$\emptyset$, and whose set of edges is a subset of the computational order
+relation $\sqsubseteq$:
+
+\begin{itemize}
+\item $V = \conf{\trunc{N}} \cup \{\emptyset\}$ \FIXME{only finite ones!}
+\item $E = \{(C_1, C_2) \in V \times V \mid C_1 \sqsubseteq C_2 \text{ and }
+|C_1| + 1 = |C_2|\}$
+\end{itemize}
+
+We write $C_1 \to C_2$ for $(C_1, C_2) \in E$.  We now prove three properties
+of $G$:
+
+\begin{description}
+\item[] \emph{G has finite degree.}  We show that for any $C_1$ there is only a
+finite number of configurations $C_2$ such that $C_1 \to C_2$.
+
+Consider any pair of configurations $C_1$, $C_2$ with $C_1 \to C_2$.  Then $C_1
+\sqsubseteq C_2$ and $|C_1| + 1 = |C_2|$.  By definition, $C_1 \sqsubseteq C_2$
+implies $C_1 \subseteq C_2$.  Then we can write $C_2 = C_1 \cup \{e\}$ for some
+$e \notin C_1$.  From the fact that $C_1 \sqsubseteq C_2$ we also know that
+$\lnot (e_2 \nearrow e_1)$ for all $e_1 \in C_1$ and all $e_2 \in C_2 \setminus
+C_1$.  In particular $\lnot (e \nearrow e_1)$ for all $e_1 \in C_1$, so $e$ can
+fire after any event $e_1$ of $C_1$.  This, together with the fact that $C_2$
+is a configuration, implies that $\pre{e} \subseteq \cut{C_1}$. From this, it
+follows that $e \in \post{\cut{C_1}}$.
+
+Now notice that $\post{\cut{C_1}}$ is finite, because $C_1$ is finite (by
+definition) and the preset and postset of each event in $\trunc{N}$ is finite.
+So there is, at most, a finite number of \emph{different} events $e \in
+\post{\cut{C_1}}$ and hence a finite number of different sets $C_1 \cup \{e\}$.
+As we saw previously, any $C_2$ such that $C_1 \to C_2$ is one of these $C_1
+\cup \{e\}$ for $e \in \post{\cut{C_1}}$.  Hence, for a given $C_1$, there is
+at most a finite number of different edges $C_1 \to C_2$ in $G$.
+
+\item[] \emph{G is connected.}  We show by induction on the size of a
+configuration $C$ that there exists a path from the empty configuration
+$\emptyset$ to $C$.  In the base case, $|C| = 0$ and consequently $C =
+\emptyset$.  The statement is trivially true.  For the step case, assume that
+we can find a path for configurations of up to size $n$, or more formally, that
+$\emptyset \to^* C$ if $|C| \le n$ and let $C'$ be a configuration of size
+$n+1$.  From $C'$ we can extract a event $e$ maximal w.r.t. the relation
+$\nearrow$.  This is always possible because $C'$ is finite and there is no
+loops in $\nearrow$ restricted to $C'$.  As there exists no other $e' \in C'$
+with $e \nearrow e'$, we can assure that $C' \setminus \{e\}$ is a
+configuration.  Furthermore, it is a configuration of size $n$ for which the
+induction hypothesis applies.  Finally, notice that $C' \setminus \{e\}
+\sqsubseteq C'$, because $C' \setminus \{e\} \subseteq C'$ and the maximality
+of $e$.  Consequently, $C' \setminus \{e\} \to C'$.
+
+\item[] \emph{$G$ has an infinite number of vertices}.  By hypothesis, we know
+that there is an infinite number of finite configurations in $\trunc{N}$.  Each
+finite configuration is a vertex in $G$.
+\end{description}
+
+In the light of these properties, K\"{o}nig's lemma guarantees the existence in
+$G$ of an infinite sequence of configurations $(C_i)_{i \ge 1}$ such that $C_1
+= \emptyset$ and $C_i \to C_{i+1}$.  By hypothesis, $N$ is n-bounded, so the
+number of reachable markings in $N$ is finite.  As each configuration $C_i$ has
+an associated marking $\marking{C_i}$, this implies that from $(C_i)_{i \ge 1}$
+we can extract a infinite subsequence of configurations $C_{i_1}, C_{i_2},
+\ldots$ marked with the same marking, that is, verifying:
+
+\begin{itemize}
+\item (subsequence) $i_j < i_{j+1}$ for $j \ge 1$, and
+\item (same marking) $\marking{C_{i_1}} = \marking{C_{i_j}}$ for $j \ge 2$, and
+\end{itemize}
+
+Consider now the configurations $C_{i_1}$ and $C_{i_2}$.  By construction, we
+know that $C_{i_1} \to^* C_{i_2}$.  This, together with the fact that relation
+$\sqsubseteq$ is transitive, implies that $C_{i_1} \sqsubseteq C_{i_2}$ and by
+\rdef{adequate}, that $C_{i_1} \prec C_{i_2}$.  But, by construction, we know
+that $\marking{C_{i_1}} = \marking{C_{i_2}}$, so $C_{i_2}$ is a cutoff.  This
+is a contradiction to the fact that $\trunc{N}$ is free of cutoffs.
+
+Hence, the number of enriched events in $\trunc{N}$ is finite.
+\end{proof}
+
+%\begin{proof} By contradiction, assume that $\trunc{N}$ is infinite. We can
+%show that there is an infinite computation in $\trunc{N}$ (Konig's lemma and
+%finite preset and postset of every event).  In this computation, consider the
+%infinite sequence of markings reached after the firing of each event. As there
+%is a finite number of markings, one marking is repeated.  Consider now the
+%first repetition.  That enriched event is a cutoff, and it is present in the
+%net, because $\trunc{N}$ is closed.  This is a contradiction.
+%\end{proof}
+
+\FIXME{Move this definition and the next proposition to other place}
+\begin{definition}  Given a n-bounded net $N$, an enriched prefix $E = (N_E,
+\chi_E)$ of its full unfolding is called \emph{complete} if for every reachable
+marking $m$ in $N$ we can find a configuration $C$ in $E$ such that
+$\marking{C} = m$.
+\end{definition}
+
+\begin{proposition} \label{pro:unfolding.complete} Let $N$ be a contextual net.
+Then, the full unfolding $\unf{N}$ is complete.
+\end{proposition} 
+
+\begin{lemma}
+\label{lem:cutoff.elimination}
+Consider the full unfolding $\unf{N}$ of a n-bounded contextual net $N$.  If a
+finite configuration $C \in \conf{\unf{N}}$ contains at least one cutoff, then
+there exists another configuration $C'$ such that $\marking{C} = \marking{C'}$
+and $C' \prec C$.
+\end{lemma}
+
+\begin{proof}
+We say that a configuration $C$ \emph{contains} a cutoff if there exists an
+event $e \in C$ such that the enriched event $(e, C\sem{e})$ is a cutoff.
+Notice that, as the full unfolding is a closed prefix and $C$ is a
+configuration, the enriched event $(e, C\sem{e})$ is always contained in it.
+
+Assume that $C$ contains the cutoff $(e, H_e)$, for some $e \in C$.  Then, by
+definition, we know that either $\marking{H_e} = m$ with $m$ the initial
+marking of $N$ or there exists another enriched event $(e', H_{e'})$ such that
+$\marking{H_e} = \marking{H_{e'}}$ and $H_{e'} \prec H_e$.  In both cases,
+we regard the history $H$ defined as $H \bydef{=} \emptyset$ in the first case
+and $H \bydef{=} H_{e'}$ in the second case.  Notice that in any case, $H \prec
+H_e$ (if $H = \emptyset$, then $H \sqsubset H_e$ and, by definition, $H \prec
+H_e$).
+
+As $\marking{H_e} = \marking{H}$, it is possible to find an extension of $H$
+firing exactly the same transitions as those labeling the set $C \setminus
+H_e$.  In other words, it must be possible to find an extension $E$ of $H$
+isomorphic to $C \setminus H_e$, such that $\marking{H_e \cup (C \setminus
+H_e)} = \marking{H \cup E}$.  This follows from the fact that $\unf{N}$ unfolds
+\emph{as much as possible} and can be proved by induction on the size of the
+set $C \setminus H_e$:
+
+\begin{itemize}
+\item{Base}.  $|C \setminus H_e| = 1$.  Assume that $C \setminus H_e =
+\{e'\}$.  As $\marking{H_e} = \marking{H}$, then the transition $t$ labeling
+$e'$ is enabled at $\marking{H}$ and, by the definition of full unfolding,
+there exists an event $e''$ labeled by $t$ such that $H \cup \{e''\}$ is a
+configuration.  Hence, $\{e''\}$ is an extension of $H$ isomorphic to $C
+\setminus H_e$.
+
+\item{Step}.  Assume we can find extensions of $H$ isomorphic to $C \setminus
+H_e$ up to size $n$.  We show that it is also possible for size $n+1$.  Assume
+that $|C \setminus H_e| = n + 1$ and consider any maximal event $e'$ of $C
+\setminus H_e$ w.r.t. the relation $\nearrow$ (it must exists because
+$\nearrow$ is acyclic in $C$).  As $e'$ can fire after any event in $C
+\setminus H_e$, and therefore any event in $C$, we know that $C \setminus
+\{e'\}$ is a configuration and that the set $(C \setminus H_e) \setminus
+\{e'\}$ is an extension of $H_e$ of size $n$.  Then, the induction hypothesis
+applies and says that we can find an extension $E$ of $H$, isomorphic to $(C
+\setminus H_e) \setminus \{e'\}$ such that $\marking{C \setminus \{e'\}} =
+\marking{H \cup E}$.  But now notice that the transition $t$ labeling $e'$ is
+enabled at $\marking{H \cup E}$ and, hence, there exists an event $e''$ labeled
+by $t$ such that $H \cup E \cup \{e''\}$ is a configuration and $E \cup
+\{e''\}$ is an extension of $H$ isomorphic to $C \setminus H_e$.  \end{itemize}
+
+We claim now that $C' \bydef{=} H \cup E$ is the configuration we are searching
+for.  To see this, we just have to verify that $C' \prec C$.  We do it using
+the third condition of \rdef{adequate}.  Indeed, $H_e$ and $H$ are
+configurations with the same marking; by hypothesis $H_e \sqsubset C$ and by
+construction $H \sqsubset H \cup E$ and $E$ is isomorphic to $C \setminus H_e$.
+Hence $H \cup E \prec C$.
+\end{proof}
+
+\begin{theorem} Let $N$ be a n-bounded net.  Then, $\trunc{N}$ is complete.
+\end{theorem}
+
+\begin{proof}
+We know after \rpro{unfolding.complete} that the full unfolding of $N$ is a
+complete enriched prefix.  Therefore, for any marking $M$ of $N$ we can find a
+configuration $C \in \conf{\unf{N}}$ with $\marking{C} = M$.  We show now that
+for such configuration $C$ we can find another configuration $C'$ with the same
+marking and free of cutoffs that, consequently, belongs to $\trunc{N}$.
+
+Let $C \in \conf{\unf{N}}$ be a configuration of the full unfolding.  If $C$ is
+free of cutoffs, then all enriched events $(e, C\sem{e})$ are enriched events
+of $\trunc{N}$ and therefore $C$ is a configuration of $\trunc{N}$.
+
+So, let us assume that $C$ contains a cutoff. By \rlem{cutoff.elimination} we
+can find another configuration $C_1 \in \conf{\unf{N}}$ with $\marking{C} =
+\marking{C_1}$ and $C_1 \prec C$.  If $C_1$ still contains cutoffs, we can
+apply again \rlem{cutoff.elimination} and find another configuration $C_2 \prec
+C_1$ with $\marking{C_2} = \marking{C}$.  Furthermore, as $\prec$ is well
+founded, the number of times we have to apply \rlem{cutoff.elimination} in
+order to find a configuration $C_n$ free of cutoffs is finite,  otherwise we
+would either have an infinite decreasing sequence of configurations w.r.t. the
+order $\prec$, or a counterexample for \rlem{cutoff.elimination}.
+\end{proof}
+
+
+\newpage
+\section{Update procedure for the \pe{} set}
+
+We consider a contextual 1-safe Petri net $N = (P, T, F, C, m_0)$ (definition
+omitted; $F \subseteq P \times T \cup P \times T$ is the \emph{flow relation}
+while $C \subseteq P \times T$ is the \emph{context relation}) and its
+\emph{full} unfolding $\unf{N} = (P', T', F', C', m_0')$.  Conditions in $P'$
+are labeled with places in $P$, and events in $T'$ are labeled with transitions
+in $T$.  We write $y = \origin{n}$ if place (resp. transition) $y$ labels
+condition (resp. event) $n$.  As usual, we write $\pre{x}$, $\post{x}$ and
+$\cont{x}$ for the \emph{preset}, \emph{postset} and \emph{context},
+respectively, of some place, transition, condition or event $x \in P \cup T
+\cup P' \cup T'$.
+
+\paragraph{History graph} Let $e \in T'$ be an event of $\unf{N}$.  A
+\emph{history of $e$} is a set $H_e \subseteq T'$ verifying some particular
+constraints (definition omitted).  For any history $H_e$ we have that $e \in
+H_e$, and we write $\event{H_e}$ to to denote the maximal event of $H_e$ w.r.t.
+the \emph{asymmetric conflict} relation $\nearrow$ (it is easy to see that this
+event is always $e$).  We extend the definition of $\event$ to sets of
+histories in the natural way.  We denote by $\hist{e}$ the set of histories of
+$e$ \emph{currently present in the computed prefix of the unfolding}.  The
+definition of $\hist{e}$ is also extended to subsets of $T'$.
+
+Storage of the histories associated to every event is done thanks to a directed
+graph, so called the \emph{history graph}.  Each node of the graph (indirectly)
+represents one history.  Nodes are labeled with events, in such a way that a
+node representing some history of $e$ is labeled with $e$.  Different graph
+nodes can be labeled with the same event, provided they represent different
+histories for that event.
+
+\begin{definition}
+
+A \emph{history graph} is a graph $\h = (V, E)$ whose set of vertices $V$
+coincides with the set of histories present in the unfolding, formally $V =
+\hist{T'}$, and whose set of edges $E \subseteq V \times V$ is the smallest set
+verifying the next inference rule:
+
+\begin{center}
+\infer{(H_e, H) \in E$ for any $H \in P \cup C}
+	{P, C \subseteq V &
+	\event{P} = \pre{\pre{e}} \cup \pre{\cont{e}} &
+	\event{C} \subseteq \cont{\pre{e}} &
+	\forall H_{e'} H_{e''} \in P \cup C, \ e' \neq e'' \land \neg (H_{e'} \# H_{e''})
+	}
+\end{center}
+
+\end{definition}
+
+%Let $H_e \in V$ be some node representing a history for an event $e$.  Let $P
+%\subseteq V$ and $C \subseteq V$ be two sets of nodes such that (1) $\event{P}
+%= \pre{\pre{e}} \cup \pre{\cont{e}}$ and $\event{C} \subseteq \cont{\pre{e}}$,
+%and (2) for each pair of histories $H_{e'}$, $H_{e''} \in P \cup C$ we have $e'
+%\neq e''$ and $\neg (H_{e'} \# H_{e''})$.  Then $(H_e, H) \in E$ for any $H \in P \cup
+%C$.
+
+\paragraph{Conflict relation between histories}  We define the conflict
+relation between histories as $H_1 \# H_2 $ iff
+\begin{itemize}
+\item $H_1$ or $H_2$ is a cutoff, or 
+\item $H_1$ or $H_2$ is in \pe{}, or
+\item there exists $e_1 \in H_1$ and $e_2 \in H_2 \setminus H_1$ with $e_2
+\nearrow e_1$
+\item there exists $e_2 \in H_2$ and $e_1 \in H_1 \setminus H_2$ with $e_1
+\nearrow e_2$
+\end{itemize}
+
+\paragraph{Procedure \peupdate{}}  The \pe{} set is updated with new histories
+after the addition of each new history $H_e$ to $\unf{N}$.  \ralg{pe.update} is
+currently used for this task.  This procedure receives as input a new history
+$H_e$ and generates all new histories for events $e'$ such that $e \nearrow
+e'$.  Note that the existence of a new history $H_e$ may trigger the creation
+of new histories for every event $e''$ such that $e \nearrow^* e''$.  Our
+procedure operates step by step, adding new histories just for events $e'$ with
+$e \nearrow e'$.  If new histories appear for $e'$, then the procedure will be
+executed again, recursively triggering the discovery of all new histories
+appearing due to the addition of $H_e$.
+
+Procedure \peupdate{} operates in three steps.  First, we generate histories
+for events $e'$ such that $\cont{e} \cap \pre{e'} \neq \emptyset$ and $\post{e}
+\cap \pre{e'} = \emptyset$.  Clearly, in this situation, $e \nearrow e'$.  Let
+$\hist{e'} = \{H_1, \ldots, H_n\}$ be the set of histories associated to $e'$
+when calling \ralg{pe.update} for $H_e$.  It is easy to see that all histories
+that one can build for $e'$ using the new history $H_e$ are in the set $\{H_1
+\cup H_e, \ldots, H_n \cup H_e\}$.  Procedure \peupdatecont{}, in
+\ralg{pe.update.cont}, filters this set and updates \pe{} with only consistent
+histories from it.  Briefly, there is a new history $H$ for event $e'$ if
+$H_i$, for $1 \le i \le n$, has edges in the graph $\h$ to histories $H_{i,1},
+\ldots, H_{i,m}$, and $\lnot H \# H_{i,j}$, for $1 \le j \le m$, and $H$ doesn't
+consume conditions in the preset or context of $e'$.  If this is the case, then
+the history $H \cup H_i$ is new for $e'$.
+
+It can also be the case that the history $H \cup H_i$ already exists in the
+unfolding \FIXME{search for an example}.  In this case, we just discard the
+history.  We use procedure \pehistdup{} to know when a history has already been
+computed.
+
+Procedure \peupdatepostexisting{} (\ralg{pe.update.post.existing}) searches for
+new histories for events $e'$ such that $\post{e} \cap (\pre{e'} \cup
+\cont{e'}) \neq \emptyset$ and $e'$ is already present in the current state of
+the unfolding.  Such an event $e'$ has a new history if it is possible to find
+a combination of histories for the events generating its preset and context
+that is free of conflicts and includes $H_e$.  More formally, let $\{c_1,
+\ldots, c_n\} = \pre{e'} \cup \cont{e'}$ be the set of conditions defining the
+preset and context of $e'$.  Now assume that $\{e_1, \ldots, e_m\} =
+\pre{\{c_1, \ldots, c_n\}}$ are the events generating $\{c_1, \ldots, c_n\}$.
+Finally, wlog, assume that $e = e_1 = \pre{c_1}$.  Notice that $H_e$ could also
+generate other conditions $c_i$ different from $c_1$.  Then, there exists a new
+history for $e'$ if there exist histories $H_{e_1}, \ldots, H_{e_m}$ for events
+$e_1, \ldots, e_m$ such that $H_{e_1} = H_e$ and for $1 \le i \le m$ and $1 \le
+j < i$ we have that
+
+\begin{itemize}
+\item $H_{e_i}$ does not consume any condition from $c_1, \ldots, c_n$, and
+\item $\lnot H_{e_j} \# H_{e_i}$
+\end{itemize}
+
+In that situation, $e'$ has a new history consisting on the union of all
+$H_{e_i}$ for $1 \le i \le m$ and $\{e'\}$.  Notice that it is possible to
+generate several times the same history \FIXME{search for an example}.  For
+this reason, we use procedure \pehistdup{} to determine if this history already
+exists in the current state of the unfolding, or it is really new.  We only
+append it to the unfolding in the latter case.
+
+Finally, procedure \peupdatepostnew{} (\ralg{pe.update.post.new}) tries to
+append to \pe{} histories for events still not present neither in the unfolding
+nor \pe{}.  For that, it explores the possibility of adding events $e'$ reading
+or consuming conditions in the post-set of $e$, formally $\post{e} \cap
+(\pre{e'} \cup \cont{e'}) \neq \emptyset$.
+
+\FIXME{finish the description and the algorithm}
+
+\begin{algorithm}
+\caption{Procedure \peupdate}
+\label{alg:pe.update}
+
+\begin{algorithmic}
+\REQUIRE $H_e$, the last history appended to $\unf{N}$
+\ENSURE \pe{} is updated with all new histories for events $e'$, with $e
+\nearrow e'$
+
+\STATE \peupdatecont ($H_e$)
+
+\STATE \peupdatepostexisting ($H_e$)
+\STATE \peupdatepostnew ($H_e$, $m$)
+
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+\caption{Procedure \peupdatecont}
+\label{alg:pe.update.cont}
+
+\begin{algorithmic}
+\REQUIRE A new history $H_e$
+\ENSURE \pe{} is updated with all new histories for events $e'$, with $\cont{e}
+\cap \pre{e'} \neq \emptyset$ and $\post{e} \cap \pre{e'} = \emptyset$
+
+\FORALL {$e'$ such that $\cont{e} \cap \pre{e'} \neq \emptyset$ and $\post{e}
+\cap \pre{e'} = \emptyset$}
+\FORALL {$H_{e'} \in \hist{e'}$}
+
+\STATE $f \leftarrow $ \TRUE
+\FORALL {$H_{e''}$ such that $(H_{e'}, H_{e''})$ is an edge of $\h$ and $e \neq
+e''$}
+\STATE $f \leftarrow f \land \lnot H_e \# H_{e''}$
+\ENDFOR
+
+\STATE $H \leftarrow H_e \cup H_{e'}$
+\IF{$f$ and not $\text{\pehistdup{}} (H)$}
+\STATE Append to $\h$ a new node $H$, labeled by $e'$
+\STATE Append to $\h$ edges $(H, H_{e''})$ for any $H_{e''}$ such that there
+exists some edge $(H_{e'}, H_{e''})$ already present in $\h$
+\STATE Append to $\h$ the edge $(H, H_e)$
+\STATE Append to \pe{} the new history $H$
+\ENDIF
+
+\ENDFOR
+\ENDFOR
+
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{Procedure \peupdatepostexisting}
+\label{alg:pe.update.post.existing}
+
+\begin{algorithmic}
+\REQUIRE A new history $H_e$
+\ENSURE \pe{} is updated with all new histories for events $e'$, with $\post{e}
+\cap (\pre{e'} \cup \cont{e'}) \neq \emptyset$ and $e'$ is already present in
+the unfolding.
+
+\FORALL {$e'$ such that $\post{e} \cap (\pre{e'} \cup \cont{e'}) \neq
+\emptyset$}
+
+\STATE $\{c_1, \ldots, c_n\} \leftarrow \pre{e'} \cup \cont{e'}$, assuming that
+$e = \pre{c_1}$
+\STATE $\{e_1, \ldots, e_m\} \leftarrow \pre{\{c_1, \ldots, c_n\}}$, assuming
+that $e = e_1$.
+
+\FORALL {histories $H_{e_1}, \ldots, H_{e_m}$ for events $e_1, \ldots, e_m$
+such that $H_{e_1} = H_e$}
+\STATE $f \leftarrow \TRUE$
+\FOR {$i = 1$ to $m$}
+\STATE $f \leftarrow f \land H_{e_i} \text{ doesn't consume any condition from
+} c_1, \ldots, c_n$
+\FOR {$j = 1$ to $i - 1$}
+\STATE $f \leftarrow f \land \lnot H_{e_j} \# H_{e_i}$
+\ENDFOR
+\ENDFOR
+
+\STATE $H = \{e'\} \cup H_{e_1} \cup \ldots \cup H_{e_m}$
+\IF {$f$ and not $\text{\pehistdup{}} (H)$}
+\STATE Append to $\h$ a new node $H$, labeled by $e'$
+\STATE Append to $\h$ new edges $(H, H_{e_i})$ for $1 \le i \le m$
+\STATE Append to \pe{} the history $H$
+\ENDIF
+\ENDFOR
+\ENDFOR
+
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{Procedure \peupdatepostnew}
+\label{alg:pe.update.post.new}
+
+\begin{algorithmic}
+\REQUIRE A new history $H_e$
+\ENSURE \pe{} is updated with all new events $e'$ such that $t = \origin{e'}$
+and $(\pre{t} \cup \cont{t}) \cap \origin{\post{e}} \neq \emptyset$ and $e'$
+was still not present in the unfolding.
+
+\STATE \FIXME{}
+
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+\caption{Procedure \pehistdup}
+\label{alg:pe.hist.dup}
+
+\begin{algorithmic}
+\REQUIRE A new history $H$ and the event $e$ to which $H$ is associated
+\ENSURE Returns \TRUE{} if the history is already present in the current state
+of the unfolding or \pe{}; otherwise returns \FALSE{}
+
+\IF {$H$ is associated to $e$ and present in the unfolding or in \pe{}}
+\RETURN \TRUE
+\ELSE
+\RETURN \FALSE
+\ENDIF
+
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{Procedure \peeventdup}
+\label{alg:pe.event.dup}
+
+\begin{algorithmic}
+\REQUIRE A presumably new event $e$
+\ENSURE Returns \TRUE{} the event is a duplicate in the current state of the
+unfolding; \FALSE{} otherwise
+
+\IF {there exists $e'$ in the unfolding or \pe{} such that $\origin{e'} =
+\origin{e}$ and $\pre{e'} = \pre{e}$ and $\cont{e'} = \cont{e}$}
+\RETURN \TRUE
+\ELSE
+\RETURN \FALSE
+\ENDIF
+
+\end{algorithmic}
+\end{algorithm}
+
+\newpage
+
+\begin{definition}
+Given two configurations $C_1, C_2 \in \conf{\unf{N}}$, we say that $C_1$ can
+\emph{evolve} to $C_2$, written $C_1 \evolves C_2$, iff $C_1 \subseteq C_2$ and
+for all $e_1 \in C_1$ and all $e_2 \in C_2 \setminus C_1$ we have $\lnot (e_2
+\nearrow e_1)$.
+\end{definition}
+
+\begin{definition}
+Let $C_1, C_2 \in \conf{\unf{N}}$ be two configurations of the full unfolding.
+We say that both configurations are \emph{in conflict}, written $C_1 \# C_2$,
+iff $\lnot (C_1 \evolves C_1 \cup C_2)$ or $\lnot (C_2 \evolves C_1 \cup C_2)$.
+\end{definition}
+
+Another characterization of the conflict relation between configurations is to
+say that $C_1 \# \, C_2$ if and only if there exists $e_1 \in C_1$ and $e_2 \in
+C_2 \setminus C_1$ with $e_2 \nearrow e_1$ or the symmetric condition holds.
+We will make extensive use of this equivalence in the sequel.
+
+\begin{definition}
+Let $C$ be a configuration of the full unfolding $\unf{N} = (S', T', F', C',
+m')$.  We define the \emph{cut} of $C$ as $$\cut{C} \: = \: m \: \cup \:
+\bigcup_{e \in C} \post{e} \: \setminus \: \bigcup_{e \in C} \pre{e}$$.
+\end{definition}
+
+\begin{definition}
+Let $\unf{N} = (S', T', F', C', m')$ be the full unfolding of some net $N$.  We
+say that a pair $(H, c)$ is an \emph{enriched condition} if either for some
+event $e \in T'$, we have $H \in \hist{e}$ and $c \in \post{e}$, or $H =
+\emptyset$ and $c \in m'$.  Additionally, we write $\conds{\unf{N}}$ to denote
+the set of enriched conditions of $\unf{N}$, that is, the set of enriched
+conditions $(H_e, c)$ for any $e \in T'$ plus all enriched conditions
+$(\emptyset, c$ for $c \in m'$.
+\end{definition}
+
+Enriched events are defined similarly:
+
+\begin{definition}
+Let $\unf{N} = (S', T', F', C', m')$ be the full unfolding of some net $N$.  We
+say that a pair $(H, e)$ is an \emph{enriched event} if for some event $e \in
+T'$, we have $H \in \hist{e}$.  Additionally, we write $\events{\unf{N}}$ to
+denote the set of enriched events of $\unf{N}$, that is, the set of enriched
+events $(H_e, e)$ for any $e \in T'$.
+\end{definition}
+
+We will let $\varepsilon$ to range over enriched events and $\rho, \sigma,
+\ldots$ to range over enriched conditions.  If $\varepsilon = (H, e)$, we will
+write $\varepsilon^H$ to denote $H$ and $\varepsilon^e$ to denote $e$.  In a
+similar way, if $\rho = (H, c)$, we will write $\rho^H$ to denote $H$ and
+$\rho^c$ to denote $c$.
+
+\FIXME{Define (and comment) $H \sem c$ as $\emptyset$ if $\pre c = \emptyset$
+or as $H \sem e$ if $\{e\} = \pre c$.}  We extend now the notation for preset,
+postset and context of events and conditions to enriched events and enriched
+conditions.
+
+\begin{definition}
+Let $\unf N = (S', T', F', C', m')$ be the full unfolding of some net $N$.  We
+define the \emph{preset}, \emph{postset} and \emph{context} of an enriched
+event $(H_e, e) \in \events{\unf N}$ and an enriched condition $(H_e, c) \in
+\conds{\unf N}$:
+
+\begin{align*}
+\post{(H, e)} & \; \bydef = \; \{ (H, c) \in \conds{\unf N} \mid c \in \post e
+\} \\
+\pre{(H, e)} & \; \bydef = \; \{ (H', c) \in \conds{\unf N} \mid c \in \pre e
+\land H' = H \sem c \} \\
+\cont{(H, e)} & \; \bydef = \; \{ (H', c) \in \conds{\unf N} \mid c \in \cont e
+\land H' = H \sem c \} \\
+\post{(H, c)} & \; \bydef = \; \{ (H', e) \in \events{\unf N} \mid (H, c) \in
+\pre{(H', e)} \} \\
+\pre{(H, c)} & \; \bydef = \; \{ (H, e) \in \events{\unf N} \mid e \in \pre c
+\} \\
+\cont{(H, c)} & \; \bydef = \; \{ (H', e) \in \events{\unf N} \mid (H, c) \in
+\cont{(H', e)} \} \\
+\end{align*}
+\end{definition}
+
+We are now ready to define the concurrency relation between enriched
+conditions.
+
+\begin{definition}
+The \emph{concurrency relation} $\mathord\parallel \subseteq \conds{\unf N} \times
+\conds{\unf N}$ between extended conditions is defined as: $$ (H, c) \parallel
+(H', c') \iff \lnot (H \confl H') \land \{c, c'\} \subseteq \cut{H \cup H'}$$
+\end{definition}
+
+For the sake of simplicity in the following developments, we characterize the
+concurrency relation in terms of \FIXME{...}
+
+\begin{remark}
+\label{rmk:the.statement}
+The statement $(H, c) \parallel (H', c')$ is equivalent to the conjunction of
+the next four statements:
+\begin{enumerate}
+\item $\lnot (\exists e_1 \in H,\, \exists e_2 \in H' \setminus H,\, e_2
+\nearrow e_1)$
+\item $\lnot (\exists e_1 \in H',\, \exists e_2 \in H \setminus H',\, e_2
+\nearrow e_1)$
+\item $\lnot (\exists e_1 \in H,\, c' \in \pre{e_1})$
+\item $\lnot (\exists e_1 \in H',\, c \in \pre{e_1})$
+\end{enumerate}
+\end{remark}
+
+In other words, \rrmk{the.statement} establishes that $(H, c) \parallel (H',
+c')$ if and only if $H$ can evolve to $H \cup H'$ (1), $H'$ can evolve to $H
+\cup H'$ (2) and none of any histories consumes the condition generated by the
+other history (3 and 4).  Note that the conjunction of conditions 1 and 2 is
+equivalent to $\lnot (H \confl H')$ while the conjunction of conditions 3 and 4
+is equivalent to $c, c' \in \cut{H \cup H'}$.
+
+\begin{lemma}
+\label{lem:let.H}
+Let $H, H' \in \hist{e}$ be two histories of some event $e$.  If $H \not= H'$,
+then $H \confl H'$.
+\end{lemma}
+
+\begin{proof}
+\FIXME{Are we using this lemma? Copy from the notebook!}
+\end{proof}
+
+\begin{lemma}
+\label{lem:two.histories}
+Let $H, H'$ be two histories with $H' \prec H$, $e = \event{H}$ and $e \in H'$.
+Then $H \confl H'$.
+\end{lemma}
+
+\begin{proof}
+We claim that $H \not\sqsubseteq H'$.  Indeed, if it were the case that $H
+\sqsubseteq H'$, and provided that $\prec$ is antisymmetric, we would have $H
+\prec H'$, a contradiction to the hypothesis $H' \prec H$.  So $H
+\not\sqsubseteq H'$ holds.  Making use of \FIXME{def $\sqsubseteq$}, one can
+write the next equivalence: $$H \not\sqsubseteq H' \iff H \not\subseteq H' \lor
+\exists e_1 \in H,\, \exists e_2 \in H' \setminus H,\, e_2 \nearrow e_1$$  As
+$H \not\sqsubseteq H'$ holds, the right-hand side also holds.  We show that
+both sides of the disjunction in the right-hand size implies $H \confl H'$.
+
+Clearly, $\exists e_1 \in H,\, \exists e_2 \in H' \setminus H,\, e_2 \nearrow
+e_1$ implies $H \confl H'$.  On the other hand, $H \not\subseteq H'$ implies
+that we can find some event $e'' \in H \setminus H'$.  Now notice that, as $e''
+\in H$, it holds that $e'' \nearrow^*_H e$.  Event $e$ and $e''$ must be
+different because $e \in H'$ by hypothesis and $e'' \notin H'$.  Consequently
+it also holds that $e'' \nearrow^+_H e$.  This means that we can find a finite
+number of events $e_1, \ldots, e_n \in H$ with $e'' = e_1 \nearrow e_2 \nearrow
+\ldots \nearrow e_n = e$.  It is easy to see that there must exist some pair of
+events $e_l, e_{l+1}$ for some $1 \le l < k$ with $e_l \in H \setminus H'$ and
+$e_{l+1} \in H'$.  By construction, $e_l \nearrow e_{l+1}$ and hence $H \confl
+H'$.
+\end{proof}
+
+
+\FIXME{Give motivation to state this theorem}
+
+\begin{theorem}
+Let $\rho = (H, c)$, $\rho' = (H', c')$ be two different enriched conditions
+such that $\event{H} = e$, $\event{H'} = e'$ and $H' \prec H$ for an adequate
+order $\prec$.  Then, we have that $$\rho \parallel \rho' \iff
+\bigwedge_{\rho_i \in \pre{\pre\rho}} \rho_i \parallel \rho' \; \land \;
+\bigwedge_{\sigma_j \in \cont{\pre\rho}} \sigma_j \parallel \rho' \; \land \;
+(\rho' \notin \pre{\pre \rho}) \; \land \; \lnot \exists e'' \in H' \setminus
+H,\, \cont{e''} \cap \pre e \not= \emptyset$$
+\end{theorem}
+
+\begin{proof}
+Let $\pre{\pre\rho} = \{\rho_1, \ldots, \rho_n\}$ and $\cont{\pre\rho} =
+\{\sigma_1, \ldots, \sigma_m\}$.  We let variable $\rho_i = (H_i, c_i)$ to
+range the set $\pre{\pre \rho}$ and variable $\sigma_j = (H_j, c_j)$ to range
+the set $\cont{\pre \rho}$, with $1 \le i \le n$ and $1 \le j \le m$.  For any
+$\rho_i$ and $\sigma_j$, we let $e_i = \event{H_i}$ and $e_j = \event{H_j}$.
+Note also that, by definition, $H_i = H\sem{e_i} = H\sem{c_i}$ and that $H_j =
+H\sem{e_j} = H\sem{c_j}$.  It is easy also to see that for any pair $\rho_1,
+\rho_2 \in \pre{\pre\rho} \cup \cont{\pre\rho}$ we have $\rho_1 \parallel
+\rho_2$.  Finally note that, also by construction, $H = \{e\} \cup
+\bigcup_{\rho_i \in \pre{\pre\rho}} \rho^H_i \cup \bigcup_{\sigma_j \in
+\cont{\pre\rho}} \sigma^H_j$.
+
+We prove in the sequel both directions of the co-implication. \FIXME{Give
+outline of the proof}
+
+\begin{enumerate}[(a)]
+\item $\rho \parallel \rho' \implies \bigwedge_{\rho_i \in \pre{\pre
+\rho}} \rho_i \parallel \rho'$  It is enough to prove that $\rho \parallel
+\rho' \implies \rho_i \parallel \rho'$ for \emph{some} $\rho_i$.  As we do not
+make any assumption on $\rho_i$, the proof will be valid for \emph{all}
+$\rho_i$.
+
+Assume that $\rho \parallel \rho'$ and that, for a proof by contradiction,
+$\lnot (\rho_i \parallel \rho')$ for some $\rho_i \in \pre{\pre\rho}$.  Then we
+know that at least one of the four statements in \rrmk{the.statement} must be
+false when regarding $\rho_i$ and $\rho'$.  We proceed by cases:
+
+\begin{enumerate}[1.]
+\item Assume that there exist events $e_1 \in H_i$ and $e_2 \in H' \setminus
+H_i$ with $e_2 \nearrow e_1$.  Two cases are possible: either $e_2 \in H$ or
+$e_2 \notin H$.  If $e_2 \notin H$, as $H_i \subseteq H$, we have that $e_1 \in
+H$, $e_2 \in H' \setminus H$ and $e_2 \nearrow e_1$, which implies $H \confl
+H'$.  This is a contradiction to $\rho \parallel \rho'$.  So, let us assume
+that $e_2 \in H$.  As $H = \{e\} \cup \bigcup_{\rho_i \in \pre{\pre\rho}}
+\rho^H_i \cup \bigcup_{\rho_j \in \cont{\pre \rho}} \rho^H_j$, several
+sub-cases are possible:
+
+\begin{itemize}
+\item $e_2 \in \rho^H_{i'}$ for some $\rho_{i'} \in \pre{\pre\rho}$ with $i'
+\not= i$.  Again, we have $e_1 \in H_i$, $e_2 \in \rho^H_{i'} \setminus H_i$
+and $e_2 \nearrow e_1$.  This implies $\rho^H_{i'} \confl H_i$, which is a
+contradiction to $\rho_i \parallel \rho_{i'}$.
+
+\item $e_2 \in \sigma^H_j$ for some $\sigma_j \in \cont{\pre\rho}$.  Likewise,
+we have $e_1 \in H_i$, $e_2 \in \sigma^H_j \setminus H_i$, $e_2 \nearrow e_1$
+and $\sigma^H_j \confl H_i$, which is a contradiction to $\rho_i \parallel
+\sigma_j$.
+
+\item $e_2 = e$.  By definition \FIXME{history} we have $e_1 \nearrow^*_{H_i}
+e_i$ (recall that $e_i = \event{H_i}$).  By construction of $H$, we have $e_i
+\nearrow e$.  By hypothesis, we have $e_2 = e$ and also by hypothesis we have
+$e_2 \nearrow e_1$.  This leads to the cycle $e_1 \nearrow^*_{H_i} e_i \nearrow
+e = e_2 \nearrow e_1$ in the asymmetric conflict relation.  Now notice that
+$e_1, e_i, e \in H$, and that $H_i \subseteq H$.  Therefore, we have a loop in
+the asymmetric conflict relation restricted to the history $H$, which is a
+contradiction to the fact that $H$ is a history.
+\end{itemize}
+
+\item Assume that there exist $e_1 \in H'$ and $e_2 \in H_i \setminus H'$ with
+$e_2 \nearrow e_1$.  Then, as $H_i \subseteq H$, we have that $e_2 \in H
+\setminus H'$.  This together with $e_1 \in H'$ and $e_2 \nearrow e_1$ implies
+$H \confl H'$, which is a contradiction to $\rho \parallel \rho'$.
+
+\item Assume that there exists $e_1 \in H_i$ such that $c' \in \pre{e_1}$.
+Intuitively, this means that $H_i$ consumes $c'$.  As $H_i \subseteq H$, also
+$H$ consumes $c'$, which leads to a contradiction of $\rho \parallel \rho'$.
+
+\item Assume that there exists $e_1 \in H'$ such that $c_i \in \pre{e_1}$.  We
+have two cases, either $e_1 = e$ or $e_1 \not= e$.  If we assume that $e_1
+\not= e$, then we have that $\pre e \cap \pre{e_1} \not= \emptyset$.  This
+implies that $e \nearrow e_1$ and that $e_1 \nearrow e$.  In turn, it implies
+that $e_1 \notin H$ (otherwise we would have a loop in the relation $\nearrow$
+restricted to $H$).  So assuming that $e_1 \not= e$ would lead to conclude that
+$e_1 \in H' \setminus H$ and that $e_1 \nearrow e$, with $e \in H$, which
+implies that $H \confl H'$, a contradiction to $\rho \parallel \rho'$.
+
+Therefore, let us assume that $e_1 = e$ and, consequently, that $e \in H'$.
+As, by hypothesis $H' \prec H$, we can apply \rlem{two.histories} and conclude
+that $H \confl H'$, a contradiction to $\rho \parallel \rho'$.
+\end{enumerate}
+
+\item $\rho \parallel \rho' \implies \bigwedge_{\sigma_j \in \cont{\pre\rho}}
+\sigma_j \parallel \rho'$  As in (a), it is still enough to prove that the
+statement holds for just one $\sigma_j$.  In particular, we will prove that
+$\rho \parallel \rho' \implies \sigma_j \parallel \rho'$ for some $\rho_j \in
+\cont{\pre\rho}$.  As we make no assumption about $\sigma_j$, the argument will be
+valid for \emph{all} $\sigma_j$.
+
+We reason by contradiction.  Assume that both $\rho \parallel \rho'$ and $\lnot
+(\sigma_j \parallel \rho')$ hold, for some $\sigma_j \in \cont{\pre\rho}$.  As
+$\lnot (\sigma_j \parallel \rho')$, we know that at least one of the four
+statements in \rrmk{the.statement} must not hold.  In the following, we see
+that we can find a contradiction in each case.
+
+\begin{enumerate}[1.]
+\item Assume that there exist events $e_1 \in H_j$ and $e_2 \in H' \setminus
+H_j$ with $e_2 \nearrow e_1$.  As in (a.1), two cases are possible: either $e_2
+\in H$ or $e_2 \notin H$.  If $e_2 \notin H$, as $H_j \subseteq H$, we have
+that $e_1 \in H$, $e_2 \in H' \setminus H$ and $e_2 \nearrow e_1$, which
+implies $H \confl H'$.  This is a contradiction to $\rho \parallel \rho'$.  So,
+let us assume that $e_2 \in H$.  As $H = \{e\} \cup \bigcup_{\rho_i \in
+\pre{\pre\rho}} \rho^H_i \cup \bigcup_{\sigma_j \in \cont{\pre \rho}}
+\sigma^H_j$, several sub-cases are possible:
+
+\begin{enumerate}
+\item $e_2 \in \sigma^H_{j'}$ for some $\sigma_{j'} \in \cont{\pre\rho}$ with
+$j' \not= j$.  Again, we have $e_1 \in H_j$, $e_2 \in \sigma^H_{j'} \setminus
+H_j$ and $e_2 \nearrow e_1$.  This implies $\sigma^H_{j'} \confl H_j$, which is
+a contradiction to $\sigma_j \parallel \sigma_{j'}$.
+
+\item $e_2 \in \rho^H_i$ for some $\rho_i \in \pre{\pre\rho}$.  Likewise, we
+have $e_1 \in H_j$, $e_2 \in \rho^H_i \setminus H_j$, $e_2 \nearrow e_1$ and
+$\rho^H_i \confl H_j$, which is a contradiction to $\sigma_j \parallel \rho_i$.
+
+\item $e_2 = e$.  Recall that $e_j = \event{H_j}$.  By definition
+\FIXME{history} we have $e_1 \nearrow^*_{H_j} e_j$.  By construction of $H$, we
+have $e_j \nearrow e$.  By hypothesis, we have $e_2 = e$ and also by hypothesis
+we have $e_2 \nearrow e_1$.  This leads to the cycle $e_1 \nearrow^*_{H_j} e_j
+\nearrow e = e_2 \nearrow e_1$ in the asymmetric conflict relation.  Now notice
+that $e_1, e_j, e \in H$, and that $H_j \subseteq H$.  Therefore, we have a
+loop in the asymmetric conflict relation restricted to the history $H$, which
+is a contradiction to the fact that $H$ is a history.
+\end{enumerate}
+
+\item Assume that there exist $e_1 \in H'$ and $e_2 \in H_j \setminus H'$ with
+$e_2 \nearrow e_1$.  The same argument as in (a.2) is still applicable here,
+changing $H_i$ by $H_j$.
+
+\item Assume that there exists $e_1 \in H_j$ such that $c' \in \pre{e_1}$.
+Same argument as in (a.3), substituting $H_i$ by $H_j$.
+
+\item Assume that there exists $e_1 \in H'$ such that $c_j \in \pre{e_1}$.  We
+then know that $\cont{e} \cap \pre{e_1} \not= \emptyset$.  \FIXME{As we deal
+with nets in which for any event $e''$ it is not the case that $\cont{e''} \cap
+\pre{e''} \not= \emptyset$, we have to assume that $e \not= e_1$.} Notice also
+that $e \nearrow e_1$.  We claim now that $e \in H'$.  By contradiction, if it
+were the case that $e \notin H'$, we would have that $e \in H \setminus H'$,
+$e_1 \in H'$ and $e \nearrow e_1$, and consequently $H \confl H'$.
+
+Therefore we know that $e \in H'$.  By hypothesis we also know that $H' \prec
+H$.  Under this assumptions we can apply \rlem{two.histories} and conclude that
+$H \confl H'$, a contradiction to $\rho \parallel H'$.
+\end{enumerate}
+
+\item $\rho \parallel \rho' \implies \rho' \notin \pre{\pre\rho}$  It is easy
+to see that it cannot be the case that $\rho' \in \pre{\pre\rho}$ holds if we
+assume $\rho \parallel \rho'$.  Indeed, if $\rho' \in \pre{\pre\rho}$ we have
+that $\rho' = \rho_i = (H_i, c_i)$ for some $\rho_i \in \pre{\pre\rho}$.  But
+notice that event $c_i \in \pre e$, that is, event $e$ consumes $c_i$.  This
+implies that the third statement of \rrmk{the.statement} doesn't hold with
+regard to $\rho$ and $\rho'$ and we have $\lnot (\rho \parallel \rho')$, a
+contradiction.
+
+\item $\rho \parallel \rho' \implies \lnot \exists e'' \in H' \setminus
+H,\, \cont{e''} \cap \pre e \not= \emptyset$  Assume, for an argument by
+contradiction, that it is the case that there exists $e'' \in H' \setminus H$
+such that $\cont{e''} \cap \pre e \not= \emptyset$.  In consequence, we have
+$e'' \nearrow e$, with $e \in H$ and $e'' \in H' \setminus H$, which implies $H
+\confl H'$, a contradiction to $\rho \parallel \rho'$.
+
+\item $\rho \parallel \rho' \Longleftarrow \bigwedge_{\rho_i \in \pre{\pre
+\rho}} \rho_i \parallel \rho' \land \bigwedge_{\rho_j \in \cont{\pre \rho}}
+\rho_j \parallel \rho' \land (\rho' \notin \pre{\pre \rho}) \land \lnot \exists
+e'' \in H' \setminus H,\, \cont{e''} \cap \pre e \not= \emptyset$  We prove now
+the opposite direction of the theorem.  We assume the right-hand side of the
+implication and the negation of the left-hand side.  As $\lnot (\rho \parallel
+\rho')$, one of the statements of \rrmk{the.statement} must be false:
+
+\begin{enumerate}[1.]
+\item Assume that there exist events $e_1 \in H$ and $e_2 \in H' \setminus H$
+with $e_2 \nearrow e_1$.  Recall that $H = \{e\} \cup \bigcup_{\rho_i \in
+\pre{\pre\rho}} \rho^H_i \cup \bigcup_{\sigma_j \in \cont{\pre\rho}}
+\sigma^H_j$.  We regard $e_1$ and reason by cases:
+
+\begin{itemize}
+\item Assume that $e_1 \in H_i$ for some $\rho_i \in \pre{\pre\rho}$. As $H_i
+\subseteq H$, we still have $e_2 \in H' \setminus H_i$, and hence $H_i \confl
+H'$, a contradiction to $\rho_i \parallel \rho'$.
+
+\item Assume that $e_1 \in H_j$ for some $\sigma_j \in \cont{\pre\rho}$.  In
+the same, way we can see that $H_j \confl H'$, a contradiction.
+
+\item Finally, assume that $e_1 = e$ and, consequently, $e_2 \nearrow e$.
+\FIXME{Definition $\nearrow$} provides three cases:
+
+\begin{itemize}
+\item Assume that $\pre{e_2} \cap \pre e \not= \emptyset$.  Under this
+assumption, $e_2 \in H'$ clearly consumes $c_i$ for one $\rho_i \in
+\pre{\pre\rho}$, which implies that $\lnot (\rho' \parallel \rho_i)$, a
+contradiction.
+
+\item Assume that $e_2 < e$.  We know that $H$ is a history, and by definition
+contains all events $e'' < e$.  As $e_2$ is one such event, we have $e_2 \in
+H$, which is a contradiction to the assumption $e_2 \in H' \setminus H$.
+
+\item Assume that $\cont{e_2} \cap \pre e \not= \emptyset$.  This is a
+contradiction to the last conjunction in hypothesis of the statement that we
+are proving.
+\end{itemize}
+\end{itemize}
+
+\item Assume that there exist events $e_1 \in H'$ and $e_2 \in H \setminus H'$
+with $e_2 \nearrow e_1$.  Using the same arguments as in (e.1), we can
+immediately discard the cases where $e_2 \in H_i$ for some $\rho_i \in
+\pre{\pre\rho}$ or $e_2 \in H_j$ for some $\sigma_j \in \cont{\pre\rho}$.  We
+assume, hence, that $e_2 = e$.  Definition of \FIXME{$\nearrow$} gives us three
+cases to examine in the relation $e \nearrow e_1$:
+
+\begin{itemize}
+\item Assume that $\pre{e} \cap \pre{e_1} \not= \emptyset$.  Then event $e_1
+\in H'$ consumes $c_i$ for some $\rho_i \in \pre{\pre\rho}$, which leads to the
+contradiction $\lnot (\rho_i \parallel \rho)$.
+
+\item Assume that $e < e_1$.  As $e_1 \in H'$ and $H'$ is a history, we should
+have $e \in H'$, while by hypothesis $e = e_2 \in H \setminus H'$ and hence $e
+\notin H'$.
+
+\item Assume that $\cont e \cap \pre{e_1} \not= \emptyset$.  Then $c_j \in
+\pre{e_1}$ for some $\sigma_j \in \cont{\pre\rho}$.  As $e_1 \in H'$, we have
+that $\lnot (\sigma_j \parallel \rho')$.  This is a contradiction.
+\end{itemize}
+
+\item Assume that there exists $e_1 \in H$ such that $c' \in \pre{e_1}$.  If we
+assume $e_1 \in H_i$ for some $\rho_i \in \pre{\pre\rho}$, we will find the
+contradiction $\lnot (\rho_i \parallel \rho')$.  Similarly, if we assume $e_1
+\in H_j$ for some $\sigma_j \in \cont{\pre\rho}$ we will reach the
+contradiction $\lnot (\sigma_j \parallel \rho')$.  So the only case that we
+examine is when $e_1 = e$.  If $c' \in \pre e$, we have that $c' = c_i$ for
+some $\rho_i \in \pre{\pre\rho}$.  As $|\pre{c''}| = 1$ for any $c''$, we have
+that $\event{H_i} = \event{H'}$.  Intuitively, this means that $H_i$ and $H'$
+are histories for the same event.  Furthermore, they are different by
+hypothesis ($\rho' \notin \pre{\pre\rho}$ is one of the hypothesis).  Under
+this assumptions, we can apply \rlem{let.H} and conclude that $H' \confl H_i$,
+which is a contradiction.
+
+\item Assume that there exists $e_1 \in H'$ such that $c \in \pre{e_1}$.  Then
+$e \in H'$, and $H'$ consumes any $c_i$ for $\rho_i \in \pre{\pre\rho}$, which
+is a contradiction.
+\end{enumerate}
+\end{enumerate}
+\end{proof}
+
+\end{document}
+
+ % vim:syn=tex:spell:
+
