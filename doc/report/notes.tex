@@ -713,9 +713,10 @@ We are now ready to define the concurrency relation between enriched
 conditions.
 
 \begin{definition}
-The \emph{concurrency relation} $\mathord\parallel \subseteq \conds{\unf N} \times
-\conds{\unf N}$ between extended conditions is defined as: $$ (H, c) \parallel
-(H', c') \iff \lnot (H \confl H') \land \{c, c'\} \subseteq \cut{H \cup H'}$$
+The \emph{concurrency relation} $\mathord\parallel \subseteq \conds{\unf N}
+\times \conds{\unf N}$ between extended conditions is defined as: $$ (H, c)
+\parallel (H', c') \iff \lnot (H \confl H') \land \{c, c'\} \subseteq \cut{H
+\cup H'}$$
 \end{definition}
 
 For the sake of simplicity in the following developments, we characterize the

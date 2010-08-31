@@ -32,13 +32,18 @@
 \newcommand{\op}[0]{(}
 \newcommand{\cp}[0]{)}
 
+\newcommand{\Rpag}[1]{Page~\pageref{#1}}
+\newcommand{\rpag}[1]{page~\pageref{#1}}
+\newcommand{\rbib}[1]{\cite{bib:#1}}
 \newcommand{\rfig}[1]{Fig.~\ref{fig:#1}}
+\newcommand{\rthm}[1]{Theorem~\ref{thm:#1}}
 \newcommand{\rlem}[1]{Lemma~\ref{lem:#1}}
 \newcommand{\rdef}[1]{Definition~\ref{def:#1}}
 \newcommand{\rpro}[1]{Proposition~\ref{pro:#1}}
 \newcommand{\rrmk}[1]{Remark~\ref{rmk:#1}}
-\newcommand{\rsec}[1]{\S~\ref{sec:#1}}
+\newcommand{\rsec}[1]{\S\ref{sec:#1}}
 \newcommand{\ralg}[1]{Algorithm~\ref{alg:#1}}
+\newcommand{\rape}[1]{Appendix~\ref{ape:#1}}
 
 \def\from{\leftarrow}
 \def\N{\mathbb{N}}
@@ -59,9 +64,13 @@
 % petri nets
 \newcommand{\unf}[1]{\mathcal{U}_{#1}}
 \newcommand{\trunc}[1]{\mathcal{T}_{#1}}
+\newcommand{\atrunc}[1]{\widehat{\mathcal{T}}_{#1}}
 \newcommand{\pref}[1]{\mathcal{P}_{#1}}
 \newcommand{\enr}[1]{\mathcal{E}_{#1}}
+\newcommand{\fnr}[1]{\mathcal{F}_{#1}}
 \newcommand{\agr}[1]{\mathcal{A}_{#1}}
+\newcommand{\hst}[1]{\mathcal{H}_{#1}}
+
 \newcommand{\pre}[1]{{}^\bullet#1}
 \newcommand{\post}[1]{#1^\bullet}
 \newcommand{\cont}[1]{\underline{#1}}
