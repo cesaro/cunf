@@ -3,5 +3,6 @@
 break breakme
 break unfold
 #break h_cmp
-run test/examples/cont/pep/peterson.ll_net
+#run test/examples/cont/pep/peterson.ll_net
+run /tmp/m0.ll_net
 
