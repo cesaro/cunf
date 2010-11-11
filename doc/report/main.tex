@@ -44,11 +44,9 @@
 %\setlength{\parskip}{0.3\baselineskip}
 \begin{document}
 
-%\title{Implementation of an unfolder for the McMillan's complete prefix for contextual nets}
-
 \title{Implementation of a complete prefix unfolder for contextual nets}
 
-\author{César Rodríguez\\[1ex](\textit{Under supervision of} Stefan Schwoon)\\[1em]LSV -- ENS Cachan}
+\author{César Rodríguez\\[1ex]\textit{Under supervision of} Stefan Schwoon\\[1em]LSV -- ENS Cachan}
 \date{August 2010}
 
 \maketitle
@@ -57,24 +55,23 @@
 
 \subsection*{General context}
 
-In\footnote{This work was supported by Fundación Caja Madrid.}\footnote{The
-choice of English language instead of French language is due to the writing
-skills of the author.} the domain of \emph{verification techniques} for
-\emph{concurrent systems}, and particularly within the approach of \emph{state
-space methods}, the \emph{state explosion problem} refers to the computational
-difficulty of exploring a representation of the system's state space due to its
-intractably large size \rbib{EH08}.
+In\footnote{This work was supported by Fundación Caja Madrid under the grant
+\emph{Beca de Postgrado Fundación Caja Madrid}.} the domain of
+\emph{verification techniques} for \emph{concurrent systems}, and particularly
+within the approach of \emph{state space methods}, the \emph{state explosion
+problem} refers to the computational difficulty of exploring a representation
+of the system's state space due to its intractably large size \rbib{EH08}.
 
 Unfoldings are mathematical structures that can be used to explore the state
 space of the system while being in some cases exponentially smaller than it.
-Unfoldings were introduced for Petri Nets by Nielsen, Plotkin and Winskel in
-\rbib{NPW80}.  While a Petri Net unfolding is usually infinite, McMillan
+Unfoldings were introduced for Petri nets by Nielsen, Plotkin and Winskel in
+\rbib{NPW80}.  While a Petri net unfolding is usually infinite, McMillan
 observed that a finite part of it can be effectively used for verification
 purposes \rbib{MM92}.
 
 In this work, we develop the first implementation of an unfolding tool
-(unfolder) for \emph{contextual nets}, i.e., Petri Nets extended with
-\emph{read arcs} following the abstract approach specified by Baldan et al. in
+(unfolder) for \emph{contextual nets}, i.e., Petri nets extended with
+\emph{read arcs}, following the abstract approach specified by Baldan et al. in
 \rbib{BCKS08}.
 
 \subsection*{The problem}
@@ -87,9 +84,10 @@ the first objective was \emph{correction of the tool}; secondarily,
 \emph{performance}.
 
 The main motivation for this work relies on the fact that the last aim of a
-formal verification method should be to be of used within some verification
-tool.  Frequently, the first implementation of a theoretical method brings new
-insights to the theory, that can then be used to refine it.
+formal verification method should be that one of being used within some
+verification tool.  Frequently, the first implementation of a theoretical
+method brings new insights to the theory, that can in turn be used to refine
+it.
 
 The problem of contextual net unfoldings is not new (see above); the
 implementation of the contextual unfolder do is.  We believe that our
@@ -102,10 +100,10 @@ knowledge, the first contextual net unfolder.
 In the practical arena, our main contribution is a 4700 lines of code
 \emph{tool} written from scratch in C language, that is able to compute a
 complete prefix of the full unfolding of a 1-safe contextual net.
-Additionally, we have filled the gaps left by the abstract unfolding algorithm
-specified in \rbib{BCKS08}, by providing a \emph{concrete algorithm}, as well
-as \emph{data structures} for representing the important objects utilized by
-it.
+Additionally, we have filled the gaps left by the abstract specification of the
+unfolding algorithm of \rbib{BCKS08}, by providing a \emph{concrete algorithm},
+as well as \emph{data structures} for representing the important objects
+utilized by it.
 
 Concerning the theory, we have integrated \emph{adequate} unfolding orders
 \rbib{ERV96} in the framework of contextual unfoldings, proving finiteness of
@@ -141,7 +139,7 @@ the optimization of our tool.
 \subsection*{Evaluation and perspectives}
 
 Performance of our tool is still low compared to other unfolders.  For
-instance, on Petri Nets (without read arcs) the Mole unfolder \rbib{MOLE} has
+instance, on Petri nets (without read arcs) the Mole unfolder \rbib{MOLE} has
 shown to operate one order of magnitude faster on certain examples.  Profiling
 of our tool has pointed out that the bottleneck is located at the computation
 of the \emph{possible extensions} to the prefix (\rsec{computation.possible}),
@@ -199,39 +197,39 @@ to pursue in the Ph.D of the author, starting at September 2010.
 %		+ different exploration orders: McMillan, <F
 % - outline
 
-Petri Nets are a formalism that has been fruitfully used for the modeling and
-verification of concurrent systems.  They naturally enable to express notions
-such as concurrency, causality or conflict between actions or resources
-\rbib{ERV96}.  Verification of safety problems for finite state Petri Nets can
+Petri nets are a formalism that has been fruitfully used for the modeling and
+verification of concurrent systems.  They naturally make possible to express
+notions such as concurrency, causality or conflict between actions or resources
+\rbib{ERV96}.  Verification of safety problems for finite state Petri nets can
 be reduced to reachability analysis, an approach that is feasible in practise
-whenever we can avoid the state explosion problem.  Net unfoldings are a
-partial-order semantics initially introduced for Petri Nets by Nielsen, Plotkin
+whenever we can avoid the state explosion problem.  net unfoldings are a
+partial-order semantics initially introduced for Petri nets by Nielsen, Plotkin
 and Winskel \rbib{NPW80}.
 
-The unfolding of a Petri Net is another particularly simple, tree-like Petri
-Net so called \emph{occurrence net}, that is behaviourally equivalent to the
-first.  While the unfolding is frequently infinite, McMillan noticed
-\rbib{MM92} that it is still possible to build a finite prefix of it,
-containing information enough to be useful for a given application.  Such a
-prefix is called \emph{complete}, in the sense that it represents the complete
-information of the original net according to some criterion, for instance,
-reachable markings.  Finite and complete prefixes can be exponentially smaller
-than the full reachability graph of the original Petri Net, while being still
-adequate for reachability analysis (in particular \emph{coverability}).  Other
-uses of unfoldings include \emph{planning} \rbib{HRJSW07} or \emph{deadlock
-detection} \rbib{MM92}.
+The unfolding of a Petri net is another particularly simple, acyclic Petri net
+so called \emph{occurrence net}, that is behaviourally equivalent to the first.
+While the unfolding is frequently infinite, McMillan noticed \rbib{MM92} that
+it is still possible to build a finite prefix of it, containing information
+enough to be useful for a given application.  Such a prefix is called
+\emph{complete}, in the sense that it represents complete information of
+the original net according to some criterion, for instance, reachable markings.
+Finite and complete prefixes can be exponentially smaller than the full
+reachability graph of the original Petri net, while being still adequate for
+reachability analysis (in particular \emph{coverability}).  Other uses of
+unfoldings include \emph{planning} \rbib{HRJSW07} or \emph{deadlock detection}
+\rbib{MM92}.
 
-\emph{Contextual nets} are Petri Nets with \emph{read arcs}, i.e., arcs
+\emph{Contextual nets} are Petri nets with \emph{read arcs}, i.e., arcs
 allowing a transition to read a place and not consume it.  When interested in
-reachability analysis, a contextual net can be translated into a Petri Net by
-replacing each read arc by a consume/produce loop.  The resulting Net is
+reachability analysis, a contextual net can be translated into a Petri net by
+replacing each read arc by a consume/produce loop.  The resulting net is
 equivalent in terms of its reachability set, and can be unfolded through the
 same procedure as for Petri nets.  However, such unfolding would explicitly
 enumerate \emph{every} possible interleaving of all the transitions reading
 from the same place, leading frequently to an explosion in size.  This blow up
 can be avoided if we define the unfolding of a contextual net as another
 \emph{contextual} net, whose construction procedure is a generalization of the
-one for Petri Nets (without read arcs).
+one for plain Petri nets.
 
 Baldan et al. have proposed in \rbib{BCKS08} such a generalization.  In
 particular, they present an abstract algorithm to compute a complete and finite
@@ -242,25 +240,25 @@ main goals for this implementation were, in this order, correctness and
 performance.
 
 During the development of our unfolder, some inspiration was taken from the
-Mole Petri Net (without read arcs) unfolder \rbib{MOLE}.  However, Petri Net
-unfolding and contextual net unfolding are two notions different enough so that
+Mole Petri net (without read arcs) unfolder \rbib{MOLE}.  However, Petri net
+unfolding and contextual net unfolding are two tasks different enough so that
 our unfolder could not be an extension of Mole.  This is due to the fact that
-the fundamental assumptions that can be done in Mole no longer holds in
-contextual unfolding.  For instance, while each transition in a Petri Net
+certain fundamental assumptions that can be done in Mole no longer holds in
+contextual unfolding.  For instance, while each transition in a Petri net
 unfolding implicitly represents \emph{only one} run of the original net, each
 transition in a contextual unfolding represents a \emph{set} of runs, or
-\emph{histories} in the original net.  The existence of only one history per
+\emph{histories}, in the original net.  The existence of only one history per
 event in the unfolding is a central assumption of Mole, that prevented us to
 reuse most of its algorithms and data structures in our unfolder.  Arguments
-similar to this one lead us to the development of a new tool.
+similar to this one lead us to the development of a new tool from scratch.
 
 Implementation of a contextual unfolder have favoured several other
-contributions.  First and foremost, we provide \emph{concrete algorithms and
-implementations for the computation of the possible extensions} of the prefix
+contributions.  First and foremost, we provide a \emph{concrete algorithm and
+implementation for the computation of the possible extensions} of the prefix
 (see \rsec{computation.possible}); a \emph{data structure} for the
 representation of histories is also provided (\rsec{history.graph}).
 Concerning the theoretical framework, we generalize (and implement) the notion
-of \emph{adequate order} \rbib{ERV96} from Petri Net unfoldings to contextual
+of \emph{adequate order} \rbib{ERV96} from Petri net unfoldings to contextual
 unfoldings and prove that the complete prefix is still finite (therefore
 proving termination of our unfolder under this exploration order).  We
 characterize the conflict relation $\confl$ between configurations (see
@@ -269,8 +267,9 @@ $\uparrow$ (see \rsec{direct.asymmetric}), a result of special relevance from
 the point of view of the implementation.  Finally, as a mean to speed up the
 computation of our unfolder, we define a \emph{concurrency relation} on
 \emph{enriched conditions} (see \rsec{optimizations}).  Subsequently, we
-characterize this relation in a suitable way so as to enable an efficient
-construction method.  Unfortunately, we had no time to implement this approach.
+characterize this relation in a suitable way that makes possible to use an
+efficient construction method.  Unfortunately, we had no time to implement this
+approach.
 
 The reminder of the document is mainly divided in three sections.  In
 \rsec{contextual.unfoldings}, we introduce contextual nets and their
@@ -280,7 +279,7 @@ providing next from subsection \rsec{computation.possible} to
 data structures. In \rsec{implementation} we summarize how our unfolder has
 been tested in order to guarantee its correctness.  Finally, some conclusions
 and future research lines are drawn in \rsec{conclusions}.  Due to space
-constrains, proofs in this work are located in the \rape{proofs}.
+constrains, proofs are located in \rape{proofs}.
 
 \section{Contextual unfoldings}
 \label{sec:contextual.unfoldings}
@@ -341,15 +340,15 @@ write $\cont t$ to denote the \emph{context} of $t$, defined as $\{p \in P \mid
 (p, t) \in C\}$.  The same notation is used to denote the context of a place $p
 \in P$, that is, the set $\{t \in T \mid (p, t) \in C\}$.
 
-Note that contextual nets are an extension of traditional Petri Nets.
-Precisely, Petri Nets are the class of contextual nets whose context relation
+Note that contextual nets are an extension of traditional Petri nets.
+Precisely, Petri nets are the class of contextual nets whose context relation
 is empty.
 
 A \emph{marking} $m$ is a function $m : P \to \N$ that maps every place of $P$
 to a natural number, including 0. If for a marking $m$ and place $p$, $m(p) =
-n$, then we say that $m$ marks $p$ with $n$ tokens.  If a marking $m$ has the
-set $\{0, \ldots, n\}$ for image, we say that $m$ is $n$-safe.  We will
-associate, without further comment, every 1-safe marking to to a subset of $P$.
+n$, then we say that $m$ marks $p$ with $n$ tokens.  If $\{0, \ldots, n\}$ is
+the range of a marking $m$, we say that $m$ is $n$-safe.  We will associate,
+without further comment, every 1-safe marking to a subset of $P$.
 
 A transition $t \in T$ is said to be \emph{enabled} at a marking $m$ if $m$
 marks every place of the preset and context of $t$ with at least one token,
@@ -363,8 +362,8 @@ m(p) + 1 & \mbox{if } p \in \post t \setminus \pre t \\
 m(p) & \mbox{otherwise}
 \end{cases}$$
 
-A sequence of transitions that can fire one after the other, starting at the
-initial marking $m_0$, is called a \emph{run}.  Formally, a finite sequence of
+A sequence of transitions that can fire one after other starting at the
+initial marking $m_0$ is called a \emph{run}.  Formally, a finite sequence of
 transitions $\sigma = t_1 \ldots t_n \in T^*$ is a run if there exist markings
 $m_1, \ldots, m_n$ such that $t_1$ is enabled at the initial marking $m_0$ and
 produces $m_1$ when fired at $m_0$, and for $2 \le i \le n$, transition $t_i$
@@ -523,8 +522,8 @@ Intuitively, relation $<$ captures the notion of \textit{what must occur first
 in \emph{any} run of $\unf N$ that fires or marks some transition or place}.
 For instance, regarding \rfig{a.1safe} (b), we have $c_3 < e_3$ since
 \emph{any} run firing $e_3$ will first mark $c_3$ (notice that all the runs
-that fire $e_3$ are $e_1, e_3$ and $e_1, e_2, e_3$).  We also have $c_2 < e_1$
-and also $e_1 < e_2$.
+that fire $e_3$ are prefixed by $e_1, e_3$ and $e_1, e_2, e_3$).  We also have
+$c_2 < e_1$ as well as $e_1 < e_2$.
 
 For any condition or event $x \in P' \cup T'$, we denote by $[x]$ the set of
 \emph{causes} of $x$, i.e., the set $\{e \in T' \mid e \le x\}$, where $\le$ is
@@ -536,7 +535,7 @@ fires $e_3$ first fires $e_2$ (as $e_1, e_3$ is a run).  However, we can assure
 that \emph{if some run fires $e_2$ and $e_3$, then it will fire $e_2$ before
 $e_3$} (since once fired $e_3$, condition $c_3$ cannot be read).  This
 situation arises due to the existence of read arcs and it is the cause of the
-existence of several causal histories for some events.  We characterize this
+existence of several causal histories for certain events.  We characterize this
 relation in the next definition.
 
 \begin{definition}
@@ -555,7 +554,7 @@ run, $e$ must read its context before $e'$ consumes at least one place of it.
 Finally, observe that if $e \not = e'$ and $\pre e \cap \pre{e'} \not =
 \emptyset$, then $e$ and $e'$ cannot be present in the same run, and the
 intuition vacuously holds.  However, this allows us to capture symmetric
-conflicts\footnote{In a 1-safe Petri Net (without read arcs), two transitions
+conflicts\footnote{In a 1-safe Petri net (without read arcs), two transitions
 are said to be in \emph{symmetric conflict} if they are different and share
 some place in its respective presets.} by means of a loop of length two in the
 asymmetric conflict relation.
@@ -580,26 +579,25 @@ iff (1) $\nearrow_C$ is acyclic and (2) $C$ is causally closed, that is, for
 all $e' < e$ with $e \in C$, we have $e' \in C$.
 \end{definition}
 
-Configurations characterizes (concurrent) runs of $\unf N$.  A set of events is
+Configurations characterize (concurrent) runs of $\unf N$.  A set of events is
 a configuration iff all its events can be ordered to form a run.  Furthermore,
-any ordering of the events of a configuration that conforms a run is compatible
-with the asymmetric conflict relation $\nearrow$, due to the requirement that
-$\nearrow_C$ is acyclic.  In \rfig{a.1safe} (b), the set $\{e_1, e_2, e_3\}$ is
-a configuration, while the set $\{e_2\}$ is not, since it is not causally
-closed.  We let $\conf{\unf N}$ denote the set of all configurations of $\unf
-N$.
+any permutation of the events of a configuration that conforms a run is
+compatible with the asymmetric conflict relation $\nearrow$.  In \rfig{a.1safe}
+(b), the set $\{e_1, e_2, e_3\}$ is a configuration, while the set $\{e_2\}$ is
+not, since it is not causally closed.  We let $\conf{\unf N}$ denote the set of
+all configurations of $\unf N$.
 
 \label{pag:evolves} The \emph{computational order} $\evolves$ between
 configurations captures the intuition that a configuration $C_1$ can evolve to
 a configuration $C_2$ if $C_1 \subseteq C_2$ and all events $C_2 \setminus C_1$
-can be fired after $C_1$.  Formally, we define that $C_1 \evolves C_2$ holds
+can fire after $C_1$.  Formally, we define that $C_1 \evolves C_2$ holds
 iff $C_1 \subseteq C_2$ and $\lnot (e_2 \nearrow e_1)$ for all $e_1 \in C_1$
 and $e_2 \in C_2 \setminus C_1$ holds.
 
 \label{pag:conflict} Additionally, two configurations are said to be in
 \emph{conflict}, written $C_1 \confl C_2$, when either $\lnot (C_1 \evolves C_1
 \cup C_2)$ or $\lnot (C_2 \evolves C_1 \cup C_2)$.  Intuitively, two
-configurations are in conflict when they cannot be extended to a common
+configurations are in conflict when they cannot evolve to a common
 configuration.  Finally, note that if two configurations are \emph{not} in
 conflict, then its union is a configuration.  The opposite is not necessarily
 true.  Still in \rfig{a.1safe} (b), it holds that $\{e_1, e_2\} \evolves \{e_1,
@@ -610,22 +608,22 @@ e_3\}$.
 As any configuration $C$ is a run of $\unf N$, we can naturally associate to
 $C$ the marking reached by that run.  We call that marking the \emph{cut} of
 $C$.  In turn, any marking in $\unf N$ corresponds, via $f_P$, to a marking in
-$N$.  We call this marking \emph{the marking} of $C$. For instance, the marking
-of configuration $\{e_1, e_2\}$ in \rfig{a.1safe} (b) is $\{p_3, p_4\}$, while
-its cut is $\{c_3, c_4\}$.
+$N$.  We call this marking \emph{the marking} of $C$.  Still in \rfig{a.1safe}
+(b), the marking of configuration $\{e_1, e_2\}$ is $\{p_3, p_4\}$, while its
+cut is $\{c_3, c_4\}$.
 
 \begin{definition}
-Let $C$ be a configuration of the full unfolding.  We define
+Let $C$ be a configuration of $\unf N$.  We define
 the \emph{cut} of $C$, written $\cut C$, and the \emph{marking} of $C$, written
 $\marking C$ as $$\cut C \: = \: m \: \cup \: \bigcup_{e \in C} \post e \:
-\setminus \: \bigcup_{e \in C} \pre e \qquad \mbox{ as well as } \qquad
-\marking C \: = \: \bigcup_{c \in \cut C} f_P (c)$$
+\setminus \: \bigcup_{e \in C} \pre e \qquad \qquad \qquad \marking C \: = \:
+\bigcup_{c \in \cut C} f_P (c)$$
 \end{definition}
 
 Some configurations are called \emph{histories}.  Intuitively, given a
 configuration $C$ and some event $e \in C$, the history of $e$ in $C$ is the
 subset of $C$ that contains $e$ as well as all events $e'$ that must fire
-before $e$ in $C$, i.e., for which $e' (\nearrow_C)^* e$ holds.
+before $e$ in $C$, i.e., those for which $e' (\nearrow_C)^* e$ holds.
 
 \begin{definition}
 \label{def:history}
@@ -644,7 +642,7 @@ is causally closed, assume that $e' \in H_e$ is some event of $H_e$ and that
 $e'' < e'$.  Then we have $e'' \nearrow e' (\nearrow_C)^* e$.  As $e'' \in C$,
 we have $e'' (\nearrow_C)^* e$ and therefore $e'' \in H_e$.
 
-In the unfolding of a Petri Net (without read arcs), any event $e$ can only
+In a Petri net unfolding (without read arcs), any event $e$ can only
 have one history (the so called \emph{local configuration} $[e]$, see
 \rbib{MM92}).  The presence of read arcs gives rise to the existence of
 multiple histories (or runs) per event, possibly infinite.  In \rfig{a.1safe}
@@ -657,48 +655,48 @@ with $[e_3]$) and $\{e_1, e_2, e_3\}$.
 Due to the fact that $\unf N$ is frequently infinite, we would like to define,
 and then construct, a finite \emph{prefix} of $\unf N$ that is still
 \emph{useful}.  A finite prefix of $\unf N$ is any contextual occurrence net
-$\pref N$ that results from stopping the abstract unfolding algorithm presented
-at the beginning of \rsec{unfolding.contextual} at an arbitrary point.  All the
-notions introduced so far in this document for $\unf N$ are likewise applicable
-to any prefix $\pref N$.  Useful, or \emph{complete}, will mean in this work
-that the prefix is large enough to represent exactly the same reachable
-markings as $N$, that is, such that $$\markings N = \bigcup_{C \in \conf{\pref
-N}} \marking{C}$$ Other definitions are possible, for instance, we could
-require in addition that all runs of $N$ are represented in $\pref N$
+$\pref N$ that results from stopping at an arbitrary point the abstract
+unfolding algorithm presented at the beginning of \rsec{unfolding.contextual}.
+All the notions introduced so far in this document for $\unf N$ are likewise
+applicable to any prefix $\pref N$.  Useful, or \emph{complete}, will mean in
+this work that the prefix is large enough to represent exactly the same
+reachable markings as $N$, that is, such that $$\markings N = \bigcup_{C \in
+\conf{\pref N}} \marking{C}$$ Other definitions are possible, for instance, we
+could require in addition that all runs of $N$ are represented in $\pref N$
 \rbib{ERV96}.  Under our definition, it is clear that $\unf N$ is complete by
 construction.
 
 \begin{proposition}
 \label{pro:unf.is}
-$\unf N$ is complete.
+The full unfolding $\unf N$ is complete.
 \end{proposition}
 
-In order to construct a finite and complete prefix for Petri Net (without read
-arcs) unfoldings, McMillan suggested to define certain events of $\unf N$ as
-\emph{cutoff} events, and let the unfolding algorithm to stop either when no
-new event can be added or when any new event is a cutoff \rbib{MM92}.  Then he
-proved that, for a proper definition of cutoff events, his prefix was finite
-and complete.  Roughly, cutoff events were defined to be those whose
-corresponding run (history, causal closure or \emph{local configuration})
-produces a marking that is reachable by a shorter run (firing less events).
-His definition of cutoff relies on the fact each event has \emph{only one}
-history and cannot be adapted without changes to the framework of contextual
-nets.
+In order to construct a finite and complete prefix of a Petri net (without read
+arcs) unfolding, McMillan suggested to define certain events of the full
+unfolding as \emph{cutoff} events, and let the unfolding algorithm to stop
+either when no new event can be added or when any new event is a cutoff
+\rbib{MM92}.  Then he proved that, for a proper definition of cutoff events,
+his prefix was finite and complete.  Roughly, cutoff events were defined to be
+those whose corresponding run (history, causal closure or \emph{local
+configuration}) produces a marking that is reachable by a shorter run (firing
+less events).  His definition of cutoff relies on the fact each event has
+\emph{only one} history and cannot be adapted without changes to the framework
+of contextual nets.
 
 The natural generalization of this idea is to consider that cutoffs are, not
 events, but \emph{enriched events}, that is, pairs $\langle e, H_e \rangle$
-where $e$ is an event and $H_e \in \hist e$.  The unfolding algorithm has also
-to be modified to compute, not a prefix of $\unf N$, but an \emph{enriched
-prefix}, that is, a pair $\langle \pref N, \chi \rangle$ such that $\pref N$ is
-a prefix of $\unf N$ and $\chi : T' \to 2^{\conf{\unf N}}$ associates to all
-events $e$ of $\pref N$ a non empty set of histories of $e$ (that is,
-$\emptyset \not = \chi(e) \subseteq \hist{e}$), additionally
-verifying\footnote{We impose this constrain on $\chi$ to conform the definition
-of \emph{closed occurrence net} of \rbib{BCKS08}.  Intuitively, this constraint
-forces the enriched prefix to be such that the history of any event $e$ present
-in the prefix is the union of the histories associated events $e'$ in
-asymmetric conflict to $e$.  Due to space constrains, we skip providing a
-detailed motivation of this additional constraint and point the reader to
+where $e$ is an event and $H_e \in \hist e$ is a history of $e$.  The unfolding
+algorithm has also to be modified to compute, not a prefix of $\unf N$, but an
+\emph{enriched prefix}, that is, a pair $\langle \pref N, \chi \rangle$ such
+that $\pref N$ is a prefix of $\unf N$ and $\chi : T' \to 2^{\conf{\unf N}}$ is
+a function associating to every event $e$ of $\pref N$ a non empty set of
+histories of $e$ (that is, $\emptyset \not = \chi(e) \subseteq \hist{e}$),
+additionally verifying\footnote{We impose this constrain on $\chi$ to conform
+the definition of \emph{closed occurrence net} of \rbib{BCKS08}.  Intuitively,
+this constraint forces the enriched prefix to be such that the history of any
+event $e$ present in the prefix is the union of the histories associated events
+$e'$ in asymmetric conflict to $e$.  Due to space constrains, we skip providing
+a detailed motivation of this additional constraint and point the reader to
 review Definition 12 of \rbib{BCKS08}.} that $H \in \chi (e)$ and $e' \in H$
 implies $H \sem{e'} \in \chi (e')$.
 
@@ -706,7 +704,7 @@ Let us set some additional definitions. Let $\enr N = \langle \pref N, \chi
 \rangle$ be an enriched prefix.  First, we set that a configuration $C$ of
 $\enr N$ is any configuration $C \in \conf{\pref N}$ that verifies $C \sem e
 \in \chi (e)$ for all $e \in C$.  The set of configurations of $\enr N$ is
-denoted by $\conf{\enr N}$.  Second, we consider by extension that $\unf N$
+denoted by $\conf{\enr N}$.  Second, we consider that, by extension, $\unf N$
 \emph{is} the enriched prefix $\langle \unf N, \chi \rangle$ such that $\chi
 (e) = \hist{e}$ for $e \in T'$.  Finally, we say that $\langle e, H_e \rangle$
 is an enriched event \emph{of} $\enr N$, denoted by $\varepsilon \in \enr N$,
@@ -777,7 +775,7 @@ $\trunc N$ has a finite number of enriched events and is complete.
 \label{sec:challenging.aspects}
 
 The main goal of this work is to provide an implementation of the unfolding
-algorithm for contextual nets, as presented in \rbib{BCKS08}.  The Mole
+algorithm for contextual nets, presented in \rbib{BCKS08}.  The Mole
 unfolder \rbib{MOLE} served as inspiration for the implementation of our
 contextual unfolder, but almost\footnote{Only the routines to read the
 description of the contextual net from a file could be reused, as the
@@ -785,7 +783,7 @@ contextual unfolder uses almost the same input format than Mole.} no code could
 be reused from it.  In this section, we justify why our implementation is not
 just an extension of Mole, but a new 4700 lines of code tool written from
 scratch, by presenting the challenging aspects that arises when unfolding
-contextual nets instead of Petri Nets.
+contextual nets instead of Petri nets.
 
 \begin{figure}
 \centering{\includegraphics{fig/read-arcs.fig}}
@@ -797,7 +795,7 @@ relation.}
 \paragraph{Conflict relation on events.}  A set of events are in
 \emph{conflict} iff no configuration (or run) fires all them together.  Hence,
 determining if a set is a configuration amounts to check that there is no
-subset of events in conflict.  In Petri Net unfoldings, this reduces to a
+subset of events in conflict.  In Petri net unfoldings, this can be reduced to a
 number of pairwise checks of events, relying on the fact that the (symmetric)
 conflict relation is \emph{binary}.  In contextual net unfoldings, this is no
 longer the case, as we have to check for a loop of \emph{any length} in the
@@ -809,7 +807,7 @@ Checking whether a set of events is a configuration is a central task of the
 unfolding algorithm (see \rsec{computation.possible}) and can no longer be made
 by checking for binary conflicts, as it is done in Mole.
 
-\paragraph{Management of histories.}  While in the unfolding of a Petri Net,
+\paragraph{Management of histories.}  While in the unfolding of a Petri net,
 each event conceptually represents only one run (or history) of the original
 net, in the unfolding of a contextual net, events correspond to more than one
 run in the original net.  As the unfolding algorithm used in this work
@@ -820,7 +818,7 @@ is no explicit notion (data structure or algorithm) of history in Mole that we
 could reuse or extend.
 
 \paragraph{Concurrency relation on conditions.}  In the unfolding of a Petri
-Net, each pair of conditions is either in \emph{causal} or \emph{concurrent} or
+net, each pair of conditions is either in \emph{causal} or \emph{concurrent} or
 \emph{conflict} relation (see \S3.1 at \rbib{ERV96}) but never in two of these
 relations at the same time.  In a contextual net unfolding, two conditions can
 be in (asymmetric) conflict and still be marked by some marking (be
@@ -832,9 +830,9 @@ can still define a concurrency relation on \emph{enriched conditions} (see
 Mole and rather implement such relation from scratch.
 
 \paragraph{Computational order $\evolves$ and asymmetric conflicts.}  The
-computational order $\evolves$ is remarkably not only the inclusion ordering
-between configurations, but also requires to check certain conditions regarding
-the asymmetric conflict relation (see definition in \rpag{pag:evolves}).  Our
+computational order $\evolves$ is remarkably not only set inclusion between
+configurations, but also requires to check certain conditions regarding the
+asymmetric conflict relation (see definition in \rpag{pag:evolves}).  Our
 current implementation needs to compute the relation $\evolves$ between
 histories each time it extends the unfolding by one enriched event.  This
 requires to explicitly store (a simplified version of) the asymmetric conflict
@@ -844,8 +842,8 @@ conflict relation is present in Mole.
 \section{Computing the unfolding}
 \label{sec:computing.unfolding}
 
-In the previous section, we defined for a 1-safe contextual net $N$, a finite
-and complete enriched prefix $\trunc N$ of the full unfolding $\unf N$.  In
+In the previous section we presented a finite and complete enriched prefix
+$\trunc N$ of the full unfolding $\unf N$ for a 1-safe contextual net $N$.  In
 this section, we provide an algorithm to compute a possibly larger enriched
 prefix $\fnr N$ that is still finite and complete.
 
@@ -870,8 +868,8 @@ the algorithm, we make use of a special event $\bot$ whose postset is the
 initial marking $m'_0$.  Event $\bot$ is \emph{not} mapped through $f_T$ to $N$
 and is removed from $\fnr N$ at the end of the algorithm.
 
-After reading \ralg{unfolding.procedure}, one realizes that two procedures
-remain undefined, namely \peupdate{} and \iscutoff{}.  We provide a declarative
+In \ralg{unfolding.procedure}, one realizes that two procedures remain
+undefined, namely \peupdate{} and \iscutoff{}.  We provide a declarative
 definition of \peupdate{} in \rsec{computation.possible}, while \iscutoff{} is
 described here.  Procedure $\iscutoff (e, H)$ takes an enriched event as
 argument and returns true if $\langle e, H \rangle$ is a cutoff, false
@@ -886,7 +884,7 @@ $\langle e, H \rangle$, all enriched events $\langle e', H' \rangle$ of $\unf
 N$ with $|H'| < |H|$ have already been appended to $\fnr N$.  For this reason,
 if $\langle e, H \rangle$ has a corresponding event in $\unf N$, then that
 event is already present in $\fnr N$.}.  It can be implemented by means of an
-exhaustive search\footnote{Although we didn't implement it like that.  A more
+exhaustive search\footnote{However, we didn't implement it like that.  A more
 elaborated version of it can be as follows:  we store a hash table mapping
 $\marking{H_e}$ to $\varepsilon = \langle e, H_e \rangle$ for every
 $\varepsilon$ of $\fnr N$.  When $\iscutoff (e, H)$ is called, we access the
@@ -895,7 +893,7 @@ Otherwise, if $\langle e', H' \rangle$ is found, we return $H' < H$.} of such
 $H'$ in the image of $\chi$.  
 
 For the rest of this section, we let $\fnr N$ be the enriched prefix computed
-by \ralg{unfolding.procedure}.  As well, we let $\enr N = \langle \pref N, \chi
+by \ralg{unfolding.procedure}.  We let also $\enr N = \langle \pref N, \chi
 \rangle$, with $\pref N = \langle P', T', F', C', m'_0 \rangle$ and $\chi : T'
 \to 2^{2^{T'}}$, be the enriched prefix that results from \emph{stopping
 \ralg{unfolding.procedure} at any arbitrary point}.  That is, $\enr N$ is any
@@ -940,14 +938,11 @@ assume that $e$ is $\langle M_p, M_c, t \rangle$
 
 \ralg{unfolding.procedure} builds $\fnr N$ by starting from an empty enriched
 prefix $\enr N$ and appending new enriched events to it, one at each iteration
-of its only loop.  Each enriched event that is a candidate to be appended to
+of its unique loop.  Each enriched event that is a candidate to be appended to
 $\enr N$ at any point in the construction of $\enr N$ is called a
 \emph{possible extension}.  Intuitively, possible extensions are enriched
 events of $\unf N$, currently not present in $\enr N$, that are \emph{enabled}
 at the cut of some configuration of $\enr N$.
-
-%A set of events is called concurrent if all of them belong to the cut of some
-%configuration.
 
 \begin{definition}
 \label{def:possible.extension}
@@ -964,16 +959,17 @@ N$ is said to be \emph{induced by} $\varepsilon$ if $e \nearrow e'$ and $H
 \subseteq H'$.
 \end{definition}
 
-The set $E$ stores the possible extensions of $\enr N$.  Each new enriched
-event $\varepsilon$ being appended to $\enr N$ appends at least one new
-configuration to $\enr N$, possibly rendering $E$ out of date, as new enriched
-events may now be possible extensions enabled at the cut of such configuration.
-It is easy to see that any such possible extension is induced by $\varepsilon$.
-Procedure \peupdate{} returns the set of possible extensions to $\enr N$
-induced by the enriched event that takes as argument, and it is used to update
-$E$ after the addition of any new enriched event.  Due to the space
-constraints, we present here a declarative definition of \peupdate{}.  A
-pseudocode version of the procedure is presented in \rape{algorithms}.
+In \ralg{unfolding.procedure}, the set $E$ stores the possible extensions of
+$\enr N$.  Every new enriched event $\varepsilon$ appended to $\enr N$ inserts
+at least one new configuration in $\enr N$, possibly rendering $E$ out of date,
+as new enriched events may now be possible extensions enabled at the cut of
+such configuration.  It is easy to see that any such event is a possible
+extension induced by $\varepsilon$.  Procedure \peupdate{} returns the set of
+possible extensions to $\enr N$ induced by the enriched event that it takes as
+argument, and it is used to update $E$ after the addition of every new enriched
+event.  Due to the space constraints, we present here a declarative definition
+of \peupdate{}.  A pseudocode version of the procedure is presented in
+\rape{algorithms}.
 
 \begin{figure}[b]
 \centering{\includegraphics{fig/possible-extensions.fig}}
@@ -1077,29 +1073,27 @@ N$ and whose set of edges contains a pair $(e, e')$ iff $e \uparrow e'$ (see
 \rfig{the.graph} (b) for an example).  Whenever a new event $e$ is appended to
 $\pref N$, we use \rdef{direct.asymmetric} to update $\agr N$.  This can be
 done easily by considering the events reading or consuming $\pre e$ and $\cont
-e$.  Our unfolder queries, for instance, then the relation $\uparrow$ by means
-of the graph $\agr N$ whenever it needs to compute the relation $\confl$.  In
-particular, this occurs within the computation of procedure \peupdate{}.
+e$.  
 
 \subsection{History graph}
 \label{sec:history.graph}
 
-\ralg{unfolding.procedure} needs to deal with enriched events $\langle e, H_e
+\ralg{unfolding.procedure} needs to deal with enriched events $\langle e, H
 \rangle$ of $\enr N$.  We now describe a data structure to store the history
-$H_e$ of such enriched events, as well as the mapping $\chi$.
+$H$ of such enriched events, as well as the mapping $\chi$.
 
-A naive implementation could represent $H_e$ by means of the list of events
-that it contains.  Naturally, this would lead to a bottleneck as the prefix
-$\enr N$ \textit{grows} and histories are larger.  We take advantage of the
-fact that each history $H_e$ is the union of $\{e\}$ with a set of histories
+A naive implementation could represent every history by means of the list of
+events contained in it.  Naturally, this would lead to a bottleneck as the
+prefix $\enr N$ \textit{grows} and histories are larger.  We take advantage of
+the fact that each history $H$ is the union of $\{e\}$ with a set of histories
 $H_{e'}$ for events $e' \uparrow e$, as explained in
-\rsec{computation.possible} and remarked in \rsec{direct.asymmetric}.  We
-represent $H_e$ by means of a node in the so called \emph{history graph}.
+\rsec{computation.possible}.  We represent $H$ by means of a node in the so
+called \emph{history graph}.
 
 \begin{definition}
-For the enriched prefix $\enr N$, we define the \emph{history graph} $\hst N =
-(V, \to)$ as the directed graph whose set of nodes $V$ coincides with the set
-$\{\langle e, H \rangle \mid e \in T' \land H \in \chi (e)\}$ of enriched
+For a given enriched prefix $\enr N$, we define the \emph{history graph} $\hst
+N = (V, \to)$ as the directed graph whose set of nodes $V$ coincides with the
+set $\{\langle e, H \rangle \mid e \in T' \land H \in \chi (e)\}$ of enriched
 events of $\enr N$, and whose edges are pairs $\langle e, H \rangle \to \langle
 e', H' \rangle$ iff $e' \in H$, and $e' \uparrow e$ and $H' = H \sem{e'}$.
 \end{definition}
@@ -1129,9 +1123,10 @@ set $r (\varepsilon) = \{e' \in T' \mid \varepsilon \to^* \langle e', H'
 procedure on $\hst N$.
 
 Our unfolder implements the mapping $\chi$ by means of the graph $\hst N$ and a
-list $l_e$ of nodes of $\hst N$ associated to each event $e \in T'$.  When we
-want to enumerate each history of $\chi(e)$, we iterate through the list $l_e$,
-and for each $\varepsilon \in l_e$, we return the set $r(\varepsilon)$.
+list $l_e$ of nodes of $\hst N$ associated to each event $e \in T'$.  In order
+to enumerate $\chi (e)$, it suffices to enumerate $l_e$.  In order to enumerate
+the events in the history of some node $\varepsilon$ of $\hst N$, we return the
+set $r(\varepsilon)$.
 
 \subsection{Cutoff criterion and adequate orders}
 \label{sec:cutoff.criterion}
@@ -1155,11 +1150,11 @@ extension $E$ of $C_1$, and $C_2 \sqsubset C_2 \cup E'$ for some extension $E'$
 isomorphic to $E$, then $C_1 \cup E \prec C_2 \cup E'$.
 \end{definition}
 
-In \rbib{ERV96}, adequate orders are defined for Petri Nets.  Here we provide a
-generalization for contextual nets.  Every adequate order as defined in
-\rbib{ERV96} is an adequate order as defined in \rdef{adequate.order}, which
-intuitively means that our definition is more general.  Briefly, this holds
-because $C_1 \sqsubset C_2$ implies $C_1 \subset C_2$.
+In \rbib{ERV96}, adequate orders are defined for Petri nets.  Every adequate
+order as defined in \rbib{ERV96} is an adequate order as defined in
+\rdef{adequate.order}, which intuitively means that our definition is more
+general.  Briefly, this holds because $C_1 \sqsubset C_2$ implies $C_1 \subset
+C_2$.
 
 We can redefine now the notion of cutoff according to any order on $\conf{\unf
 N}$ that is adequate.  We call \emph{adequate cutoff} to any enriched event
@@ -1178,7 +1173,7 @@ $\atrunc N$ has a finite number of enriched events and is complete.
 \end{theorem}
 
 The so called McMillan order ($C_1 \prec C_2$ iff $|C_1| < |C_2|$) is adequate.
-This is the order used in \rbib{BCKS08} and the one we use in
+This is the order used in \rbib{BCKS08} as well as on
 \ralg{unfolding.procedure} and the definition of \iscutoff{}.  For our
 unfolder, we also implemented the order $\prec_F$ of \rbib{ERV96}, which, due
 to space constraints we cannot present here.
@@ -1192,16 +1187,16 @@ extensions to $\enr N$, in particular in the computation of the $\confl$
 relation.  Roughly speaking, code profiling has pointed out that our tool
 spends in average 85\% of the time computing the relation $\confl$.  We propose
 now an optimization of procedure \peupdate{} that could speed up the unfolding
-the algorithm.
+algorithm.
 
-In a Petri Net unfolding, it is possible to define a \emph{binary} concurrency
+In a Petri net unfolding, it is possible to define a \emph{binary} concurrency
 relation $R$ on the unfolding conditions.  Then, it is possible to determine if
 a number of conditions are concurrent by checking whether \emph{every} pair of
 conditions is in $R$.  Such approach is successfully exploited by Mole to speed
 up the computation of the unfolding.  Unfortunately, this idea cannot be used
-without modifications in the framework of contextual unfoldings, due to
-existence of several histories for each event.  We can nevertheless define a
-concurrency relation on enriched conditions.
+without modifications in the framework of contextual unfoldings.  We can
+nevertheless define a concurrency relation, not on conditions, but on enriched
+conditions.
 
 An \emph{enriched condition} of $\enr N$ is a pair $\rho = \langle c, H
 \rangle$ such that either $H = \emptyset$ and $c \in m'_0$, the initial marking
@@ -1225,7 +1220,7 @@ $$ \rho \parallel \rho' \bydef\iff \lnot (H \confl H') \land \{c, c'\}
 \subseteq \cut{H \cup H'}$$  That is, $\rho$ is concurrent to $\rho'$ if its
 histories are not in conflict, and $H$ does not consume $c'$ and $H'$ does not
 consume $c$.  Relation $\parallel$ enjoy the property that any set of
-conditions $\{c_1, \ldots, c_n\}$ is concurrent iff there exists enriched
+conditions $\{c_1, \ldots, c_n\}$ is concurrent iff there exist enriched
 conditions $\langle c_1, H_1 \rangle, \ldots, \langle c_n, H_n \rangle$
 verifying $\langle c_i, H_i \rangle \parallel \langle c_j, H_j \rangle$ for $1
 \le i < j \le n$.  We believe that is remarkably interesting from the point of
@@ -1257,12 +1252,12 @@ To understand the practical utility of this equivalence, assume that $\langle
 e, H \rangle$ is the last possible extensions appended to $\enr N$.  This
 triggered the addition of enriched conditions $\rho = \langle c, H \rangle$
 with $c \in \post e \cup \cont e$.  At this point, we use \rthm{two.different}
-so as to compute and store $\rho \parallel \rho'$ for every $\rho'$ already
-present in $\enr N$.  We compute $\rho \parallel \rho'$ by means of a boolean
-conjunction that regards the previously computed results of $\rho_i \parallel
-\rho'$ and $\sigma_j \parallel \rho'$ for certain enriched conditions $\rho_i$
-and $\sigma_j$, as well as other logical conditions, that are also easy to
-compute.
+to compute and subsequently store $\rho \parallel \rho'$ for every $\rho'$
+already present in $\enr N$.  We compute $\rho \parallel \rho'$ by means of a
+boolean conjunction that regards the previously computed results of $\rho_i
+\parallel \rho'$ and $\sigma_j \parallel \rho'$ for certain enriched conditions
+$\rho_i$ and $\sigma_j$, as well as other logical conditions, that are also
+easy to compute, considering the internal data structures of our unfolder.
 
 The ability to use the relation $\parallel$ to compute sets of concurrent
 conditions as well as the fact that it can be computed incrementally as $\enr
@@ -1320,16 +1315,16 @@ computation was complete or not.  When testing under toy examples, this can be
 check by hand, but this is no longer the case when the examples are big.  We
 addressed this problem in two different ways.
 
-We made profit of the existence of the Petri Net unfolder Mole.  Mole is able
-to compute a compete unfolding prefix for a Petri Net, without read arcs.  We
-developed a small tool to check whether two given Petri Nets are isomorphic,
-and compared the resulting prefixes when unfolding the same Petri Net with both
+We made profit of the existence of the Petri net unfolder Mole.  Mole is able
+to compute a compete unfolding prefix for a Petri net, without read arcs.  We
+developed a small tool to check whether two given Petri nets are isomorphic,
+and compared the resulting prefixes when unfolding the same Petri net with both
 unfolders.  We can assure that for all the (trivial and non trivial) examples
 provided by the PEP~Project \rbib{PEP}, the output of our unfolder is a prefix
 isomorphic to the prefix generated by Mole.
 
 Of course, Mole cannot unfold contextual nets.  In order to check our unfolder
-on Petri Nets with read arcs, we developed another tool able to compute the
+on Petri nets with read arcs, we developed another tool able to compute the
 reachability set of any 1-safe net.  We then applied it to a set of examples
 and its unfoldings obtained through our tool.  In all the cases the
 reachability set of the example and its unfolding was the same.
@@ -1366,8 +1361,8 @@ subsequently proved how we can still use them to build a finite and complete
 prefix.  A concurrency relation on enriched conditions has also been suggested,
 but not implemented.  This relation has subsequently been characterized so as
 to allow the relation itself to be updated as the unfolding grows.  Similar
-ideas have successfully been used in Mole, a Petri Net (without read arcs)
-unfolder, which let us think that this could be an interesting avenue.
+ideas have successfully been used in Mole, a Petri net (without read arcs)
+unfolder, which suggests that this could be an interesting avenue.
 
 The implementation of the contextual unfolder showed to be non trivial (4700
 lines of C code).  With the goal of soundness in mind, and whenever possible,

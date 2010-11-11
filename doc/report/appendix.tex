@@ -4,17 +4,15 @@
 \section{Proofs}
 \label{ape:proofs}
 
-We provided in this Appendix proofs of the statements presented in previous
+We provide in this Appendix proofs of the statements presented in previous
 sections.  For each proof, we first formulate the statement and then present
 its proof by \emph{making the same assumptions as those made in the section
 where the statement initially appears}.
 
 Let us present here some notation whose presentation we had to skip due to the
-space constraints of this document.
-
-We say that a configuration $C$ of the full unfolding $\unf N$ (or enriched
-prefix $\enr N$ of it), \emph{contains} an enriched event $\langle e, H
-\rangle$ if $e \in C$ and $H = C \sem e$.
+space constraints of this document.  We say that a configuration $C$ of the
+full unfolding $\unf N$ (or enriched prefix $\enr N$ of it), \emph{contains} an
+enriched event $\langle e, H \rangle$ if $e \in C$ and $H = C \sem e$.
 
 For any enriched event $\varepsilon = \langle e, H \rangle$ of $\unf N$ (or
 enriched prefix $\enr N$ of it), we will write $\varepsilon^H$ to denote $H$
@@ -38,9 +36,9 @@ marking in $N$, we would have infinite cutoffs in $\trunc N$, a contradiction.
 As the number of configurations is finite, the number of enriched events must
 be finite.
 
-We say that a configuration $C$ \emph{contains} an enriched event $\langle e,
-H_e \rangle$ if $e \in C$ and $H_e = C \sem e$.  According to this definition,
-it is possible to prove that, for any configuration of $\unf N$ we can find a
+We say that a configuration $C$ contains an enriched event $\langle e, H_e
+\rangle$ if $e \in C$ and $H_e = C \sem e$.  According to this definition, it
+is possible to prove that, for any configuration of $\unf N$ we can find a
 configuration free of cutoffs.  That configuration must be present in $\trunc
 N$.  Since $\unf N$ is complete, we can conclude that $\trunc N$ is also
 complete.
@@ -116,7 +114,7 @@ Due to the fact that $\hst N$ is acyclic (\rlem{the.edge}), we know that $\to$
 is well founded.  We prove the statement by structural induction on the edge
 relation $\to$.
 
-\paragraph{Base case} Node $\varepsilon$ has no outgoing edge.  We have to
+\paragraph{Base} Node $\varepsilon$ has no outgoing edge.  We have to
 prove that $H = \{e\}$.  For an argument by contradiction, assume that there is
 at least one enriched event $e_1 \in H \setminus \{e\}$.  As $e_1 \in H$ and
 $e_1 \ne e$, we have $e_1 \nearrow^+_H e$.  This implies that we can find some
@@ -213,7 +211,7 @@ is a configuration, implies that $\pre{e} \subseteq \cut{C_1}$. From this, it
 follows that $e \in \post{\cut{C_1}}$.
 
 Now notice that $\post{\cut{C_1}}$ is finite, because $C_1$ is finite and the
-preset and postset of each event in $\trunc{N}$ is finite (due to our initial
+preset and postset of each event in $\unf N$ is finite (due to our initial
 assumption about the finiteness of $N$).  So there is, at most, a finite number
 of \emph{different} events $e \in \post{\cut{C_1}}$ and hence a finite number
 of different sets $C_1 \cup \{e\}$.  As we saw previously, any $C_2$ such that
@@ -284,10 +282,9 @@ $e \in C$ and $H_e = C \sem e$.  Then, by definition, we know that either
 $\marking{H_e} = m'$, with $m'$ the initial marking of $\unf N$, or there
 exists another enriched event $\langle e', H_{e'} \rangle$ such that
 $\marking{H_e} = \marking{H_{e'}}$ and $H_{e'} \prec H_e$.  In both cases, we
-regard the history $H$ defined as $H \bydef{=} \emptyset$ in the first case and
-$H \bydef{=} H_{e'}$ in the second case.  Notice that in any case, $H \prec
-H_e$ (if $H = \emptyset$, then $H \sqsubset H_e$ and by definition, $H \prec
-H_e$).
+regard history $H$ defined as $H \bydef{=} \emptyset$ in the first case and $H
+\bydef{=} H_{e'}$ in the second case.  Notice that in any case, $H \prec H_e$
+(if $H = \emptyset$, then $H \sqsubset H_e$ and by definition, $H \prec H_e$).
 
 As $\marking{H_e} = \marking{H}$, it is possible to find an extension of $H$
 firing exactly the same transitions as those labeling the set $C \setminus
@@ -464,12 +461,12 @@ Let $\pre{\pre\rho} = \{\rho_1, \ldots, \rho_n\}$ and $\cont{\pre\rho} =
 \rangle$ to range the set $\pre{\pre \rho}$ and variable $\sigma_j = \langle
 H_j, c_j \rangle$ to range the set $\cont{\pre \rho}$, with $1 \le i \le n$ and
 $1 \le j \le m$.  For any $\rho_i$ and $\sigma_j$, we let $H_i \in \chi (e_i)$
-and $H_j \in \chi (e_j)$.  Note also that, by definition, $H_i = H \sem{e_i} =
-H\sem{c_i}$ and that $H_j = H\sem{e_j} = H\sem{c_j}$.  It is easy also to see
-that for any pair $\rho_1, \rho_2 \in \pre{\pre\rho} \cup \cont{\pre\rho}$ we
-have $\rho_1 \parallel \rho_2$.  Finally note that, also by construction, $H =
-\{e\} \cup \bigcup_{\rho_i \in \pre{\pre\rho}} \rho^H_i \cup \bigcup_{\sigma_j
-\in \cont{\pre\rho}} \sigma^H_j$.
+and $H_j \in \chi (e_j)$.  Note also that, by definition, $H_i = H \sem{e_i}$
+and that $H_j = H\sem{e_j}$.  It is easy also to see that for any pair $\rho_1,
+\rho_2 \in \pre{\pre\rho} \cup \cont{\pre\rho}$ we have $\rho_1 \parallel
+\rho_2$.  Finally note that, also by construction, $H = \{e\} \cup
+\bigcup_{\rho_i \in \pre{\pre\rho}} \rho^H_i \cup \bigcup_{\sigma_j \in
+\cont{\pre\rho}} \sigma^H_j$.
 
 We prove in the sequel both directions of the co-implication.  From left to
 right, we prove that the hypothesis implies each one of the conjunctions.
