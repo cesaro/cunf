@@ -327,8 +327,8 @@ sub print_markings {
 	$i = 0;
 	for $k (sort (keys %markings)) {
 		$v = $markings{$k};
-		print @$v[0], " $k  after ", trans2labeling (@$v[1 .. @$v - 1]), "\n";
-		#print "$k\n";
+		#print @$v[0], " $k  after ", trans2labeling (@$v[1 .. @$v - 1]), "\n";
+		print "$k\n";
 		$i++;
 	}
 	print " -- $i markings\n"

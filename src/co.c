@@ -45,7 +45,7 @@ void co_add (struct ec *r)
 	struct cond *c;
 	struct h *hp;
 	struct ls *n;
-	int m1, m;
+	int m;
 	int i, j;
 
 	/* notation:
@@ -100,28 +100,23 @@ void co_add (struct ec *r)
 	if (r->h->id == 0) return;	
 	ASSERT (r->h->ecl.deg >= 1);
 
-	/* 3. generate marks m1, m */
-	m1 = ++u.mark;
+	/* 3. generate mark m */
 	m = ++u.mark;
-	ASSERT (m1 > 0);
 	ASSERT (m > 0);
 
-	/* 4. mark with m1 events e' in H such that e' \uparrow e */
-	for (i = r->h->nod.deg - 1; i >= 0; i--) {
-		hp = (struct h *) r->h->nod.adj[i];
-		hp->e->m = m1;
-	}
-
 	/* 5. mark with m pre(e) */
-	/* 6. mark with m events e' such that e' is not marked with m1 and
-	 * cont(e') intersects pre(e) */
+	/* 6. mark with m events e' reading from pre (e) */
 	for (i = e->pre.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->pre.adj[i];
 		c->m = m;
 		for (j = c->cont.deg - 1; j >= 0; j--) {
-			ep = (struct event *) c->cont.adj[j];
-			if (ep->m != m1) ep->m = m;
+			((struct event *) c->cont.adj[j])->m = m;
 		}
+	}
+
+	/* 4. now unmark those e' *in H* that read from pre (e) */
+	for (i = r->h->sd.deg - 1; i >= 0; i--) {
+		((struct event *) r->h->sd.adj[i])->m = 0;
 	}
 
 	/* 7. mark with m all enriched conditions r' in co(r_0) such that no
@@ -133,9 +128,6 @@ void co_add (struct ec *r)
 		rp = (struct ec *) ri->co.adj[i];
 		if (rp->c->m == m) continue;
 
-		/* if some event of H' reading some condition of cut(H') is
-		 * marked with m2, then r' is not concurrent to r */
-		/* FIXME -- simplify this loop, see pe.c:300 */
 		for (rpp = rp; rpp; rpp = rpp->r2) {
 
 			/* assert a correct structure of r' */

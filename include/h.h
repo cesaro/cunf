@@ -26,6 +26,7 @@ struct h {
 	int depth;		/* 1 + max(h->nod.adj[i]->depth) */
 
 	struct al rd;		/* events in h reading the cut of h */
+	struct al sd;		/* events in h reading from pre(h->e) */
 	struct nl *marking;	/* marking associated to the history */
 	struct h *corr;		/* if h is cutoff, corresponding history */
 	struct {

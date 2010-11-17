@@ -325,8 +325,6 @@ static struct h * _pe_comb_new_hist (struct event *e)
 	struct ec *r;
 	int i;
 
-	/* FIXME -- hace falta comprobar duplicados? */
-
 	h = h_alloc (e);
 
 	for (r = pe.comb.r; r->h == 0; r = r->r2) {

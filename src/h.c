@@ -378,6 +378,7 @@ struct h * h_alloc (struct event * e)
 	h->m = 0;
 	h->depth = 0;
 	al_init (&h->rd);
+	al_init (&h->sd);
 	h->marking = 0;
 	h->parikh.tab = 0;
 
@@ -415,7 +416,7 @@ struct h * h_dup (struct h * h)
 	al_init (&nh->ecl);
 	al_cpy (&nh->ecl, &h->ecl);
 	al_init (&nh->rd);
-	al_cpy (&nh->rd, &h->rd);
+	al_init (&nh->sd);
 
 	al_add (&nh->e->hist, nh);
 	return nh;
@@ -427,6 +428,7 @@ void h_free (struct h *h)
 	al_term (&h->nod);
 	al_term (&h->ecl);
 	al_term (&h->rd);
+	al_term (&h->sd);
 	nl_delete (h->marking);
 	gl_free (h->parikh.tab);
 	gl_free (h);
@@ -503,18 +505,19 @@ void h_marking (struct h *h)
 	struct place *p;
 	struct cond *c;
 
-	 /* 1. explore all events of history h and mark its preset
-	  * 2. explore again all events of history h and append to the marking
-	  * all places labeling conditions in the postset of each event (take
-	  * care of the fact that *maybe* the postset of the event is still not
-	  * built)
-	  * 2'. profit the occasion of exploring the history again to build the
-	  * parikh vector 
-	  * 2''. if the place labeling a condition is appended to the marking,
-	  * append to the adjacency list rd all events reading that condition
-	  * that have been marked in 1.
-	  * 3. append the postset of h->e->ft if needed
-	  * 4. we are done! */
+	/* 1. explore all events of history h and mark its preset
+	 * 2. explore again all events of history h and append to the marking
+	 * all places labeling conditions in the postset of each event (take
+	 * care of the fact that *maybe* the postset of the event is still not
+	 * built)
+	 * 2'. profit the occasion of exploring the history again to build the
+	 * parikh vector 
+	 * 2''. if the place labeling a condition is appended to the marking,
+	 * append to the adjacency list rd all events reading that condition
+	 * that have been marked in 1.
+	 * 3. append the postset of h->e->ft if needed
+	 * 4. insert into sd those events in h reading from pre(h->e)
+	 * 5. we are done! */
 
 	visited = ++u.mark;
 	ASSERT (visited > 0);
@@ -576,6 +579,15 @@ void h_marking (struct h *h)
 		for (i = h->e->ft->post.deg - 1; i >= 0; i--) {
 			p = (struct place *) h->e->ft->post.adj[i];
 			nl_insert (&l, p);
+		}
+	}
+
+	/* 4. insert into sd those events in h reading from pre(h->e) */
+	for (i = h->e->pre.deg - 1; i >= 0; i--) {
+		c = (struct cond *) h->e->pre.adj[i];
+		for (j = c->cont.deg - 1; j >= 0; j--) {
+			e = (struct event *) c->cont.adj[j];
+			if (e->m == visited) al_add (&h->sd, e);
 		}
 	}
 
