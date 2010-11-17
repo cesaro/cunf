@@ -2,7 +2,6 @@
 #ifndef _MARKING_H_
 #define _MARKING_H_
 
-#include "nodelist.h"
 #include "h.h"
 
 void marking_init (void);

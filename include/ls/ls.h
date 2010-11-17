@@ -1,10 +1,10 @@
 
 /*
- * Static singly-linked list -- interface
+ * Static Singly-Linked List -- interface
  */
 
-#ifndef _LS_H_
-#define _LS_H_
+#ifndef _LS_LS_H_
+#define _LS_LS_H_
 
 struct ls {
 	struct ls * next;

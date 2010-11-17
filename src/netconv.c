@@ -10,8 +10,8 @@
 #include "unfold.h"
 #include "global.h"
 #include "debug.h"
+#include "ls/ls.h"
 #include "glue.h"
-#include "ls.h"
 
 #include "netconv.h"
 
@@ -24,6 +24,7 @@ void nc_create_net()
 	ls_init (&u.net.places);
 	ls_init (&u.net.trans);
 	u.net.numpl = u.net.numtr = 0;
+	u.net.t0 = 0;
 }
 
 void nc_create_unfolding()
@@ -46,11 +47,11 @@ struct place * nc_create_place (void)
 	p = gl_malloc (sizeof (struct place));
 	ls_insert (&u.net.places, &p->nod);
 
-	dg_init (&p->pre);
-	dg_init (&p->post);
-	dg_init (&p->cont);
-	p->conds = 0;
 	p->id = u.net.numpl++;
+	al_init (&p->pre);
+	al_init (&p->post);
+	al_init (&p->cont);
+	ls_init (&p->conds);
 	p->m = 0;
 
 	return p;
@@ -63,14 +64,14 @@ struct trans * nc_create_transition (void)
 	t = gl_malloc (sizeof (struct trans));
 	ls_insert (&u.net.trans, &t->nod);
 
-	dg_init (&t->pre);
-	dg_init (&t->post);
-	dg_init (&t->cont);
-	t->events = 0;
 	t->id = ++u.net.numtr;
+	al_init (&t->pre);
+	al_init (&t->post);
+	al_init (&t->cont);
+	ls_init (&t->events);
+	t->m = 0;
 	t->parikhcnt1 = 0;
 	t->parikhcnt2 = 0;
-	t->m = 0;
 
 	return t;
 }
@@ -79,35 +80,15 @@ struct trans * nc_create_transition (void)
 /* nc_create_arc							    */
 /* Create an arc between two nodes (place->transition or transition->place) */
 
-void nc_create_arc (struct dg * src_post, struct dg * dst_pre,
-		struct dg * src_pre, struct dg * dst_post)
+void nc_create_arc (struct al * src_post, struct al * dst_pre,
+		void * src, void * dst)
 {
-	if (dg_test (src_post, dst_post)) return;
-	dg_add (src_post, dst_post);
-	dg_add (dst_pre, src_pre);
-}
-
-/****************************************************************************/
-/* nc_compute_sizes							    */
-/* compute (maximal) sizes of transition presets/postsets		    */
-
-void nc_compute_sizes (void)
-{
-	struct ls *n;
-	struct trans *t;
-
-	u.net.maxpre = u.net.maxpost = u.net.maxcont = 0;
-	for (n = u.net.trans.next; n; n = n->next) {
-		t = ls_i (struct trans, n, nod);
-
-		if (u.net.maxpre < t->pre.deg) u.net.maxpre = t->pre.deg;
-		if (u.net.maxpost < t->post.deg) u.net.maxpost = t->post.deg;
-		if (u.net.maxcont < t->cont.deg) u.net.maxcont = t->cont.deg;
-	}
+	if (al_test (src_post, dst)) return;
+	al_add (src_post, dst);
+	al_add (dst_pre, src);
 }
 
 /*****************************************************************************/
-
 void nc_static_checks (const char * stoptr)
 {
 	struct trans *t;

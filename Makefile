@@ -7,16 +7,20 @@ include defs.mk
 all: $(TARGETS)
 
 fake :
-	@echo $(MSRCS)
+	@echo $(CROSS)
 	@echo $(CC)
 	@echo $(SRCS)
+	@echo $(MSRCS)
+	@echo $(DEPS)
 
 $(TARGETS) : % : %.o $(OBJS)
 	@echo " LD  $@"
 	@$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $^ $(LDFLAGS) 
 
+e : $(TARGETS)
+	./src/main test/examples/cont/pep/sdl_arq.ll_net
+
 _e : $(TARGETS)
-	./test/dg
 	./src/main test/examples/norm/pep/sem.ll_net
 	./src/main test/examples/norm/pep/elevator.ll_net
 	./src/main test/examples/norm/pep/do_od.ll_net
@@ -32,6 +36,7 @@ _e : $(TARGETS)
 	./src/main test/examples/cont/pep/mutual.ll_net
 
 	./src/main test/examples/small/asymcnfl.ll_net
+	./src/main test/examples/small/conc.ll_net
 	./src/main test/examples/small/test1.ll_net
 	./src/main test/examples/small/fig2.ll_net
 	./src/main test/examples/small/pag9.ll_net
@@ -41,6 +46,7 @@ _e : $(TARGETS)
 	./src/main test/examples/small/erv-size-parih.ll_net
 	./src/main test/examples/small/erv-foata.ll_net
 	./src/main test/examples/small/mcmillan-erv.ll_net
+	./src/main test/examples/small/2readers.ll_net
 	./src/main test/examples/small/8readers.ll_net
 	./src/main test/examples/small/peupdate.ll_net
 	./src/main test/examples/small/peupdate-bug.ll_net
@@ -65,10 +71,6 @@ _e : $(TARGETS)
 	./src/main test/examples/norm/bench/rw_1w3r.ll_net
 	./src/main test/examples/norm/bench/rw_2w1r.ll_net
 
-e : $(TARGETS)
-	./src/main test/examples/norm/bench/buf100.ll_net
-	#./src/main test/examples/cont/pep/peterson.ll_net
-
 gp : $(TARGETS)
 	./src/main test/examples/cont/pep/reader_writer_2.ll_net
 	mv gmon.out gmon.out.1
@@ -80,10 +82,11 @@ gp : $(TARGETS)
 	gprof src/main gmon.out.* > s
 
 ee : $(TARGETS)
-	./test/dg 2>&1 | tee /tmp/mole.log
+	./src/main 2>&1 | tee /tmp/mole.log
 
 g : $(TARGETS)
 	gdb ./src/main
+
 
 menuconfig .config : rules.out
 	@echo " CNF $<"

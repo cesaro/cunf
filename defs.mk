@@ -1,28 +1,24 @@
 
 # traditional variables
-R:=$(shell pwd)
 CFLAGS:=-Wall -Wextra -g
 CPPFLAGS:=-I include/
 LDFLAGS:=
 
 # object file targets
-SRCS:=$(filter-out %/main.c, $(wildcard $R/src/*.c))
-
-OBJS:=$(patsubst %.c,%.o,$(SRCS))
+SRCS:=$(wildcard src/*/*.c)
+SRCS+=$(filter-out %/main.c, $(wildcard src/*.c))
 
 # object files containing a main() function
-MSRCS:=$(wildcard $R/src/main.c)
-
-# tests
-MSRCS+=$(wildcard $R/test/*.c)
-
-MOBJS:=$(patsubst %.c,%.o,$(MSRCS))
-
-# dependency files
-DEPS:=$(patsubst %.o,%.d,$(OBJS)) $(patsubst %.o,%.d,$(MOBJS))
+MSRCS:=$(wildcard src/main.c)
+MSRCS+=$(wildcard test/*.c)
 
 # compilation targets
+OBJS:=$(patsubst %.c,%.o,$(SRCS))
+MOBJS:=$(patsubst %.c,%.o,$(MSRCS))
 TARGETS:=$(patsubst %.o,%,$(MOBJS))
+
+# dependency files
+DEPS:=$(patsubst %.o,%.d,$(OBJS) $(MOBJS))
 
 # define the toolchain
 CROSS:=
@@ -67,7 +63,7 @@ STRIP:=$(CROSS)strip
 	@echo " P2P $<"
 	@tools/pnml2pep.pl < $< > $@
 
-%.dot.r : %.dot
+%.r : %.dot
 	@echo " RS  $<"
 	@tools/rs.pl $< > $@
 

@@ -4,9 +4,9 @@
 #include "nodelist.h"
 #include "marking.h"
 #include "global.h"
+#include "ls/ls.h"
 #include "debug.h"
 #include "glue.h"
-#include "ls.h"
 #include "h.h"
 
 struct hash_entry {

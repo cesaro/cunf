@@ -3,6 +3,7 @@
 #define _GLUE_H_
 
 #include "config.h"
+#include "debug.h"
 
 void gl_free (void * ptr);
 void * gl_malloc (int size);

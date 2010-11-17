@@ -1,10 +1,10 @@
 
 /*
- * Static doubly-linked list
+ * Static Doubly-Linked List
  */
 
-#ifndef _DLS_H_
-#define _DLS_H_
+#ifndef _DLS_DLS_H_
+#define _DLS_DLS_H_
 
 struct dls {
 	struct dls * prev;

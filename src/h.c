@@ -1,10 +1,10 @@
 
 #include "marking.h"
+#include "dls/dls.h"
 #include "global.h"
+#include "al/al.h"
 #include "debug.h"
 #include "glue.h"
-#include "ac.h"
-#include "dg.h"
 #include "h.h"
 
 static void _h_lists (struct h * h1, struct h * h2, struct dls * l1,
@@ -24,7 +24,7 @@ static void _h_lists (struct h * h1, struct h * h2, struct dls * l1,
 		h = dls_i (struct h, n, auxnod);
 		ASSERT (h->m == m1);
 		for (i = h->nod.deg - 1; i >= 0; i--) {
-			hp = dg_i (struct h, h->nod.adj[i], nod);
+			hp = (struct h *) h->nod.adj[i];
 			if (hp->m == m1) continue;
 			hp->m = m1;
 			dls_append (l1, &hp->auxnod);
@@ -48,7 +48,7 @@ static void _h_lists (struct h * h1, struct h * h2, struct dls * l1,
 		h = dls_i (struct h, n, auxnod);
 		ASSERT (h->m == m2);
 		for (i = h->nod.deg - 1; i >= 0; i--) {
-			hp = dg_i (struct h, h->nod.adj[i], nod);
+			hp = (struct h *) h->nod.adj[i];
 			if (hp->m == m12) continue;
 			if (hp->m == m2) continue;
 			if (hp->m == m1) {
@@ -68,7 +68,7 @@ static void _h_lists (struct h * h1, struct h * h2, struct dls * l1,
 		h = dls_i (struct h, n, auxnod);
 		ASSERT (h->m == m12);
 		for (i = h->nod.deg - 1; i >= 0; i--) {
-			hp = dg_i (struct h, h->nod.adj[i], nod);
+			hp = (struct h *) h->nod.adj[i];
 			if (hp->m == m12) continue;
 			ASSERT (hp->m == m1);
 			dls_remove (l1, &hp->auxnod);
@@ -83,23 +83,23 @@ static void _h_lists (struct h * h1, struct h * h2, struct dls * l1,
 	PRINT ("l1 : "); */
 	/* assert that all elements in l1 are marked with m1, that all ... */
 	ASSERT (u.unf.e0->hist.deg == 1);
-	ASSERT (dg_i (struct h, u.unf.e0->hist.adj[0], nod)->m == m12);
+	ASSERT (((struct h *) u.unf.e0->hist.adj[0])->m == m12);
 	for (n = l1->next; n; n = n->next) {
 		h = dls_i (struct h, n, auxnod);
 		ASSERT (h->m == m1);
-		// PRINT ("e%d:%s ", h->e->id, h->e->origin->name);
+		// PRINT ("e%d:%s ", h->e->id, h->e->ft->name);
 	}
 	// PRINT ("\nl2 : ");
 	for (n = l2->next; n; n = n->next) {
 		h = dls_i (struct h, n, auxnod);
 		ASSERT (h->m == m2);
-		// PRINT ("e%d:%s ", h->e->id, h->e->origin->name);
+		// PRINT ("e%d:%s ", h->e->id, h->e->ft->name);
 	}
 	// PRINT ("\nl12 : ");
 	for (n = l12->next; n; n = n->next) {
 		h = dls_i (struct h, n, auxnod);
 		ASSERT (h->m == m12);
-		// PRINT ("e%d:%s ", h->e->id, h->e->origin->name);
+		// PRINT ("e%d:%s ", h->e->id, h->e->ft->name);
 	}
 	// PRINT ("\n");
 #endif
@@ -177,7 +177,7 @@ void __h (struct dls * l)
 
 	for (n = l->next; n; n = n->next) {
 		h = dls_i (struct h, n, auxnod);
-		PRINT ("%02d h%d/e%d:%s\n", h->depth, h->id, h->e->id, h->e->origin->name);
+		PRINT ("%02d h%d/e%d:%s\n", h->depth, h->id, h->e->id, h->e->ft->name);
 	}
 	PRINT ("\n");
 }
@@ -216,7 +216,7 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 			h = dls_i (struct h, n, auxnod);
 			if (h->depth != depth) continue;
 			dls_remove (&l1, n);
-			t = h->e->origin;
+			t = h->e->ft;
 			if (t->parikhcnt1 == 0 && t->parikhcnt2 == 0) {
 				nl_insert2 (&l, t, _h_t_cmp);
 			}
@@ -228,7 +228,7 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 			h = dls_i (struct h, n, auxnod);
 			if (h->depth != depth) continue;
 			dls_remove (&l2, n);
-			t = h->e->origin;
+			t = h->e->ft;
 			if (t->parikhcnt2 == 0 && t->parikhcnt1 == 0) {
 				nl_insert2 (&l, t, _h_t_cmp);
 			}
@@ -280,6 +280,7 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 	return 0;
 }
 
+#if 0
 static int _h_confl_check (struct dls * l1, struct dls * l2, struct dls * l12)
 {
 	struct dls * n, * np;
@@ -325,15 +326,16 @@ static int _h_confl_cnd_check (struct nl *conds, struct dls *l, int m)
 		/* check whether at least one event consuming c is present in l
 		 */
 		for (i = c->post.deg - 1; i >= 0; i--) {
-			e = dg_i (struct event, c->post.adj[i], post);
+			e = (struct event *) c->post.adj[i];
 			for (j = e->hist.deg - 1; j >= 0; j--) {
-				h = dg_i (struct h, e->hist.adj[j], nod);
+				h = (struct h *) e->hist.adj[j];
 				if (h->m == m) return 1;
 			}
 		}
 	}
 	return 0;
 }
+#endif
 
 void _h_list (struct dls *l, struct h *h, int m, int mexcl)
 {
@@ -354,7 +356,7 @@ void _h_list (struct dls *l, struct h *h, int m, int mexcl)
 		hp = dls_i (struct h, n, auxnod);
 		ASSERT (hp->m == m);
 		for (i = hp->nod.deg - 1; i >= 0; i--) {
-			hpp = dg_i (struct h, hp->nod.adj[i], nod);
+			hpp = (struct h *) hp->nod.adj[i];
 			if (hpp->m == m || hpp->m == mexcl) continue;
 			hpp->m = m;
 			dls_append (l, &hpp->auxnod);
@@ -371,11 +373,13 @@ struct h * h_alloc (struct event * e)
 	h = gl_malloc (sizeof (struct h));
 	h->id = u.unf.numh++;
 	h->e = e;
-	dg_init (&h->nod);
+	al_init (&h->nod);
+	al_init (&h->ecl);
 	h->m = 0;
+	h->depth = 0;
+	al_init (&h->rd);
 	h->marking = 0;
 	h->parikh.tab = 0;
-	h->depth = 0;
 
 	/* set h->corr to something different to null, so that it looks like a
 	 * cutoff; this avoids that h is used to create a new history till it
@@ -385,7 +389,7 @@ struct h * h_alloc (struct event * e)
 	/* size and parikh.size can still be garbage (see h_marking) */
 
 	/* also, add this history to the histories associated to the event */
-	dg_add (&e->hist, &h->nod);
+	al_add (&e->hist, h);
 	return h;
 }
 
@@ -397,25 +401,32 @@ struct h * h_dup (struct h * h)
 	nh->id = u.unf.numh++;
 	nh->e = h->e;
 	nh->m = 0;
+	nh->depth = h->depth;
 	nh->marking = 0;
 	nh->parikh.tab = 0;
-	nh->depth = h->depth;
 
 	/* see annotation in h_alloc */
 	nh->corr = nh;
 
 	/* size and parikh.size can still be garbage (see h_marking) */
 
-	dg_init (&nh->nod);
-	dg_cpy (&nh->nod, &h->nod);
-	dg_add (&nh->e->hist, &nh->nod);
+	al_init (&nh->nod);
+	al_cpy (&nh->nod, &h->nod);
+	al_init (&nh->ecl);
+	al_cpy (&nh->ecl, &h->ecl);
+	al_init (&nh->rd);
+	al_cpy (&nh->rd, &h->rd);
+
+	al_add (&nh->e->hist, nh);
 	return nh;
 }
 
 void h_free (struct h *h)
 {
-	dg_rem (&h->e->hist, &h->nod);
-	dg_term (&h->nod);
+	al_rem (&h->e->hist, h);
+	al_term (&h->nod);
+	al_term (&h->ecl);
+	al_term (&h->rd);
 	nl_delete (h->marking);
 	gl_free (h->parikh.tab);
 	gl_free (h);
@@ -427,12 +438,16 @@ void h_add (struct h * h, struct h * hp)
 	 * event associated to) history hp, by means of an edge from node h to
 	 * node hp */
 
+	/* we are done if the edge is already present */
 	ASSERT (h->e != hp->e);
 	ASSERT (hp->corr == 0); /* assert that hp is not a cutoff */
-	dg_add (&h->nod, &hp->nod);
+	if (al_test (&h->nod, hp)) return;
+
+	al_add (&h->nod, hp);
 	if (hp->depth >= h->depth) h->depth = hp->depth + 1;
 }
 
+#if 0
 int h_conflict2 (struct h *h1, struct nl *cond1, struct h *h2,
 		struct nl *cond2)
 {
@@ -476,52 +491,30 @@ int h_conflict2 (struct h *h1, struct nl *cond1, struct h *h2,
 	if (_h_confl_check (&l1, &l2, &l12)) return 1;
 	return _h_confl_check (&l2, &l1, &l12);
 }
-
-int ___h_conflict (struct h *h1, struct nl *cond1, struct h *h2,
-		struct nl *cond2)
-{
-	int m1, m2;
-	struct dls l1;
-
-	/* return the logical value of the next boolean expression:
-	 * h1 or h2 is a cutoff, or
-	 * h1 is in conflict with h2, or
-	 * h2 is in conflict with h1, or
-	 * h1 consumes at least one condition in conds2, or
-	 * h2 consumes at least one condition in conds1
-	 */
-
-	/* display a conflict if one of the histories is a cutoff */
-	if (h1->corr != 0 || h2->corr != 0) return 1;
-
-	/* generate two marks */
-	m1 = ++u.mark;
-	m2 = ++u.mark;
-
-	/* build a list of events in h1 */
-	_h_list (&l1, h1, m1, m1);
-	cond1 = cond2 = 0;
-	return 0;
-}
+#endif
 
 void h_marking (struct h *h)
 {
-	int i, s, visited;
+	int i, j, s, visited;
 	struct dls auxl, *n;
 	struct h *hp, *hpp;
+	struct nl *l, *pl;
+	struct event *e;
 	struct place *p;
 	struct cond *c;
-	struct nl *l, *pl;
 
 	 /* 1. explore all events of history h and mark its preset
 	  * 2. explore again all events of history h and append to the marking
-	  * all places labeling conditions in the postset of each event
+	  * all places labeling conditions in the postset of each event (take
+	  * care of the fact that *maybe* the postset of the event is still not
+	  * built)
 	  * 2'. profit the occasion of exploring the history again to build the
 	  * parikh vector 
-	  * 3. note that, at this point, postset of event h->e may still not
-	  * built, so append to the marking the postset of h->e->origin if
-	  * needed :)
-	  * 4. we are done!  */
+	  * 2''. if the place labeling a condition is appended to the marking,
+	  * append to the adjacency list rd all events reading that condition
+	  * that have been marked in 1.
+	  * 3. append the postset of h->e->ft if needed
+	  * 4. we are done! */
 
 	visited = ++u.mark;
 	ASSERT (visited > 0);
@@ -530,22 +523,25 @@ void h_marking (struct h *h)
 	dls_init (&auxl);
 	dls_append (&auxl, &h->auxnod);
 	h->m = visited;
+	h->e->m = visited; /* to later fill rd list */
 
 	s = 1;
 	for (n = auxl.next; n; n = n->next) {
 		hp = dls_i (struct h, n, auxnod);
 		ASSERT (hp->m == visited);
 		for (i = hp->nod.deg - 1; i >= 0; i--) {
-			hpp = dg_i (struct h, hp->nod.adj[i], nod);
+			hpp = (struct h *) hp->nod.adj[i];
 			if (hpp->m == visited) continue;
 			hpp->m = visited;
+			hpp->e->m = visited; /* to later fill rd list */
 			dls_append (&auxl, &hpp->auxnod);
 			s++;
 		}
 
 		ASSERT (hp->e);
+		ASSERT (hp->e->pre.deg == hp->e->ft->pre.deg);
 		for (i = hp->e->pre.deg - 1; i >= 0; i--) {
-			c = dg_i (struct cond, hp->e->pre.adj[i], pre);
+			c = (struct cond *) hp->e->pre.adj[i];
 			c->m = visited;
 		}
 	}
@@ -553,25 +549,32 @@ void h_marking (struct h *h)
 	/* 2. explore again all events and append places associated to the
 	 * postset of the original transition
 	 * 2'. profit the occasion of exploring the history again to build the
-	 * parikh vector  */
+	 * parikh vector
+	 * 2''. if the place labeling a condition is appended to the marking,
+	 * append to the adjacency list rd all events reading that condition
+	 * that have been marked in 1. */
 	l = 0;
 	_h_parikh_init (h, &pl);
 	for (n = auxl.next; n; n = n->next) {
 		hp = dls_i (struct h, n, auxnod);
+		ASSERT (hp->e->post.deg == hp->e->ft->post.deg || hp == h);
 		for (i = hp->e->post.deg - 1; i >= 0; i--) {
-			c = dg_i (struct cond, hp->e->post.adj[i], post);
-			if (c->m != visited) nl_insert (&l, c->origin);
+			c = (struct cond *) hp->e->post.adj[i];
+			if (c->m == visited) continue;
+			nl_insert (&l, c->fp);
+			for (j = c->cont.deg - 1; j >= 0; j--) {
+				e = (struct event *) c->cont.adj[j];
+				if (e->m == visited) al_add (&h->rd, e);
+			}
 		}
-
-		_h_parikh_add (h, &pl, hp->e->origin);
+		_h_parikh_add (h, &pl, hp->e->ft);
 	}
 	_h_parikh_trans2vector (h, pl);
 
-	/* 3. append the postset of h->e->origin if needed */
+	/* 3. append the postset of h->e->ft if needed */
 	if (h->e->post.deg == 0) {
-		for (i = h->e->origin->post.deg - 1; i >= 0; i--) {
-			p = dg_i (struct place, h->e->origin->post.adj[i],
-					post);
+		for (i = h->e->ft->post.deg - 1; i >= 0; i--) {
+			p = (struct place *) h->e->ft->post.adj[i];
 			nl_insert (&l, p);
 		}
 	}
@@ -579,17 +582,20 @@ void h_marking (struct h *h)
 	/* store the marking associated to the history h, and the number of
 	 * events in the history in h->marking and h->size */
 	ASSERT (s >= 1);
-	if (h->id != 0) { ASSERT (s >= 2); }
+	ASSERT (s >= 2 || h->id == 0);
 	h->marking = l;
 	h->size = s;
 
 //#if 0
-	PRINT ("+ History h%d/e%d:%s; size %d; depth %d; marking ",
+	PRINT ("+ History h%d/e%d:%s; size %d; depth %d; readers %d; "
+			"ecs %d; marking ",
 			h->id,
 			h->e->id,
-			h->e->origin->name,
+			h->e->ft->name,
 			h->size,
-			h->depth);
+			h->depth,
+			h->rd.deg,
+			h->ecl.deg);
 	marking_print (h);
 	PRINT ("\n");
 //#endif
@@ -611,7 +617,7 @@ int h_isdup (struct h *h)
 
 	/* check that every history pointed by h->e->hist is different to h */
 	for (i = h->e->hist.deg - 1; i >= 0; i--) {
-		hp = dg_i (struct h, h->e->hist.adj[i], nod);
+		hp = (struct h *) h->e->hist.adj[i];
 		if (h == hp) continue;
 
 		/* generate three different marks */
@@ -627,10 +633,10 @@ int h_isdup (struct h *h)
 						"h%d/e%d:%s\n",
 						h->id,
 						h->e->id,
-						h->e->origin->name,
+						h->e->ft->name,
 						hp->id,
 						hp->e->id,
-						hp->e->origin->name);
+						hp->e->ft->name);
 				return 1;
 			}
 		}
@@ -650,16 +656,16 @@ int h_isdup (struct h *h)
 
 	for (i = h->e->hist.deg - 1; i >= 0; i--) {
 		if (&h->nod == h->e->hist.adj[i]) continue;
-		if (dg_cmp (&h->nod, h->e->hist.adj[i]) == 0) {
-			struct h *hp = dg_i (struct h, h->e->hist.adj[i], nod);
+		if (al_cmp (&h->nod, h->e->hist.adj[i]) == 0) {
+			struct h *hp = (struct h *) h->e->hist.adj[i];
 			PRINT ("  History h%d/e%d:%s is a duplicate of "
 					"h%d/e%d:%s\n",
 					h->id,
 					h->e->id,
-					h->e->origin->name,
+					h->e->ft->name,
 					hp->id,
 					hp->e->id,
-					hp->e->origin->name);
+					hp->e->ft->name);
 			return 1;
 		}
 	}
@@ -683,7 +689,6 @@ int h_cmp (struct h *h1, struct h *h2)
 	if (h1->size != h2->size) return h1->size - h2->size;
 
 #ifdef CONFIG_MCMILLAN
-	BREAK (1);
 	return 0;
 #endif
 
@@ -722,8 +727,8 @@ int h_cmp (struct h *h1, struct h *h2)
 	int ret;
 
 	PRINT ("  cmp h%d/e%d:%s  h%d/e%d:%s",
-			h1->id, h1->e->id, h1->e->origin->name,
-			h2->id, h2->e->id, h2->e->origin->name);
+			h1->id, h1->e->id, h1->e->ft->name,
+			h2->id, h2->e->id, h2->e->ft->name);
 	ret = _h_cmp (h1, h2);
 	PRINT (" returns %d\n", ret);
 	return ret;

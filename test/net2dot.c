@@ -22,7 +22,7 @@ static void write_net_dot (void)
 
 	/* mark the places in the initial marking */
 	for (i = u.net.t0->post.deg - 1; i >= 0; i--) {
-		p = dg_i (struct place, u.net.t0->post.adj[i], post);
+		p = (struct place *) u.net.t0->post.adj[i];
 		p->m = 1;
 	}
 
@@ -49,7 +49,7 @@ static void write_net_dot (void)
 		if (t->id == 0) continue;
 
 		for (i = t->post.deg - 1; i >= 0; i--) {
-			p = dg_i (struct place, t->post.adj[i], post);
+			p = (struct place *) t->post.adj[i];
 			P ("\tt%-6d -> p%d;\n", t->id, p->id);
 		}
 	}
@@ -59,12 +59,12 @@ static void write_net_dot (void)
 		t = ls_i (struct trans, n, nod);
 		if (t->id == 0) continue;
 		for (i = t->pre.deg - 1; i >= 0; i--) {
-			p = dg_i (struct place, t->pre.adj[i], pre);
+			p = (struct place *) t->pre.adj[i];
 			P ("\tp%-6d -> t%d;\n", p->id, t->id);
 		}
 
 		for (i = t->cont.deg - 1; i >= 0; i--) {
-			p = dg_i (struct place, t->cont.adj[i], cont);
+			p = (struct place *) t->cont.adj[i];
 			P ("\tp%-6d -> t%d [arrowhead=none color=red];\n",
 					p->id, t->id);
 		}

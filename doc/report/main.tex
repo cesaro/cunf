@@ -613,11 +613,10 @@ $N$.  We call this marking \emph{the marking} of $C$.  Still in \rfig{a.1safe}
 cut is $\{c_3, c_4\}$.
 
 \begin{definition}
-Let $C$ be a configuration of $\unf N$.  We define
-the \emph{cut} of $C$, written $\cut C$, and the \emph{marking} of $C$, written
-$\marking C$ as $$\cut C \: = \: m \: \cup \: \bigcup_{e \in C} \post e \:
-\setminus \: \bigcup_{e \in C} \pre e \qquad \qquad \qquad \marking C \: = \:
-\bigcup_{c \in \cut C} f_P (c)$$
+Let $C$ be a configuration of $\unf N$.  We define the \emph{cut} of $C$,
+written $\cut C$, and the \emph{marking} of $C$, written $\marking C$ as $$\cut
+C = \left ( m \cup \bigcup_{e \in C} \post e \right ) \setminus \bigcup_{e \in
+C} \pre e \qquad \qquad \qquad \marking C = \bigcup_{c \in \cut C} f_P (c)$$
 \end{definition}
 
 Some configurations are called \emph{histories}.  Intuitively, given a

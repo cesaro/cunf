@@ -5,7 +5,7 @@ use vars qw (@places %label %in %out %indeg @cut0 %cutofft %cutoffh);
 use vars qw (%reach %markings);
 
 sub debug {
-	#print STDERR @_, "\n";
+	#print STDOUT @_, "\n";
 }
 
 sub build_cut0 {
@@ -144,7 +144,7 @@ sub enabled {
 	my $p;
 	my $t;
 	my %i;
-	
+
 	# get a copy of the in-degre hash table
 	%i = %indeg;
 
@@ -183,7 +183,7 @@ sub fire {
 		$h{$p} = 1;
 	}
 
-	# keys of the hash h conforms the new marking
+	# keys of hash %h conform the new marking
 	return keys %h;
 }
 
@@ -195,11 +195,15 @@ sub reach {
 	my @ncut;
 	my @ena;
 	my $t;
+	my $i;
+	my $l;
+	my $s;
 
 	# populate the work set and the reach hash table with the initial cut
 	push @work, \@cut0;
 	$m = cut2key @cut0;
-	$reach{$m} = [];
+	$reach{$m} = ["00000"];
+	$i = 1;
 	debug "Cut0: @cut0 -> $m";
 
 	# while we have a cut to explore
@@ -219,9 +223,12 @@ sub reach {
 		for $t (@ena) {
 			@ncut = fire (\@cut, $t);
 			$nm = cut2key @ncut;
-			debug " fired $t, gives cut @ncut, key $nm";
+			debug " fired $t, gives cut @ncut";
 			if (! defined ($reach{$nm})) {
-				$reach{$nm} = [@{$reach{$m}}, $t];
+				$s = sprintf "%05d", $i++;
+				$l = @{$reach{$m}} - 1;
+				$reach{$nm} = [$s, @{$reach{$m}}[1 .. $l], $t];
+				debug "sequence: ", ($s, @{$reach{$m}}[1 .. $l], $t);
 				push @work, [@ncut];
 			} else {
 				debug "  droping, already reached ",
@@ -233,22 +240,85 @@ sub reach {
 
 sub reach2markings {
 	my $k;
+	my $v;
 	my $l;
 	my @cut;
 
-	for $k (keys %reach) {
+	while (1) {
+		($k, $v) = each (%reach);
+		last unless defined ($k);
 		@cut = split ("_", $k);
 		$l = cut2labeling @cut;
 		if (defined ($markings{$l})) {
-			$markings{$l} = ["*", @{$reach{$k}}];
+			$markings{$l} = [@$v[0], "*", @$v[1 .. @$v - 1]];
 		} else {
-			$markings{$l} = $reach{$k};
+			$markings{$l} = $v;
 		}
 	}
 }
 
+sub history_of {
+	my ($ref, $t) = @_;
+	my %exec;
+	my %h = ();
+	my @work; 
+	my @candidates;
+	my $p;
+	my $k;
+	my $v;
+	my $found;
+
+	debug "transition $t";
+	debug "execution ", @$ref;
+
+	# build a hash out of the execution
+	$exec{$_} = 1 for (@$ref);
+
+	@work = ($t);
+	while ($#work >= 0) {
+		$t = shift @work;
+		if (defined $h{$t}) {
+			debug "skiping $t";
+			next;
+		}
+		$h{$t} = 1;
+		debug "exploring $t";
+
+		# compute transitions in direct asymmetric conflict to $t
+		@candidates = ();
+		for $p (@{$in{$t}}) {
+			debug "$p:$label{$p} is in in{$t}, taking out{$p}";
+			push @candidates, @{$out{$p}};
+		}
+		for $k (keys %out) {
+			$v = $out{$k};
+			$found = 0;
+			for (@$v) {
+				$found = 1 if ($t eq $_);
+			}
+			debug ("found $t in ($k, (@$v)) in out, taking in{$k}") if ($found);
+			if ($found && defined ($in{$k})) {
+				push (@candidates, @{$in{$k}});
+			}
+		}
+		debug "candidates @candidates";
+
+		# we retain those that belong to the given execution
+		for (@candidates) {
+			if (defined $exec{$_}) {
+				push @work, ($_);
+				debug "retaining $_";
+			}
+		}
+	}
+
+	# keys of hash %h conform the history of $t in $exec
+	return keys %h;
+}
+
 sub print_markings {
 	my $k;
+	my $v;
 	my $i;
 
 	# we may have added transition "*" to the list of transitions
@@ -256,25 +326,45 @@ sub print_markings {
 
 	$i = 0;
 	for $k (sort (keys %markings)) {
-		#print "$k  after ", trans2labeling (@{$markings{$k}}), "\n";
-		print "$k\n";
+		$v = $markings{$k};
+		print @$v[0], " $k  after ", trans2labeling (@$v[1 .. @$v - 1]), "\n";
+		#print "$k\n";
 		$i++;
 	}
 	print " -- $i markings\n"
 }
 
+sub print_histories {
+	my $k;
+	my $v;
+	my $id;
+	my $ev;
+	my @h;
+
+	$id = 5702;
+	$ev = "e93";
+
+	for $k (sort (keys %markings)) {
+		$v = $markings{$k};
+		last if (@$v[0] == $id);
+	}
+
+	$v = [@$v[1 .. @$v - 1]];
+	@h = history_of $v, $ev;
+	print "\nHistory of $ev:$label{$ev} in run $id is: \n";
+	print "Run: ", trans2labeling (@$v), "\n";
+	print "History: ", trans2labeling (@h), "\n";
+}
+
 sub test {
 	my $e;
-	my %h;
-
-	for $e ("c1", "c2", "c3", "c4", "c2", "c1", "c3", "c1") {
-		print "$e\n";
-		push @{$h{$e}}, ($e);
+	my @a = ("uno", "dos", "tres", "cuatro", "cinco", "seis", "siete",
+	"ocho");
+	
+	for $e (@a[1 .. $#a]) {
+		print "$e ";
 	}
-
-	for (keys %h) {
-		print "k '$_' v '@{$h{$_}}'\n";
-	}
+	print "\n";
 }
 
 sub main {
@@ -286,6 +376,7 @@ sub main {
 	reach ();
 	reach2markings ();
 	print_markings ();
+	#print_histories ();
 }
 
 main ();

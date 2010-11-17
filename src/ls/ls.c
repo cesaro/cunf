@@ -3,10 +3,8 @@
  * Static single-linked list -- implementation
  */
 
-#include "config.h"
-#include "debug.h"
 #include "glue.h"
-#include "ls.h"
+#include "ls/ls.h"
 
 #ifdef CONFIG_DEBUG
 static void _ls_assert (struct ls * l)
@@ -57,8 +55,7 @@ void ls_append (struct ls * l, struct ls * n)
 
 void ls_remove (struct ls * l, struct ls * p)
 {
-	/* remove from the list l the node n such that n is the next node of
-	 * node p */
+	/* remove from the list l the next node of node p */
 
 	ASSERT (l->next);
 	if (l->next == 0) return;
@@ -96,7 +93,7 @@ void ls_shift (struct ls * l)
 
 void ls_push (struct ls * l, struct ls * n)
 {
-	/* insert the node n in the head of the list l (same as ls_insert) */
+	/* same as ls_insert */
 	ASSERT (l);
 	ASSERT (n);
 

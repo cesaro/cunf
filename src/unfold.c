@@ -2,10 +2,12 @@
 #include "netconv.h"
 #include "marking.h"
 #include "global.h"
+#include "ls/ls.h"
+#include "al/al.h"
 #include "debug.h"
+#include "glue.h"
 #include "pe.h"
-#include "ls.h"
-#include "dg.h"
+#include "co.h"
 
 #include "unfold.h"
 
@@ -19,9 +21,11 @@ static struct cond * _unfold_new_cond (struct event *e, struct place *p)
 	/* initialize structure's fields */
 	ls_insert (&u.unf.conds, &c->nod);
 	c->pre = e;
-	dg_init (&c->post);
-	dg_init (&c->cont);
-	c->origin = p;
+	al_init (&c->post);
+	al_init (&c->cont);
+	c->fp = p;
+	ls_insert (&p->conds, &c->pnod);
+	ls_init (&c->ecl);
 	c->m = 0;
 
 	/* also the condition number */
@@ -29,10 +33,8 @@ static struct cond * _unfold_new_cond (struct event *e, struct place *p)
 
 	/* finally, update the preset of c, the postset of e and append the
 	 * condition to the list p->conds only if e is not a cutoff */
-	dg_add (&e->post, &c->post);
 	c->pre = e;
-	if (! e->iscutoff) nl_push (&p->conds, c);
-
+	al_add (&e->post, c);
 	return c;
 }
 
@@ -43,31 +45,76 @@ static void _unfold_postset (struct event *e)
 	int i;
 
 	ASSERT (e);
-	ASSERT (e->origin);
+	ASSERT (e->ft);
 
 	/* if the output degree of the post node in e is the same as in the
-	 * post node in e->origin, we are done :) */
-	t = e->origin;
+	 * post node in e->origin, postset conditions are already unfolded;
+	 * otherwise we create a new condition for each place */
+
+	t = e->ft;
 	if (e->post.deg == t->post.deg) return;
 
-	/* otherwise, build a condition for each place in the original
-	 * transition */
 	for (i = t->post.deg - 1; i >= 0; i--) {
-		p = dg_i (struct place, t->post.adj[i], post);
+		p = (struct place *) t->post.adj[i];
 		_unfold_new_cond (e, p);
 	}
+}
 
-	ASSERT (e->post.deg == t->post.deg);
+static void _unfold_combine (struct ec *r)
+{
+	struct ec *rpp;
+	struct ec *rp;
+	struct ls *n;
 
-#if 0
-	struct cond *c;
-	PRINT ("  Postset built for e%d:%s, ", e->id, e->origin->name);
-	for (i = e->post.deg - 1; i >= 0; i--) {
-		c = dg_i (struct cond, e->post.adj[i], post);
-		PRINT (" c%d:%s", c->id, c->origin->name);
+	ASSERT (r);
+	ASSERT (r->c);
+
+	for (n = r->c->ecl.next; n; n = n->next) {
+		rp = ls_i (struct ec, n, nod);
+		if (EC_ISGEN (rp) || r == rp) continue;
+		if (co_test (r, rp)) {
+			rpp = ec_alloc2 (r, rp);
+			co_add (rpp);
+			pe_update_read (rpp);
+		}
 	}
-	PRINT ("\n");
-#endif
+}
+
+static void _unfold_enriched (struct h *h)
+{
+	struct event *e;
+	struct trans *t;
+	struct cond *c;
+	struct ec *r;
+	int i;
+
+	ASSERT (h);
+	ASSERT (h->corr == 0);
+	ASSERT (h->e);
+	ASSERT (h->e->ft);
+	ASSERT (h->e->iscutoff == 0);
+	ASSERT (h->e->post.deg == h->e->ft->post.deg);
+
+	/* append a new enriched condition r for each c in post(e), compute the
+	 * concurrency relation for r and use r to update pe with new possible
+	 * extensions */
+	e = h->e;
+	t = e->ft;
+	for (i = e->post.deg - 1; i >= 0; i--) {
+		c = (struct cond *) e->post.adj[i];
+		r = ec_alloc (c, h);
+		co_add (r);
+		pe_update_gen (r);
+	}
+
+	/* then, do the same with cont(e) :) */
+	for (i = e->cont.deg - 1; i >= 0; i--) {
+		c = (struct cond *) e->cont.adj[i];
+		r = ec_alloc (c, h);
+		co_add (r);
+		pe_update_read (r);
+		_unfold_combine (r);
+	}
 }
 
 static void _unfold_init (void)
@@ -78,16 +125,16 @@ static void _unfold_init (void)
 	/* allocate and initialize initial event */
 	e0 = gl_malloc (sizeof (struct event));
 	ls_insert (&u.unf.events, &e0->nod);
-	dg_init (&e0->pre);
-	dg_init (&e0->post);
-	dg_init (&e0->cont);
-	dg_init (&e0->ac);
-	dg_init (&e0->hist);
-	nl_push (&u.net.t0->events, e0);
-	e0->origin = u.net.t0;
+	al_init (&e0->pre);
+	al_init (&e0->post);
+	al_init (&e0->cont);
+	al_init (&e0->ac);
+	al_init (&e0->hist);
+	e0->ft = u.net.t0;
+	ls_insert (&u.net.t0->events, &e0->tnod);
 	e0->id = u.unf.numev++;
-	e0->m = 0;
 	e0->iscutoff = 0;
+	e0->m = 0;
 	ASSERT (e0->id == 0);
 	PRINT ("+ Event e0 !!\n");
 
@@ -100,32 +147,29 @@ static void _unfold_init (void)
 	marking_add (h0);
 	ASSERT (h0->corr == 0);
 
-	/* build the postset of e0 */
-	_unfold_postset (e0);
-
 	/* set up the initial event in the unfolding */
 	u.unf.e0 = e0;
 
-	/* return the initial history */
+	_unfold_postset (e0);
+	_unfold_enriched (h0);
 }
 
 static void _unfold_progress (struct h *h)
 {
 #ifdef CONFIG_DEBUG
-	PRINT ("- h%d/e%d:%s; size %d; is ",
+	PRINT ("\n- h%d/e%d:%s; size %d; is ",
 			h->id,
 			h->e->id,
-			h->e->origin->name,
+			h->e->ft->name,
 			h->size);
 	if (h->corr != 0) {
 		PRINT ("a cut-off! (corr. h%d/e%d:%s)\n",
 				h->corr->id,
 				h->corr->e->id,
-				h->corr->e->origin->name);
+				h->corr->e->ft->name);
 	} else {
 		PRINT ("new!\n");
 	}
-	db_h (h);
 
 #else
 	static int i = 0;
@@ -137,53 +181,111 @@ static void _unfold_progress (struct h *h)
 #endif
 }
 
-void unfold (void)
-{
-	struct h *h0;
+static int __compare (int * events, int nr, struct dls *l) {
+	int len, i;
 	struct h *h;
 
-	/* 1. initialize structures (unfolding, mark. hash table and pe) */
-	nc_create_unfolding ();
-	marking_init ();
-	pe_init ();
+	len = 0;
+	for (l = l->next; l; l = l->next) {
+		len++;
+		for (i = nr - 1; i >= 0; i--) {
+			h = dls_i (struct h, l, auxnod);
+			if (events[i] == h->e->id) break;
+		}
+		if (i < 0) return 0;
+	}
+	if (len != nr) return 0;
+
+	/* found! */
+	return 1;
+}
+
+#if 0
+	int eid = 112;
+	int nr = 67;
+	int events[] = {54, 23, 2, 61, 53, 109, 46, 72, 40, 77, 41, 55, 3, 52,
+	110, 1, 59, 103, 36, 82, 19, 60, 18, 44, 74, 20, 29, 100, 9, 12, 58, 8,
+	62, 57, 76, 104, 50, 56, 35, 31, 6, 63, 39, 21, 4, 112, 67, 32, 80, 16,
+	107, 24, 13, 48, 10, 14, 28, 5, 15, 7, 17, 11, 66, 65, 69, 45, 0};
+
+	h21
+	int eid = 20;
+	int nr = 18;
+	int events[] = {20, 0, 1, 12, 13, 14, 15, 16, 17, 19, 2, 3, 4, 5, 6, 7, 8, 9};
+
+	h127
+	int eid = 56;
+	int nr = 36;
+	int events[] = {0, 1, 32, 35, 36, 4, 40, 10, 11, 12, 13, 14, 2, 20, 21,
+	23, 24, 29, 3, 31, 41, 46, 15, 16, 17, 18, 19, 5, 50, 52, 55, 56, 6, 7,
+	8, 9};
+
+#endif
+
+void __test (void) {
+	struct event *e;
+	struct ls *n;
+	struct h *h;
+	struct dls l;
+	int i;
+
+	int eid = 93;
+	int nr = 38;
+	int events[] = {2, 6, 4, 3, 1, 59, 27, 204, 245, 264, 78, 16, 93, 26,
+	20, 91, 13, 10, 9, 12, 28, 5, 198, 47, 226, 15, 169, 123, 8, 111, 165,
+	7, 11, 143, 66, 31, 22, 0};
+
+	for (n = u.unf.events.next; n; n = n->next) {
+		e = ls_i (struct event, n, nod);
+		if (e->id == eid) break;
+	}
+	ASSERT (n && e->id == eid);
+
+	for (i = e->hist.deg - 1; i >= 0; i--) {
+		h = (struct h *) e->hist.adj[i];
+		h_list (&l, h);
+		if (__compare (events, nr, &l)) break;
+	}
+
+	if (i >= 0) {
+		PRINT ("found! h%d\n", h->id);
+		BREAK (1);
+	} else {
+		PRINT ("not found :(\n");
+	}
+}
+
+void unfold (void)
+{
+	struct h *h;
+
 #ifdef CONFIG_MCMILLAN
 	PRINT ("  Using McMillan order\n");
 #else
 	PRINT ("  Using Esparza-Romer-Vogler order\n");
 #endif
 
-	/* 2. insert the initial event e0, the initial history h0 and build the
-	 * postset of e0 */
-	/* 3. insert the initial marking in the marking hash table */
+	nc_create_unfolding ();
+	marking_init ();
+	pe_init ();
 	_unfold_init ();
 
-	/* 4. call pe_update with h0 to populate pe */
-	ASSERT (u.unf.e0);
-	ASSERT (u.unf.e0->hist.deg == 1);
-	h0 = dg_i (struct h, u.unf.e0->hist.adj[0], nod);
-	pe_update (h0);
-
-	/* 5. loop, extract a history from pe */
 	while (1) {
-
-		/* extract one history from pe */
 		h = pe_pop ();
 		if (h == 0) break;
 
-		/* 6. insert in the marking table its marking and determine if
-		 * it is a cutoff (set field h->corr to the corresponding event
-		 * or to null); print progress */
 		marking_add (h);
 		_unfold_progress (h);
-
-		/* 7. build the postset of the maximal transition, if not
-		 * already present in the unfolding */
-		if (h->corr == 0) h->e->iscutoff = 0;
 		_unfold_postset (h->e);
 
-		/* 8. update pe with this new history only if it is not a
-		 * cutoff */
-		if (h->corr == 0) pe_update (h);
+		if (h->corr == 0) {
+			h->e->iscutoff = 0;
+			_unfold_enriched (h);
+		}
 	}
+
+	/* __test (); */
+	/* db_h2dot (); */
 }
+
 

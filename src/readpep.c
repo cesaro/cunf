@@ -538,9 +538,9 @@ static int _insert_arc()
 		gl_err ("arc: incorrect place identifier");
 
 	tp? nc_create_arc (&(TrArray[tr]->post), &(PlArray[pl]->pre),
-			   &(TrArray[tr]->pre), &(PlArray[pl]->post))
+			   TrArray[tr], PlArray[pl])
 	  : nc_create_arc (&(PlArray[pl]->post), &(TrArray[tr]->pre),
-			   &(PlArray[pl]->pre), &(TrArray[tr]->post));
+			   PlArray[pl], TrArray[tr]);
 	return 0;
 }
 
@@ -562,7 +562,7 @@ static int _insert_ra()
 			  TrArray[tr],PlArray[pl]);
 #endif
 	nc_create_arc (&TrArray[tr]->cont, &PlArray[pl]->cont,
-			&TrArray[tr]->cont, &PlArray[pl]->cont);
+			TrArray[tr], PlArray[pl]);
 	return 0;
 }
 
@@ -575,22 +575,22 @@ static void _insert_t0 (void)
 	t0 = gl_malloc (sizeof (struct trans));
 	ls_insert (&u.net.trans, &t0->nod);
 
-	dg_init (&t0->pre);
-	dg_init (&t0->post);
-	dg_init (&t0->cont);
-	t0->events = 0;
-	t0->id = 0;
 	t0->name = "_t0_";
+	t0->id = 0;
+	al_init (&t0->pre);
+	al_init (&t0->post);
+	al_init (&t0->cont);
+	ls_init (&t0->events);
+	t0->m = 0;
 	t0->parikhcnt1 = 0;
 	t0->parikhcnt2 = 0;
-	t0->m = 0;
 
 	/* the postset of t0 consist on all marked places */
 	for (n = u.net.places.next; n; n = n->next) {
 		p = ls_i (struct place, n, nod);
 		if (p->m) {
-			dg_add (&t0->post, &p->post);
-			dg_add (&p->pre, &t0->pre);
+			al_add (&t0->post, p);
+			al_add (&p->pre, t0);
 
 			/* we remove the mark :) */
 			p->m = 0;
@@ -663,8 +663,5 @@ void read_pep_net (char *PEPfilename)
 	/* this is cheating! we now append some initial transition t0
 	 * generating the initial marking */
 	_insert_t0 ();
-
-	/* compute the sizes for max{pre|post|cont} */
-	nc_compute_sizes ();
 }
 

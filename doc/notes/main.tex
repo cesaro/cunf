@@ -169,12 +169,13 @@ we have that $m = n = 1$.  See \rlem{let.c}.
 \paragraph{Step} $u = m + n \ge 3$. Assume that the statement is true for $2,
 \ldots, u - 1$, where $u \ge 3$.  We have to prove it for $u$.  Provided that
 $\confl$ is a symmetric relation, we assume without loss of generality that $m
-\ge 2$.  Consider configurations $$B_1 \bydef= \bigcup_{1 \le i \le n} C_i
-\qquad B_2 = C'_1 \qquad B_3 = \bigcup_{2 \le j \le m} C'_j$$ By induction
-hypothesis, we know that $\lnot (B_1 \confl B_2)$, since $n + 1 < u$.  We also
-know that $\lnot (B_1 \confl B_3)$, since $n + m - 1 < u$, and that $\lnot (B_2
-\confl B_3)$, since $1 + m - 1 < u$.  Now by \rlem{c1c2c3} we have that $$\lnot
-(B_1 \confl (B_2 \cup B_3)$$  This is exactly what we wanted to prove.
+\ge 2$.  Consider configurations $$B_1 \bydef = \bigcup_{1 \le i \le n} C_i
+\qquad B_2 \bydef = C'_1 \qquad B_3 \bydef = \bigcup_{2 \le j \le m} C'_j$$ By
+induction hypothesis, we know that $\lnot (B_1 \confl B_2)$, since $n + 1 < u$.
+We also know that $\lnot (B_1 \confl B_3)$, since $n + m - 1 < u$, and that
+$\lnot (B_2 \confl B_3)$, since $1 + m - 1 < u$.  Now by \rlem{c1c2c3} we have
+that $$\lnot (B_1 \confl (B_2 \cup B_3)$$  This is exactly what we wanted to
+prove.
 \end{proof}
 
 \begin{theorem}
@@ -341,6 +342,30 @@ e$, as well as $e'' \nearrow e$.  Then we have that $e' \nearrow^*_{H_j} e''
 \end{proof}
 
 \begin{lemma}
+\label{lem:be.configurations}
+Let $C_1, C_2, C_3 \in \conf{\unf N}$ be configurations of the full unfolding
+such that $C_1 \evolves C_2$ and $C_1 \confl C_3$.  Then, $C_2 \confl C_3$.
+\end{lemma}
+\begin{proof}
+Since $C_1 \confl C_3$ holds, two cases are possible:
+
+\begin{itemize}
+\item There is some $e_1 \in C_3$ and some $e_2 \in C_1 \setminus C_3$ with
+$e_2 \nearrow e_1$.  By hypothesis $C_1 \evolves C_2$ and consequently $C_1
+\subseteq C_2$. This leads to $e_2 \in C_2 \setminus C_3$.  Hence $C_2 \confl
+C_3$.
+
+\item There is some $e_1 \in C_1$ and some $e_2 \in C_3 \setminus C_1$ with
+$e_2 \nearrow e_1$.  Due to the fact that $C_1 \subseteq C_2$, we have that
+$e_1 \in C_2$.  We claim now that $e_2 \not\in C_2$ holds.  By contradiction,
+if $e_2 \in C_2$ holds, then $e_2 \in C_2 \setminus C_1$ holds.  This, together
+with $e_1 \in C_1$ and $e_2 \nearrow e_1$ entails $C_1 \not\evolves C_2$, a
+contradiction to our hypothesis.  So $e_2 \not\in C_2$ holds, and consequently
+$e_2 \in C_3 \setminus C_2$ also holds.  Hence $C_2 \confl C_3$.
+\end{itemize}
+\end{proof}
+
+\begin{lemma}
 \label{lem:two.histories}
 Let $H, H'$ be two histories of $\unf N$, with $H' \prec H$ for some adequate
 order $\prec$, and such that $H \in \hist{e}$ and $e \in H'$.  Then $H \confl
@@ -381,8 +406,11 @@ H_{k+1} \rangle, \ldots, \rho_n = \langle c_n, H_n \rangle$ be generating
 enriched conditions for conditions $c_{k+1}, \ldots, c_n$, such that $\rho_i
 \parallel \rho_j$ for $1 \le i < j \le n$ and $H = \{e\} \cup \bigcup_{1 \le i
 \le n} H_i$.  Finally, let $\rho' = \langle c', H' \rangle$ be an enriched
-condition such that $H' \prec H$ for some adequate order $\prec$.  Then, $$\rho
-\parallel \rho' \iff
+condition such that, for some adequate order $\prec$ and some $m \ge 1$, there
+are enriched conditions $\rho'_1 = \langle c', H'_1 \rangle, \ldots, \rho'_m =
+\langle c', H'_m \rangle$ verifying $H' = H'_1 \cup \ldots \cup H'_m$ and
+$\rho'_i \parallel \rho'_j$ for $1 \le i < j \le m$ and $H'_i \prec H$ for $1
+\le i \le m$.  Then, $$\rho \parallel \rho' \iff
 \left ( \bigwedge_{1 \le i \le k} \rho_i \parallel \rho' \right ) \land 
 \left ( \bigwedge_{k < j \le n} \rho_j \parallel \rho' \right ) \land 
 \left ( c' \notin \pre e \right ) \land
@@ -456,9 +484,14 @@ to $H$).  So assuming that $e_1 \ne e$ would lead to conclude that $e_1 \in H'
 \setminus H$ and that $e_1 \nearrow e$, with $e \in H$, which implies that $H
 \confl H'$, a contradiction to $\rho \parallel \rho'$.
 
-Therefore, let us assume that $e_1 = e$ and consequently that $e \in H'$.  By
-hypothesis $H' \prec H$, so we can apply \rlem{two.histories} and conclude that
-$H \confl H'$, a contradiction to $\rho \parallel \rho'$.
+Therefore, let us assume that $e_1 = e$ and consequently that $e \in H'$.
+Since $H' = \cup_{1 \le i \le m} H'_i$, we have that $e \in H'_i$ for some
+$H'_i$.  Asume, without loss of generality, that $i = 1$ and that $e \in H'_1$.
+By hypothesis we know that $H'_1 \prec H$, so we can apply \rlem{two.histories}
+and conclude that $H'_1 \confl H$.  Now, as every pair of histories $H'_i,
+H'_j$ is free of conflict, we can easily conclude that $H'_1 \evolves H'$.
+Now, we use this fact to apply \rlem{be.configurations} and conclude that $H'
+\confl H$.  This is a contradiction to $\rho \parallel \rho'$.
 \end{enumerate}
 
 \item $\rho \parallel \rho' \implies \bigwedge_{k < j \le n} \rho_j \parallel
@@ -508,10 +541,10 @@ Same argument as in (a.3), substituting $H_i$ by $H_j$.
 
 \item Assume that there exists $e_1 \in H'$ such that $c_j \in \pre{e_1}$. We
 can assume that $e \notin H'$, since if it were the case that $e \in H'$, by
-\rlem{two.histories}, we would have $H \confl H'$, a contradiction.  This
-implies that $e_1 \ne e$.  Furthermore, we also know that $e \nearrow e_1$,
-since $\cont{e} \cap \pre{e_1} \ne \emptyset$.  Then, we have $H \confl H'$, a
-contradiction to $\rho \parallel \rho'$.
+\rlem{be.configurations} and \rlem{two.histories}, we would have $H \confl H'$,
+a contradiction.  This implies that $e_1 \ne e$.  Furthermore, we also know
+that $e \nearrow e_1$, since $\cont{e} \cap \pre{e_1} \ne \emptyset$.  Then, we
+have $H \confl H'$, a contradiction to $\rho \parallel \rho'$.
 \end{enumerate}
 
 \item $\rho \parallel \rho' \implies c' \notin \pre e$.  If $c' \in \pre e$,

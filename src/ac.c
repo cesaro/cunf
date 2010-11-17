@@ -1,7 +1,7 @@
 
 #include "global.h"
-#include "debug.h"
-#include "dg.h"
+#include "al/al.h"
+#include "glue.h"
 #include "ac.h"
 
 void ac_add (struct event * e)
@@ -32,52 +32,52 @@ void ac_add (struct event * e)
 
 	/* we explore the preset of e */
 	for (i = e->pre.deg - 1; i >= 0; i--) {
-		c = dg_i (struct cond, e->pre.adj[i], pre);
+		c = (struct cond *) e->pre.adj[i];
 
 		/* and the postset of c */
 		for (j = c->post.deg - 1; j >= 0; j--) {
-			ep = dg_i (struct event, c->post.adj[j], post);
+			ep = (struct event *) c->post.adj[j];
 			/* FIXME -- does it really hurts keeping arrows between e and e ? */
 			if (ep == e) continue;
 			/* 1. pre(e') intersects pre(e) */
 			/* 5. pre(e') intersects pre(e) */
-			dg_add (&e->ac, &ep->ac);
-			dg_add (&ep->ac, &e->ac);
+			al_add (&e->ac, ep);
+			al_add (&ep->ac, e);
 		}
 
 		/* 3. post(e') intersects pre(e) */
-		dg_add (&c->pre->ac, &e->ac);
+		al_add (&c->pre->ac, e);
 
 		/* we explore the context of c */
 		for (j = c->cont.deg - 1; j >= 0; j--) {
-			ep = dg_i (struct event, c->cont.adj[j], cont);
+			ep = (struct event *) c->cont.adj[j];
 			/* FIXME -- does it really hurts keeping arrows between e and e ? */
 			if (ep == e) continue;
 			/* 6. context(e') intersects pre(e) */
-			dg_add (&ep->ac, &e->ac);
+			al_add (&ep->ac, e);
 		}
 	}
 
 	/* we explore the context of e */
 	for (i = e->cont.deg - 1; i >= 0; i--) {
-		c = dg_i (struct cond, e->cont.adj[i], cont);
+		c = (struct cond *) e->cont.adj[i];
 
 		/* and the postset of c */
 		for (j = c->post.deg - 1; j >= 0; j--) {
-			ep = dg_i (struct event, c->post.adj[j], post);
+			ep = (struct event *) c->post.adj[j];
 			/* FIXME -- does it really hurts keeping arrows between e and e ? */
 			if (ep == e) continue;
 			/* 2. pre(e') intersects context(e) */
-			dg_add (&e->ac, &ep->ac);
+			al_add (&e->ac, ep);
 		}
 
 		/* 4. post(e') intersects context(e) */
-		dg_add (&c->pre->ac, &e->ac);
+		al_add (&c->pre->ac, e);
 	}
 }
 
 int ac_test (struct event * e1, struct event * e2)
 {
-	return dg_test (&e1->ac, &e2->ac);
+	return al_test (&e1->ac, e2);
 }
 

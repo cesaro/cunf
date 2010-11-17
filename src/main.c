@@ -59,7 +59,7 @@ void write_dot (const char * filename)
 	m = ++u.mark;
 	ASSERT (m > 0);
 	for (i = u.unf.e0->post.deg - 1; i >= 0; i--) {
-		c = dg_i (struct cond, u.unf.e0->post.adj[i], post);
+		c = (struct cond *) u.unf.e0->post.adj[i];
 		c->m = m;
 	}
 
@@ -72,7 +72,7 @@ void write_dot (const char * filename)
 		enr++;
 		P ("\te%-6d [label=\"%s:e%d\"%s];\n",
 				e->id,
-				e->origin->name,
+				e->ft->name,
 				e->id,
 				e->iscutoff ? " shape=Msquare" : "");
 	}
@@ -83,7 +83,7 @@ void write_dot (const char * filename)
 		c = ls_i (struct cond, n, nod);
 
 		P ("\tc%-6d [label=\"%s:c%d\"];%s\n",
-				c->id, c->origin->name, c->id,
+				c->id, c->fp->name, c->id,
 				c->m == m ? " /* initial */" : "");
 	}
 
@@ -94,7 +94,7 @@ void write_dot (const char * filename)
 		if (e->id == 0) continue;
 		P ("\te%-6d -> e%d [label=\"", e->id, e->id);
 		for (i = e->hist.deg - 1; i >= 0; i--) {
-			h = dg_i (struct h, e->hist.adj[i], nod);
+			h = (struct h *) e->hist.adj[i];
 			P ("h%d%s", h->id, i == 0 ? "" : ",");
 		}
 		P ("\"];\n");
@@ -107,7 +107,7 @@ void write_dot (const char * filename)
 		if (e->id == 0) continue;
 
 		for (i = e->post.deg - 1; i >= 0; i--) {
-			c = dg_i (struct cond, e->post.adj[i], post);
+			c = (struct cond *) e->post.adj[i];
 			P ("\te%-6d -> c%d;\n", e->id, c->id);
 		}
 	}
@@ -118,13 +118,14 @@ void write_dot (const char * filename)
 		if (e->id == 0) continue;
 
 		for (i = e->pre.deg - 1; i >= 0; i--) {
-			c = dg_i (struct cond, e->pre.adj[i], pre);
+			c = (struct cond *) e->pre.adj[i];
 			P ("\tc%-6d -> e%d;\n", c->id, e->id);
 		}
 
 		for (i = e->cont.deg - 1; i >= 0; i--) {
-			c = dg_i (struct cond, e->cont.adj[i], cont);
-			P ("\tc%-6d -> e%d [arrowhead=none color=red];\n", c->id, e->id);
+			c = (struct cond *) e->cont.adj[i];
+			P ("\tc%-6d -> e%d [arrowhead=none color=red];\n",
+					c->id, e->id);
 		}
 	}
 
@@ -136,9 +137,9 @@ void write_dot (const char * filename)
 		e = ls_i (struct event, n, nod);
 		if (e->id == 0) continue;
 		for (i = e->hist.deg - 1; i >= 0; i--) {
-			h = dg_i (struct h, e->hist.adj[i], nod);
+			h = (struct h *) e->hist.adj[i];
 			hnr++;
-			P ("\t%sh%-6d %5d %4d ",
+			P ("\t%sh%-5d %5d %4d ",
 					h->corr ? "*" : " ", h->id,
 					h->depth, h->size);
 			h_list (&l, h);
@@ -146,7 +147,7 @@ void write_dot (const char * filename)
 				hp = dls_i (struct h, ln, auxnod);
 				P ("e%d:%s%s ",
 						hp->e->id,
-						hp->e->origin->name,
+						hp->e->ft->name,
 						ln->next ? "," : "");
 			}
 			P ("<br align=\"left\"/>\n");

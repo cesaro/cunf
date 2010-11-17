@@ -3,10 +3,8 @@
  * Static doubly-linked list
  */
 
-#include "config.h"
-#include "debug.h"
 #include "glue.h"
-#include "dls.h"
+#include "dls/dls.h"
 
 #ifdef CONFIG_DEBUG
 #undef _SLOW_CHECK
