@@ -8,10 +8,10 @@
 #include "ec.h"
 #include "h.h"
 
-#ifdef CONFIG_DEBUG
 #define PRINT(args...) fprintf (stderr, ##args)
 /* #define PRINT printf */
 
+#ifdef CONFIG_DEBUG
 #define ASSERT(expr)    \
 	if (! (expr)) { \
 		PRINT (__FILE__ ":%d: %s: Assertion `" #expr "' failed.\n", \
@@ -20,13 +20,15 @@
 		exit (1); \
 	}
 
+#define DPRINT			PRINT
 #define DEBUG(fmt,args...)      PRINT ("%s: " fmt "\n", __func__, ##args)
 #define TRACE(expr,type)        DEBUG (#expr "='%" type "'", expr)
 #define BREAK(expr)    		if (expr) breakme ()
 
 #else
 #undef _DEBUG
-#define PRINT(args...)
+//#define DPRINT(args...)
+#define DPRINT			PRINT
 #define ASSERT(expr)
 #define DEBUG(fmt,args...)
 #define TRACE(expr,type)

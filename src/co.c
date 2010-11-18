@@ -129,11 +129,10 @@ void co_add (struct ec *r)
 		if (rp->c->m == m) continue;
 
 		for (rpp = rp; rpp; rpp = rpp->r2) {
-
 			/* assert a correct structure of r' */
-			if (rpp->h) ASSERT (rpp->r1 == 0 && rpp->r2 == 0);
-			if (rpp->r1 == 0) ASSERT (rpp->h);
-			if (rpp->r1) ASSERT (rpp->r2);
+			ASSERT (rpp->h == 0 || (rpp->r1 == 0 && rpp->r2 == 0));
+			ASSERT (rpp->r1 || rpp->h);
+			ASSERT (rpp->r1 == 0 || rpp->r2);
 
 			if (rpp->r1) hp = rpp->r1->h; else hp = rpp->h;
 			ASSERT (hp);

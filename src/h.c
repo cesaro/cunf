@@ -78,30 +78,30 @@ static void _h_lists (struct h * h1, struct h * h2, struct dls * l1,
 	}
 
 #ifdef CONFIG_DEBUG
-	/* PRINT ("H1 : "); db_h (h1);
-	PRINT ("H2 : "); db_h (h2);
-	PRINT ("l1 : "); */
+	/* DPRINT ("H1 : "); db_h (h1);
+	DPRINT ("H2 : "); db_h (h2);
+	DPRINT ("l1 : "); */
 	/* assert that all elements in l1 are marked with m1, that all ... */
 	ASSERT (u.unf.e0->hist.deg == 1);
 	ASSERT (((struct h *) u.unf.e0->hist.adj[0])->m == m12);
 	for (n = l1->next; n; n = n->next) {
 		h = dls_i (struct h, n, auxnod);
 		ASSERT (h->m == m1);
-		// PRINT ("e%d:%s ", h->e->id, h->e->ft->name);
+		// DPRINT ("e%d:%s ", h->e->id, h->e->ft->name);
 	}
-	// PRINT ("\nl2 : ");
+	// DPRINT ("\nl2 : ");
 	for (n = l2->next; n; n = n->next) {
 		h = dls_i (struct h, n, auxnod);
 		ASSERT (h->m == m2);
-		// PRINT ("e%d:%s ", h->e->id, h->e->ft->name);
+		// DPRINT ("e%d:%s ", h->e->id, h->e->ft->name);
 	}
-	// PRINT ("\nl12 : ");
+	// DPRINT ("\nl12 : ");
 	for (n = l12->next; n; n = n->next) {
 		h = dls_i (struct h, n, auxnod);
 		ASSERT (h->m == m12);
-		// PRINT ("e%d:%s ", h->e->id, h->e->ft->name);
+		// DPRINT ("e%d:%s ", h->e->id, h->e->ft->name);
 	}
-	// PRINT ("\n");
+	// DPRINT ("\n");
 #endif
 }
 
@@ -177,9 +177,9 @@ void __h (struct dls * l)
 
 	for (n = l->next; n; n = n->next) {
 		h = dls_i (struct h, n, auxnod);
-		PRINT ("%02d h%d/e%d:%s\n", h->depth, h->id, h->e->id, h->e->ft->name);
+		DPRINT ("%02d h%d/e%d:%s\n", h->depth, h->id, h->e->id, h->e->ft->name);
 	}
-	PRINT ("\n");
+	DPRINT ("\n");
 }
 
 static int _h_cmp_foata (struct h *h1, struct h *h2)
@@ -469,9 +469,9 @@ int h_conflict2 (struct h *h1, struct nl *cond1, struct h *h2,
 
 	i++;
 	if (h1->id < h2->id) {
-		PRINT ("  xxx %d %d\n", h1->id, h2->id);
+		DPRINT ("  xxx %d %d\n", h1->id, h2->id);
 	} else {
-		PRINT ("  xxx %d %d\n", h2->id, h1->id);
+		DPRINT ("  xxx %d %d\n", h2->id, h1->id);
 	}
 #endif
 
@@ -598,8 +598,7 @@ void h_marking (struct h *h)
 	h->marking = l;
 	h->size = s;
 
-//#if 0
-	PRINT ("+ History h%d/e%d:%s; size %d; depth %d; readers %d; "
+	DPRINT ("+ History h%d/e%d:%s; size %d; depth %d; readers %d; "
 			"ecs %d; marking ",
 			h->id,
 			h->e->id,
@@ -608,9 +607,10 @@ void h_marking (struct h *h)
 			h->depth,
 			h->rd.deg,
 			h->ecl.deg);
+#if CONFIG_DEBUG
 	marking_print (h);
-	PRINT ("\n");
-//#endif
+#endif
+	DPRINT ("\n");
 }
 
 int h_isdup (struct h *h)
@@ -641,7 +641,7 @@ int h_isdup (struct h *h)
 		if (l1.next == l1.prev && l2.next == l2.prev) {
 			if (dls_i (struct h, l1.next, auxnod) == h &&
 					dls_i (struct h, l2.next, auxnod) == hp) {
-				PRINT ("  History h%d/e%d:%s is a duplicate of "
+				DPRINT ("  History h%d/e%d:%s is a duplicate of "
 						"h%d/e%d:%s\n",
 						h->id,
 						h->e->id,
@@ -670,7 +670,7 @@ int h_isdup (struct h *h)
 		if (&h->nod == h->e->hist.adj[i]) continue;
 		if (al_cmp (&h->nod, h->e->hist.adj[i]) == 0) {
 			struct h *hp = (struct h *) h->e->hist.adj[i];
-			PRINT ("  History h%d/e%d:%s is a duplicate of "
+			DPRINT ("  History h%d/e%d:%s is a duplicate of "
 					"h%d/e%d:%s\n",
 					h->id,
 					h->e->id,
@@ -738,11 +738,11 @@ int h_cmp (struct h *h1, struct h *h2)
 {
 	int ret;
 
-	PRINT ("  cmp h%d/e%d:%s  h%d/e%d:%s",
+	DPRINT ("  cmp h%d/e%d:%s  h%d/e%d:%s",
 			h1->id, h1->e->id, h1->e->ft->name,
 			h2->id, h2->e->id, h2->e->ft->name);
 	ret = _h_cmp (h1, h2);
-	PRINT (" returns %d\n", ret);
+	DPRINT (" returns %d\n", ret);
 	return ret;
 }
 #endif

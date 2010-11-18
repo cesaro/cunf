@@ -136,7 +136,7 @@ static void _unfold_init (void)
 	e0->iscutoff = 0;
 	e0->m = 0;
 	ASSERT (e0->id == 0);
-	PRINT ("+ Event e0 !!\n");
+	DPRINT ("+ Event e0 !!\n");
 
 	/* e0 has only one history h0, consisting only on the event e0 */
 	h0 = h_alloc (e0);
@@ -156,29 +156,26 @@ static void _unfold_init (void)
 
 static void _unfold_progress (struct h *h)
 {
-#ifdef CONFIG_DEBUG
-	PRINT ("\n- h%d/e%d:%s; size %d; is ",
+	static int i = 0;
+	i++;
+
+	DPRINT ("\n- h%d/e%d:%s; size %d; is ",
 			h->id,
 			h->e->id,
 			h->e->ft->name,
 			h->size);
 	if (h->corr != 0) {
-		PRINT ("a cut-off! (corr. h%d/e%d:%s)\n",
+		DPRINT ("a cut-off! (corr. h%d/e%d:%s)\n",
 				h->corr->id,
 				h->corr->e->id,
 				h->corr->e->ft->name);
 	} else {
-		PRINT ("new!\n");
+		DPRINT ("new!\n");
 	}
 
-#else
-	static int i = 0;
-	
-	i++;
-	if ((i & 0xff) == 0) {
-		printf ("At size %6d, %d histories\n", h->size, i);
+	if ((i & 0xf) == 0) {
+		PRINT ("  At size %6d, %d histories\n", h->size, i);
 	}
-#endif
 }
 
 static int __compare (int * events, int nr, struct dls *l) {
@@ -235,6 +232,7 @@ void __test (void) {
 	20, 91, 13, 10, 9, 12, 28, 5, 198, 47, 226, 15, 169, 123, 8, 111, 165,
 	7, 11, 143, 66, 31, 22, 0};
 
+	e = 0;
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
 		if (e->id == eid) break;
@@ -248,10 +246,10 @@ void __test (void) {
 	}
 
 	if (i >= 0) {
-		PRINT ("found! h%d\n", h->id);
+		DPRINT ("found! h%d\n", h->id);
 		BREAK (1);
 	} else {
-		PRINT ("not found :(\n");
+		DPRINT ("not found :(\n");
 	}
 }
 

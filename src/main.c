@@ -177,10 +177,8 @@ void write_dot (const char * filename)
 	i = fclose (f);
 	if (i == EOF) gl_err ("'%s': %s", filename, strerror (errno));
 
-#ifndef CONFIG_DEBUG
-	printf ("%d events, %d conditions, %d histories\n",
+	PRINT ("  %d events, %d conditions, %d histories. Have a nice day!\n",
 			u.unf.numev - 1, u.unf.numco, hnr);
-#endif
 }
 
 int main (int argc, char **argv)
@@ -230,15 +228,12 @@ int main (int argc, char **argv)
 
 	if (!llnet) usage (argv[0]);
 
-	PRINT ("  Reading net from '%s'\n", llnet);
+	DPRINT ("  Reading net from '%s'\n", llnet);
 	read_pep_net (llnet);
 	nc_static_checks (sptr);
 	unfold ();
 	PRINT ("  Done, writing unfolding to '%s'\n", dotfile);
 	write_dot (dotfile);
-	// db_h2dot ();
-	PRINT ("  Have a nice day!\n");
-
 	return EXIT_SUCCESS;
 }
 

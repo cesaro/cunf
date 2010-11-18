@@ -1,6 +1,6 @@
 
 # traditional variables
-CFLAGS:=-Wall -Wextra -g
+CFLAGS:=-Wall -Wextra -O3
 CPPFLAGS:=-I include/
 LDFLAGS:=
 
@@ -19,6 +19,15 @@ TARGETS:=$(patsubst %.o,%,$(MOBJS))
 
 # dependency files
 DEPS:=$(patsubst %.o,%.d,$(OBJS) $(MOBJS))
+
+# testing
+TEST_NETS:=$(patsubst %.xml,%.ll_net,$(wildcard test/examples/small/*xml))
+TEST_NETS+=$(wildcard test/examples/norm/pep/*.ll_net)
+TEST_NETS+=$(wildcard test/examples/cont/pep/*.ll_net)
+TEST_NETS:=$(filter-out %buf100.ll_net, $(TEST_NETS))
+
+TEST_R:=$(patsubst %.ll_net,%.r,$(TEST_NETS))
+TEST_UNF_R:=$(patsubst %.ll_net,%.unf.r,$(TEST_NETS))
 
 # define the toolchain
 CROSS:=
@@ -41,7 +50,7 @@ STRIP:=$(CROSS)strip
 
 .c.o:
 	@echo " CC  $<"
-	@$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 %.out : %.cml
 	@echo " CNF $<"
@@ -58,6 +67,7 @@ STRIP:=$(CROSS)strip
 %.unf.dot : %.ll_net
 	@echo " UNF $<"
 	@src/main $<
+	@#src/main $< 2>&1 | grep nice
 
 %.ll_net : %.xml
 	@echo " P2P $<"

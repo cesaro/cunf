@@ -172,7 +172,7 @@ static void _pe_comb_ent_init (int i)
 	ASSERT (!r || r->c);
 	ASSERT (!r || r->c->fp == p);
 	ASSERT (!r || r->m == pe.comb.m);
-	if (i >= pe.comb.pre_size) ASSERT (!r || EC_ISGEN (r));
+	if (i >= pe.comb.pre_size) { ASSERT (!r || EC_ISGEN (r)); }
 	pe.comb.tab[i].r = r;
 }
 
@@ -198,7 +198,7 @@ void _pe_comb_ent_next (int i)
 	ASSERT (!r || r->c);
 	ASSERT (!r || r->c->fp == pe.comb.tab[i].p);
 	ASSERT (!r || r->m == pe.comb.m);
-	if (i >= pe.comb.pre_size) ASSERT (!r || EC_ISGEN (r));
+	if (i >= pe.comb.pre_size) { ASSERT (!r || EC_ISGEN (r)); }
 	pe.comb.tab[i].r = r;
 }
 
@@ -296,24 +296,19 @@ static struct event * _pe_comb_new_event (void)
 	ASSERT (e->pre.deg == t->pre.deg);
 	ASSERT (e->cont.deg == t->cont.deg);
 
-#if 0
-	/* update the asymmetric conflict relation with this event */
-	ac_add (e);
-#endif
-
-//#if 0
-	PRINT ("+ Event e%d:%s; pre {", e->id, e->ft->name);
+#if CONFIG_DEBUG
+	DPRINT ("+ Event e%d:%s; pre {", e->id, e->ft->name);
 	for (i = e->pre.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->pre.adj[i];
-		PRINT (" c%d:%s", c->id, c->fp->name);
+		DPRINT (" c%d:%s", c->id, c->fp->name);
 	}
-	PRINT ("}; cont {");
+	DPRINT ("}; cont {");
 	for (i = e->cont.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->cont.adj[i];
-		PRINT (" c%d:%s", c->id, c->fp->name);
+		DPRINT (" c%d:%s", c->id, c->fp->name);
 	}
-	PRINT ("}\n");
-//#endif
+	DPRINT ("}\n");
+#endif
 
 	/* therefore, at this the moment the event has no postset */
 	return e;
@@ -366,10 +361,10 @@ static void _pe_comb_solution ()
 
 #if CONFIG_DEBUG
 	int i;
-	PRINT ("  Solution %s, ", pe.comb.t->name);
+	DPRINT ("  Solution %s, ", pe.comb.t->name);
 	db_r2 (0, pe.comb.r, "");
 	for (i = 0; i < pe.comb.size; i++) db_r2 (" ", pe.comb.tab[i].r, "");
-	PRINT ("\n");
+	DPRINT ("\n");
 #endif
 
 	e = _pe_comb_instance_of ();
@@ -385,7 +380,7 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t)
 	struct place *pp;
 	struct ec *rp;
 
-	PRINT ("  Explore  %s\n", t->name);
+	DPRINT ("  Explore  %s\n", t->name);
 
 	ASSERT (pe.comb.tab);
 	ASSERT (r->c->fp == p);
@@ -563,7 +558,7 @@ static void __pe_debug (struct ec *r) {
 	int i;
 
 	db_r2 ("+ Condition ", r, " type ");
-	PRINT ("%s co \n", EC_ISCOMP (r) ? "C" :
+	DPRINT ("%s co \n", EC_ISCOMP (r) ? "C" :
 			EC_ISREAD (r) ? "R" : "G");
 	
 	for (i = r->co.deg - 1; i >= 0; i--) db_r2 ("   ", r->co.adj[i], 0);

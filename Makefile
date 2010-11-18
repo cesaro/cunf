@@ -2,7 +2,7 @@
 -include .config
 include defs.mk
 
-.PHONY: fake all menuconfig m g clean distclean
+.PHONY: fake all menuconfig m g test clean distclean testclean
 
 all: $(TARGETS)
 
@@ -11,6 +11,7 @@ fake :
 	@echo $(CC)
 	@echo $(SRCS)
 	@echo $(MSRCS)
+	@echo $(TEST_NETS)
 	@echo $(DEPS)
 
 $(TARGETS) : % : %.o $(OBJS)
@@ -87,6 +88,10 @@ ee : $(TARGETS)
 g : $(TARGETS)
 	gdb ./src/main
 
+test : $(TEST_R) $(TEST_UNF_R)
+	@echo " DIF ..."
+	@echo > t.diff
+	@for n in $(TEST_NETS:%.ll_net=%); do diff -Naur $$n.r $$n.unf.r >> t.diff; done; true;
 
 menuconfig .config : rules.out
 	@echo " CNF $<"
@@ -106,6 +111,10 @@ distclean : clean
 	@rm -f rules.out .config $R/include/config.h
 	@rm -f $(DEPS)
 	@echo Mr. Proper done.
+
+testclean :
+	@rm -f $(TEST_UNF_R)
+	@echo Cleaning of test results done.
 
 -include $(DEPS)
 
