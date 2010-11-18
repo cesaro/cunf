@@ -93,6 +93,8 @@ test : $(TEST_R) $(TEST_UNF_R)
 	@echo > t.diff
 	@for n in $(TEST_NETS:%.ll_net=%); do diff -Naur $$n.r $$n.unf.r >> t.diff; done; true;
 
+times : $(TIME_UNF_DOT)
+
 menuconfig .config : rules.out
 	@echo " CNF $<"
 	@./tools/cml2/cmlconfigure.py -c -i .config -o .config
@@ -113,7 +115,7 @@ distclean : clean
 	@echo Mr. Proper done.
 
 testclean :
-	@rm -f $(TEST_UNF_R)
+	@rm -f $(TEST_UNF_R) $(TIME_UNF_DOT)
 	@echo Cleaning of test results done.
 
 -include $(DEPS)

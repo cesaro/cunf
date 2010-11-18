@@ -177,7 +177,7 @@ void write_dot (const char * filename)
 	i = fclose (f);
 	if (i == EOF) gl_err ("'%s': %s", filename, strerror (errno));
 
-	PRINT ("  %d events, %d conditions, %d histories. Have a nice day!\n",
+	PRINT ("  %d events, %d conditions, %d histories. Done.\n",
 			u.unf.numev - 1, u.unf.numco, hnr);
 }
 
@@ -232,7 +232,7 @@ int main (int argc, char **argv)
 	read_pep_net (llnet);
 	nc_static_checks (sptr);
 	unfold ();
-	PRINT ("  Done, writing unfolding to '%s'\n", dotfile);
+	DPRINT ("  Writing unfolding to '%s'\n", dotfile);
 	write_dot (dotfile);
 	return EXIT_SUCCESS;
 }

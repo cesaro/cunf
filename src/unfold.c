@@ -173,8 +173,8 @@ static void _unfold_progress (struct h *h)
 		DPRINT ("new!\n");
 	}
 
-	if ((i & 0xf) == 0) {
-		PRINT ("  At size %6d, %d histories\n", h->size, i);
+	if ((i & 0xfff) == 0) {
+		DPRINT ("  At size %6d, %d histories\n", h->size, i);
 	}
 }
 
@@ -258,9 +258,9 @@ void unfold (void)
 	struct h *h;
 
 #ifdef CONFIG_MCMILLAN
-	PRINT ("  Using McMillan order\n");
+	DPRINT ("  Using McMillan order\n");
 #else
-	PRINT ("  Using Esparza-Romer-Vogler order\n");
+	DPRINT ("  Using Esparza-Romer-Vogler order\n");
 #endif
 
 	nc_create_unfolding ();

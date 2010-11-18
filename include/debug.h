@@ -27,8 +27,7 @@
 
 #else
 #undef _DEBUG
-//#define DPRINT(args...)
-#define DPRINT			PRINT
+#define DPRINT(args...)
 #define ASSERT(expr)
 #define DEBUG(fmt,args...)
 #define TRACE(expr,type)

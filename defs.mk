@@ -21,13 +21,22 @@ TARGETS:=$(patsubst %.o,%,$(MOBJS))
 DEPS:=$(patsubst %.o,%.d,$(OBJS) $(MOBJS))
 
 # testing
-TEST_NETS:=$(patsubst %.xml,%.ll_net,$(wildcard test/examples/small/*xml))
-TEST_NETS+=$(wildcard test/examples/norm/pep/*.ll_net)
+#TEST_NETS:=$(patsubst %.xml,%.ll_net,$(wildcard test/examples/small/*xml))
+#TEST_NETS+=$(wildcard test/examples/norm/pep/*.ll_net)
 TEST_NETS+=$(wildcard test/examples/cont/pep/*.ll_net)
 TEST_NETS:=$(filter-out %buf100.ll_net, $(TEST_NETS))
 
 TEST_R:=$(patsubst %.ll_net,%.r,$(TEST_NETS))
 TEST_UNF_R:=$(patsubst %.ll_net,%.unf.r,$(TEST_NETS))
+
+# measuring time
+TIME_NETS:=$(patsubst %.xml,%.ll_net,$(wildcard test/examples/small/*xml))
+TIME_NETS+=$(wildcard test/examples/norm/pep/*.ll_net)
+TIME_NETS+=$(wildcard test/examples/norm/bench/*.ll_net)
+TIME_NETS+=$(wildcard test/examples/cont/pep/*.ll_net)
+TIME_NETS+=$(wildcard test/examples/cont/bench/*.ll_net)
+
+TIME_UNF_DOT:=$(TIME_NETS:%.ll_net=%.unf.dot)
 
 # define the toolchain
 CROSS:=
@@ -50,7 +59,7 @@ STRIP:=$(CROSS)strip
 
 .c.o:
 	@echo " CC  $<"
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+	@$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 %.out : %.cml
 	@echo " CNF $<"
@@ -66,8 +75,8 @@ STRIP:=$(CROSS)strip
 
 %.unf.dot : %.ll_net
 	@echo " UNF $<"
-	@src/main $<
-	@#src/main $< 2>&1 | grep nice
+	@time src/main $<
+	@#src/main $< 2>&1 | grep Done
 
 %.ll_net : %.xml
 	@echo " P2P $<"
