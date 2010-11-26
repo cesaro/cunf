@@ -134,12 +134,14 @@ static void _pe_comb_ent_init (int i)
 	struct ls *n;
 
 	ASSERT (i >= 0 && i < pe.comb.size);
+	DPRINT ("  Comb %d %s init ", i, pe.comb.tab[i].p->name);
 
 	/* no enriched conditions available if there are no conditions
 	 * associated to this place */
 	p = pe.comb.tab[i].p;
 	if (p->conds.next == 0) {
 		pe.comb.tab[i].r = 0;
+		DPRINT ("0\n");
 		return;
 	}
 
@@ -151,6 +153,7 @@ static void _pe_comb_ent_init (int i)
 	}
 	if (! n) {
 		pe.comb.tab[i].r = 0;
+		DPRINT ("0\n");
 		return;
 	}
 
@@ -174,6 +177,9 @@ static void _pe_comb_ent_init (int i)
 	ASSERT (!r || r->m == pe.comb.m);
 	if (i >= pe.comb.pre_size) { ASSERT (!r || EC_ISGEN (r)); }
 	pe.comb.tab[i].r = r;
+#ifdef CONFIG_DEBUG
+	if (r) db_r (r); else DPRINT ("0\n");
+#endif
 }
 
 void _pe_comb_ent_next (int i)
@@ -183,6 +189,7 @@ void _pe_comb_ent_next (int i)
 	ASSERT (i >= 0 && i < pe.comb.size);
 	ASSERT (pe.comb.tab[i].r);
 	ASSERT (pe.comb.tab[i].r->c->fp == pe.comb.tab[i].p);
+	DPRINT ("  Comb %d %s next ", i, pe.comb.tab[i].p->name);
 
 	r = pe.comb.tab[i].r;
 	if (i < pe.comb.pre_size) {
@@ -200,6 +207,9 @@ void _pe_comb_ent_next (int i)
 	ASSERT (!r || r->m == pe.comb.m);
 	if (i >= pe.comb.pre_size) { ASSERT (!r || EC_ISGEN (r)); }
 	pe.comb.tab[i].r = r;
+#ifdef CONFIG_DEBUG
+	if (r) db_r (r); else DPRINT ("0\n");
+#endif
 }
 
 static struct event * _pe_comb_instance_of (void)
@@ -425,56 +435,38 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t)
 
 static void _pe_comb_explore (void)
 {
-	int i, j, m;
+	int i, j;
 
 	if (pe.comb.size == 0) {
 		_pe_comb_solution ();
 		return;
 	}
 
-	m = 0;
 	i = 0;
 	_pe_comb_ent_init (0);
-	DPRINT ("  Comb 0 %s set ", pe.comb.tab[0].p->name);
-	if (pe.comb.tab[0].r) db_r (pe.comb.tab[0].r); else PRINT ("(null)\n");
 
 	while (pe.comb.tab[0].r) {
 		for (j = 0; j < i; j++) {
-			if (j > m) m = j;
 			if (! co_test (pe.comb.tab[i].r, pe.comb.tab[j].r)) {
 				break;
 			}
 		}
 
 		if (j == i) {
-			m = 0;
-			i++;
-			if (i < pe.comb.size) {
+			if (i + 1 == pe.comb.size) {
+				_pe_comb_solution ();
+				_pe_comb_ent_next (i);
+			} else {
+				i++;
 				_pe_comb_ent_init (i);
-				DPRINT ("  Comb %d %s set ", i, pe.comb.tab[i].p->name);
-				if (pe.comb.tab[i].r) db_r (pe.comb.tab[i].r); else PRINT ("(null)\n");
 			}
 		} else {
 			_pe_comb_ent_next (i);
-			DPRINT ("  Comb %d %s set ", i, pe.comb.tab[i].p->name);
-			if (pe.comb.tab[i].r) db_r (pe.comb.tab[i].r); else PRINT ("(null)\n");
 		}
 
-		if (i >= pe.comb.size) {
-			_pe_comb_solution ();
+		while (i >= 1 && pe.comb.tab[i].r == 0) {
 			i--;
 			_pe_comb_ent_next (i);
-			DPRINT ("  Comb %d %s set ", i, pe.comb.tab[i].p->name);
-			if (pe.comb.tab[i].r) db_r (pe.comb.tab[i].r); else PRINT ("(null)\n");
-		}
-
-		if (i == 0) m--;
-		while (pe.comb.tab[i].r == 0 && m >= 0) {
-			i = m;
-			_pe_comb_ent_next (i);
-			DPRINT ("  Comb %d %s set ", i, pe.comb.tab[i].p->name);
-			if (pe.comb.tab[i].r) db_r (pe.comb.tab[i].r); else PRINT ("(null)\n");
-			m--;
 		}
 	}
 }

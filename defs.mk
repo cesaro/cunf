@@ -79,7 +79,7 @@ STRIP:=$(CROSS)strip
 %.unf.dot : %.ll_net
 	@echo " UNF $<"
 	@time src/main $<
-	#@src/main $< 2>&1 | grep Done
+	@#src/main $< 2>&1 | grep Done
 
 %.ll_net : %.xml
 	@echo " P2P $<"
