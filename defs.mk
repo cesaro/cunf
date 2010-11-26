@@ -79,6 +79,7 @@ STRIP:=$(CROSS)strip
 %.unf.dot : %.ll_net
 	@echo " UNF $<"
 	@time src/main $<
+	@#tools/time.sh $<
 	@#src/main $< 2>&1 | grep Done
 
 %.ll_net : %.xml
