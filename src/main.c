@@ -177,7 +177,7 @@ void write_dot (const char * filename)
 	i = fclose (f);
 	if (i == EOF) gl_err ("'%s': %s", filename, strerror (errno));
 
-	PRINT ("  %d events, %d conditions, %d histories. Done.\n",
+	PRINT ("  Done, %d events, %d conditions, %d histories.\n",
 			u.unf.numev - 1, u.unf.numco, hnr);
 }
 

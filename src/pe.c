@@ -380,28 +380,11 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t)
 	struct place *pp;
 	struct ec *rp;
 
-	DPRINT ("  Explore  %s\n", t->name);
+	DPRINT ("  Explore  %s (%s", t->name, p->name);
 
 	ASSERT (pe.comb.tab);
 	ASSERT (r->c->fp == p);
 	ASSERT (al_test (&t->pre, p) || al_test (&t->cont, p));
-
-#if 0
-	if (strcmp (t->name, "T219") == 0) {
-		if (strcmp (p->name, "P179") == 0) {
-			for (i = r->co.deg - 1; i >= 0; i--) {
-				rp = (struct ec *) r->co.adj[i];
-				ASSERT (strcmp (rp->c->fp->name, "P140") != 0);
-			}
-		} else {
-			ASSERT (strcmp (p->name, "P140") == 0);
-			for (i = r->co.deg - 1; i >= 0; i--) {
-				rp = (struct ec *) r->co.adj[i];
-				ASSERT (strcmp (rp->c->fp->name, "P179") != 0);
-			}
-		}
-	}
-#endif
 
 	m = ++u.mark;
 	ASSERT (m > 0);
@@ -420,6 +403,7 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t)
 		pe.comb.size++;
 		pe.comb.pre_size++;
 		pp->m = m;
+		DPRINT (" %s", pp->name);
 	}
 
 	for (i = t->cont.deg - 1; i >= 0; i--) {
@@ -429,7 +413,9 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t)
 		pe.comb.tab[pe.comb.size].p = pp;
 		pe.comb.size++;
 		pp->m = m;
+		DPRINT (" %s", pp->name);
 	}
+	DPRINT (")\n");
 
 	for (i = r->co.deg - 1; i >= 0; i--) {
 		rp = (struct ec *) r->co.adj[i];
@@ -449,6 +435,8 @@ static void _pe_comb_explore (void)
 	m = 0;
 	i = 0;
 	_pe_comb_ent_init (0);
+	DPRINT ("  Comb 0 %s set ", pe.comb.tab[0].p->name);
+	if (pe.comb.tab[0].r) db_r (pe.comb.tab[0].r); else PRINT ("(null)\n");
 
 	while (pe.comb.tab[0].r) {
 		for (j = 0; j < i; j++) {
@@ -461,21 +449,31 @@ static void _pe_comb_explore (void)
 		if (j == i) {
 			m = 0;
 			i++;
-			if (i < pe.comb.size) _pe_comb_ent_init (i);
+			if (i < pe.comb.size) {
+				_pe_comb_ent_init (i);
+				DPRINT ("  Comb %d %s set ", i, pe.comb.tab[i].p->name);
+				if (pe.comb.tab[i].r) db_r (pe.comb.tab[i].r); else PRINT ("(null)\n");
+			}
 		} else {
 			_pe_comb_ent_next (i);
+			DPRINT ("  Comb %d %s set ", i, pe.comb.tab[i].p->name);
+			if (pe.comb.tab[i].r) db_r (pe.comb.tab[i].r); else PRINT ("(null)\n");
 		}
 
 		if (i >= pe.comb.size) {
 			_pe_comb_solution ();
 			i--;
 			_pe_comb_ent_next (i);
+			DPRINT ("  Comb %d %s set ", i, pe.comb.tab[i].p->name);
+			if (pe.comb.tab[i].r) db_r (pe.comb.tab[i].r); else PRINT ("(null)\n");
 		}
 
 		if (i == 0) m--;
 		while (pe.comb.tab[i].r == 0 && m >= 0) {
 			i = m;
 			_pe_comb_ent_next (i);
+			DPRINT ("  Comb %d %s set ", i, pe.comb.tab[i].p->name);
+			if (pe.comb.tab[i].r) db_r (pe.comb.tab[i].r); else PRINT ("(null)\n");
 			m--;
 		}
 	}
@@ -577,7 +575,6 @@ void pe_update_gen (struct ec * r)
 	ASSERT (r);
 	ASSERT (EC_ISGEN (r));
 	__pe_debug (r);
-	BREAK (r->c->id == 161 && r->h->id == 70);
 
 	p = r->c->fp;
 	for (i = p->post.deg - 1; i >= 0; i--) {

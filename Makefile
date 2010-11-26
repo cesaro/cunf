@@ -12,6 +12,7 @@ fake :
 	@echo $(SRCS)
 	@echo $(MSRCS)
 	@echo $(TEST_NETS)
+	@echo $(TIME_NETS)
 	@echo $(DEPS)
 
 $(TARGETS) : % : %.o $(OBJS)
@@ -19,66 +20,66 @@ $(TARGETS) : % : %.o $(OBJS)
 	@$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $^ $(LDFLAGS) 
 
 e : $(TARGETS)
-	./src/main test/examples/cont/pep/sdl_arq.ll_net
+	./src/main test/nets/cont/pep/sdl_arq.ll_net
 
 _e : $(TARGETS)
-	./src/main test/examples/norm/pep/sem.ll_net
-	./src/main test/examples/norm/pep/elevator.ll_net
-	./src/main test/examples/norm/pep/do_od.ll_net
-	./src/main test/examples/norm/pep/peterson.ll_net
-	./src/main test/examples/norm/pep/mutual.ll_net
-	./src/main test/examples/norm/bench/buf100.ll_net
-	./src/main test/examples/norm/pep/parrow.ll_net
-	./src/main test/examples/norm/pep/reader_writer_2.ll_net
+	./src/main test/nets/norm/pep/sem.ll_net
+	./src/main test/nets/norm/pep/elevator.ll_net
+	./src/main test/nets/norm/pep/do_od.ll_net
+	./src/main test/nets/norm/pep/peterson.ll_net
+	./src/main test/nets/norm/pep/mutual.ll_net
+	./src/main test/nets/norm/bench/buf100.ll_net
+	./src/main test/nets/norm/pep/parrow.ll_net
+	./src/main test/nets/norm/pep/reader_writer_2.ll_net
 
-	./src/main test/examples/cont/pep/do_od.ll_net
-	./src/main test/examples/cont/pep/peterson_pfa.ll_net
-	./src/main test/examples/cont/pep/peterson.ll_net
-	./src/main test/examples/cont/pep/mutual.ll_net
+	./src/main test/nets/cont/pep/do_od.ll_net
+	./src/main test/nets/cont/pep/peterson_pfa.ll_net
+	./src/main test/nets/cont/pep/peterson.ll_net
+	./src/main test/nets/cont/pep/mutual.ll_net
 
-	./src/main test/examples/small/asymcnfl.ll_net
-	./src/main test/examples/small/conc.ll_net
-	./src/main test/examples/small/test1.ll_net
-	./src/main test/examples/small/fig2.ll_net
-	./src/main test/examples/small/pag9.ll_net
-	./src/main test/examples/small/fig1.ll_net
-	./src/main test/examples/small/fig1-cp.ll_net
-	./src/main test/examples/small/fig1-pr.ll_net
-	./src/main test/examples/small/erv-size-parih.ll_net
-	./src/main test/examples/small/erv-foata.ll_net
-	./src/main test/examples/small/mcmillan-erv.ll_net
-	./src/main test/examples/small/2readers.ll_net
-	./src/main test/examples/small/8readers.ll_net
-	./src/main test/examples/small/peupdate.ll_net
-	./src/main test/examples/small/peupdate-bug.ll_net
+	./src/main test/nets/small/asymcnfl.ll_net
+	./src/main test/nets/small/conc.ll_net
+	./src/main test/nets/small/test1.ll_net
+	./src/main test/nets/small/fig2.ll_net
+	./src/main test/nets/small/pag9.ll_net
+	./src/main test/nets/small/fig1.ll_net
+	./src/main test/nets/small/fig1-cp.ll_net
+	./src/main test/nets/small/fig1-pr.ll_net
+	./src/main test/nets/small/erv-size-parih.ll_net
+	./src/main test/nets/small/erv-foata.ll_net
+	./src/main test/nets/small/mcmillan-erv.ll_net
+	./src/main test/nets/small/2readers.ll_net
+	./src/main test/nets/small/8readers.ll_net
+	./src/main test/nets/small/peupdate.ll_net
+	./src/main test/nets/small/peupdate-bug.ll_net
 
-	./src/main test/examples/norm/bench/ds_1.sync.ll_net
-	./src/main test/examples/norm/bench/buf100.ll_net
-	./src/main test/examples/norm/bench/byzagr4_1b.ll_net
-	./src/main test/examples/norm/bench/pd_7.sync.ll_net
-	./src/main test/examples/norm/bench/dph_7.dlmcs.ll_net
-	./src/main test/examples/norm/bench/elevator_4.ll_net
-	./src/main test/examples/norm/bench/elevator_4.mci
-	./src/main test/examples/norm/bench/fifo20.ll_net
-	./src/main test/examples/norm/bench/fifo20.mci
-	./src/main test/examples/norm/bench/ftp_1.sync.ll_net
-	./src/main test/examples/norm/bench/furnace_3.ll_net
-	./src/main test/examples/norm/bench/key_3.sync.ll_net
-	./src/main test/examples/norm/bench/key_4.fsa.ll_net
-	./src/main test/examples/norm/bench/q_1.ll_net
-	./src/main test/examples/norm/bench/q_1.sync.ll_net
-	./src/main test/examples/norm/bench/rw_12.ll_net
-	./src/main test/examples/norm/bench/rw_12.sync.ll_net
-	./src/main test/examples/norm/bench/rw_1w3r.ll_net
-	./src/main test/examples/norm/bench/rw_2w1r.ll_net
+	./src/main test/nets/norm/bench/ds_1.sync.ll_net
+	./src/main test/nets/norm/bench/buf100.ll_net
+	./src/main test/nets/norm/bench/byzagr4_1b.ll_net
+	./src/main test/nets/norm/bench/pd_7.sync.ll_net
+	./src/main test/nets/norm/bench/dph_7.dlmcs.ll_net
+	./src/main test/nets/norm/bench/elevator_4.ll_net
+	./src/main test/nets/norm/bench/elevator_4.mci
+	./src/main test/nets/norm/bench/fifo20.ll_net
+	./src/main test/nets/norm/bench/fifo20.mci
+	./src/main test/nets/norm/bench/ftp_1.sync.ll_net
+	./src/main test/nets/norm/bench/furnace_3.ll_net
+	./src/main test/nets/norm/bench/key_3.sync.ll_net
+	./src/main test/nets/norm/bench/key_4.fsa.ll_net
+	./src/main test/nets/norm/bench/q_1.ll_net
+	./src/main test/nets/norm/bench/q_1.sync.ll_net
+	./src/main test/nets/norm/bench/rw_12.ll_net
+	./src/main test/nets/norm/bench/rw_12.sync.ll_net
+	./src/main test/nets/norm/bench/rw_1w3r.ll_net
+	./src/main test/nets/norm/bench/rw_2w1r.ll_net
 
 gp : $(TARGETS)
-	./src/main test/examples/cont/pep/reader_writer_2.ll_net
+	./src/main test/nets/cont/pep/reader_writer_2.ll_net
 	mv gmon.out gmon.out.1
-	./src/main test/examples/cont/pep/parrow.ll_net
+	./src/main test/nets/cont/pep/parrow.ll_net
 	mv gmon.out gmon.out.2
-	#./src/main test/examples/cont/bench/buf100.ll_net
-	./src/main test/examples/cont/pep/ab_gesc.ll_net
+	#./src/main test/nets/cont/bench/buf100.ll_net
+	./src/main test/nets/cont/pep/ab_gesc.ll_net
 	mv gmon.out gmon.out.3
 	gprof src/main gmon.out.* > s
 

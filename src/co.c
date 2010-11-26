@@ -136,7 +136,6 @@ void co_add (struct ec *r)
 
 			if (rpp->r1) hp = rpp->r1->h; else hp = rpp->h;
 			ASSERT (hp);
-			BREAK (r->h->id == 535 && hp->id == 481);
 			for (j = hp->rd.deg - 1; j >= 0; j--) {
 				ep = (struct event *) hp->rd.adj[j];
 				if (ep->m == m) break;

@@ -3,5 +3,5 @@
 break breakme
 break main
 break unfold
-run test/examples/cont/pep/mutual.ll_net
+run test/nets/small/2readers.ll_net
 
