@@ -39,8 +39,6 @@ TIME_NETS+=$(wildcard test/nets/cont/bench/*.ll_net)
 TIME_NETS+=$(wildcard test/nets/pr/pep/*.ll_net)
 TIME_NETS+=$(wildcard test/nets/pr/bench/*.ll_net)
 
-TIME_UNF_DOT:=$(TIME_NETS:%.ll_net=%.unf.dot)
-
 # define the toolchain
 CROSS:=
 
@@ -78,9 +76,13 @@ STRIP:=$(CROSS)strip
 
 %.unf.dot : %.ll_net
 	@echo " UNF $<"
-	@time src/main $<
-	@#tools/time.sh $<
 	@#src/main $< 2>&1 | grep Done
+
+%.time : %.ll_net
+	@tools/time.sh src/main $<
+	@#tools/time.sh tools/mole-20060323 $<
+	@#tools/time.sh tools/cunf-10 $<
+	@#time src/main $<
 
 %.ll_net : %.xml
 	@echo " P2P $<"

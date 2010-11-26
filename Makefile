@@ -7,7 +7,6 @@ include defs.mk
 all: $(TARGETS)
 
 fake :
-	@echo $(CROSS)
 	@echo $(CC)
 	@echo $(SRCS)
 	@echo $(MSRCS)
@@ -94,7 +93,8 @@ test : $(TEST_R) $(TEST_UNF_R)
 	@echo > t.diff
 	@for n in $(TEST_NETS:%.ll_net=%); do diff -Naur $$n.r $$n.unf.r >> t.diff; done; true;
 
-times : $(TIME_UNF_DOT)
+times : $(TIME_NETS:%.ll_net=%.time)
+
 
 menuconfig .config : rules.out
 	@echo " CNF $<"
