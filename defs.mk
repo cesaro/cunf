@@ -1,6 +1,7 @@
 
 # traditional variables
 CFLAGS:=-Wall -Wextra -O3
+#CFLAGS:=-Wall -Wextra -g
 CPPFLAGS:=-I include/
 LDFLAGS:=
 
@@ -76,7 +77,7 @@ STRIP:=$(CROSS)strip
 
 %.unf.dot : %.ll_net
 	@echo " UNF $<"
-	@#src/main $< 2>&1 | grep Done
+	@src/main $< 2>&1 | grep Done
 
 %.time : %.ll_net
 	@tools/time.sh src/main $<

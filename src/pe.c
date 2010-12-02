@@ -306,7 +306,7 @@ static struct event * _pe_comb_new_event (void)
 	ASSERT (e->pre.deg == t->pre.deg);
 	ASSERT (e->cont.deg == t->cont.deg);
 
-#if CONFIG_DEBUG
+#ifdef CONFIG_DEBUG
 	DPRINT ("+ Event e%d:%s; pre {", e->id, e->ft->name);
 	for (i = e->pre.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->pre.adj[i];
@@ -369,7 +369,7 @@ static void _pe_comb_solution ()
 	struct event *e;
 	struct h *h;
 
-#if CONFIG_DEBUG
+#ifdef CONFIG_DEBUG
 	int i;
 	DPRINT ("  Solution %s, ", pe.comb.t->name);
 	db_r2 (0, pe.comb.r, "");
@@ -541,7 +541,7 @@ struct h * pe_pop (void)
 	return ret;
 }
 
-#if CONFIG_DEBUG
+#ifdef CONFIG_DEBUG
 static void __pe_debug (struct ec *r) {
 /* + Condition {c0:P12, h1/e1:T0} type G|R|C co */
 

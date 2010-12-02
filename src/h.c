@@ -194,7 +194,7 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 	struct nl *nn;
 	struct nl *l;
 	struct h *h;
-	
+
 	/* generate three different marks */
 	m1 = ++u.mark;
 	m2 = ++u.mark;
@@ -203,9 +203,7 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 	/* separate the events in h1 and h2 in three lists */
 	_h_lists (h1, h2, &l1, &l2, &l12, m1, m2, m12);
 
-	/* while both lists have events; we can safely ignore events in l12, as
-	 * they  collaborate exactly in the same amount for foata vectors of
-	 * every slice (depth) in both histories */
+	/* while both lists have events */
 	depth = 1;
 	while (l1.next && l2.next) {
 
@@ -221,6 +219,9 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 				nl_insert2 (&l, t, _h_t_cmp);
 			}
 			t->parikhcnt1++;
+			DPRINT ("  foata depth %d l1 add t %s pkh1 %d pkh2 %d\n",
+					depth, t->name, t->parikhcnt1,
+					t->parikhcnt2);
 		}
 
 		/* same with list l2 */
@@ -233,6 +234,36 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 				nl_insert2 (&l, t, _h_t_cmp);
 			}
 			t->parikhcnt2++;
+			DPRINT ("  foata depth %d l2 add t %s pkh1 %d pkh2 %d\n",
+					depth, t->name, t->parikhcnt1,
+					t->parikhcnt2);
+		}
+
+		/* if l is empty, parikh vectors are the same even if we skip
+		 * adding transitions from l12; if l is not empty, we need to
+		 * take into account transitions from l12, so we push also
+		 * transitions from l12 if l is not empty (it is also safe to
+		 * unconditionally append transitions from l12) */
+#ifdef CONFIG_ERV
+		if (l) {
+#else
+		if (1) {
+#endif
+			for (n = l12.next; n; n = n->next) {
+				h = dls_i (struct h, n, auxnod);
+				if (h->depth > depth) continue;
+				dls_remove (&l12, n);
+				if (h->depth != depth) continue;
+				t = h->e->ft;
+				if (t->parikhcnt2 == 0 && t->parikhcnt1 == 0) {
+					nl_insert2 (&l, t, _h_t_cmp);
+				}
+				t->parikhcnt1++;
+				t->parikhcnt2++;
+				DPRINT ("  foata depth %d l12 add t %s pkh1 %d pkh2 %d\n",
+						depth, t->name, t->parikhcnt1,
+						t->parikhcnt2);
+			}
 		}
 
 		/* parikh vectors of transitions at depth 'depth' in both
@@ -241,9 +272,21 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 		 * both vectors and clear these two fields */
 		found = 0;
 		found2 = 0;
+#ifdef CONFIG_ERV_MOLE
+		/* fix to mimic the unfold order used in mole (which is not
+		 * exactly the ERV order) */
+		for (nn = l; nn; nn = nn->next) {
+			t = (struct trans *) nn->node;
+			if (t->parikhcnt1) found2++;
+			if (t->parikhcnt2) found2--;
+		}
+#endif
 		for (nn = l; nn; nn = nn->next) {
 			t = (struct trans *) nn->node;
 			found = t->parikhcnt1 - t->parikhcnt2;
+			DPRINT ("  foata depth %d t %s pkh1 %d pkh2 %d found %d\n", 
+					depth, t->name, t->parikhcnt1,
+					t->parikhcnt2, found);
 			t->parikhcnt1 = 0;
 			t->parikhcnt2 = 0;
 			if (found != 0) break;
@@ -258,6 +301,9 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 					if (t->parikhcnt2 != 0) found2 = -found;
 				}
 			}
+			DPRINT ("  foata depth %d t %s pkh1 %d pkh2 %d found %d found2 %d\n", 
+					depth, t->name, t->parikhcnt1,
+					t->parikhcnt2, found, found2);
 			t->parikhcnt1 = 0;
 			t->parikhcnt2 = 0;
 		}
@@ -607,7 +653,7 @@ void h_marking (struct h *h)
 			h->depth,
 			h->rd.deg,
 			h->ecl.deg);
-#if CONFIG_DEBUG
+#ifdef CONFIG_DEBUG
 	marking_print (h);
 #endif
 	DPRINT ("\n");

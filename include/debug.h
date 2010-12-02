@@ -31,7 +31,8 @@
 #define ASSERT(expr)
 #define DEBUG(fmt,args...)
 #define TRACE(expr,type)
-#define BREAK(expr)
+#define BREAK(expr)    		if (expr) breakme ()
+//#define BREAK(expr)
 #endif
 
 void breakme (void);
