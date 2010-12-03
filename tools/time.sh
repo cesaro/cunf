@@ -30,7 +30,7 @@ if [ "$U" = "" ]; then U="?"; fi
 # stderr: output
 
 echo "$OUT" >&2
-echo -e "stat\thist\tuser\telapsed\tnet"
-echo -e "$S\t$H\t$U\t$E\t$2"
+/bin/echo -e "stat\thist\tuser\telapsed\tnet"
+/bin/echo -e "$S\t$H\t$U\t$E\t$2"
 exit 0
 

@@ -15,6 +15,7 @@ struct place {
 	struct ls conds; /* conditions derived from this place   */
 	int m;		/* general purpose mark; initially, non-zero if place
 			 * is marked */
+	int comb_idx;	/* see _pe_comb_init() */
 };
 
 struct trans {

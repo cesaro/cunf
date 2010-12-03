@@ -260,7 +260,11 @@ void unfold (void)
 #ifdef CONFIG_MCMILLAN
 	DPRINT ("  Using McMillan order\n");
 #else
+#ifdef CONFIG_ERV
 	DPRINT ("  Using Esparza-Romer-Vogler order\n");
+#else
+	DPRINT ("  Using Mole ERV order\n");
+#endif
 #endif
 
 	nc_create_unfolding ();
@@ -282,6 +286,7 @@ void unfold (void)
 		}
 	}
 
+	pe_term ();
 	/* __test (); */
 	/* db_h2dot (); */
 }

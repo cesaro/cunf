@@ -42,13 +42,11 @@ static void _al_alloc (struct al * n)
 		/* 2 slots is the minimum size */
 		if (n->adj == 0 || n->deg == 0) {
 			n->adj = gl_realloc (0, 2 * sizeof (struct al *));
-			// DEBUG ("node %p: realloc %d > 2 !", n, n->deg);
 			return;
 		}
 
 		/* duplicate the size */
 		n->adj = gl_realloc (n->adj, n->deg * 2 * sizeof (struct al *));
-		// DEBUG ("node %p: realloc %d > %d", n, n->deg, n->deg * 2);
 	}
 }
 

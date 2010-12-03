@@ -1,6 +1,7 @@
 
 # traditional variables
 CFLAGS:=-Wall -Wextra -O3
+#CFLAGS:=-Wall -Wextra -pg
 #CFLAGS:=-Wall -Wextra -g
 CPPFLAGS:=-I include/
 LDFLAGS:=
@@ -77,13 +78,13 @@ STRIP:=$(CROSS)strip
 
 %.unf.dot : %.ll_net
 	@echo " UNF $<"
-	@src/main $< 2>&1 | grep Done
+	@src/main $<
+	@#src/main $< 2>&1 | grep Done
 
 %.time : %.ll_net
 	@tools/time.sh src/main $<
 	@#tools/time.sh tools/mole-20060323 $<
 	@#tools/time.sh tools/cunf-10 $<
-	@#time src/main $<
 
 %.ll_net : %.xml
 	@echo " P2P $<"

@@ -70,14 +70,9 @@ _e : $(TARGETS)
 	./src/main test/nets/plain/bench/rw_2w1r.ll_net
 
 gp : $(TARGETS)
-	./src/main test/nets/cont/pep/reader_writer_2.ll_net
+	./src/main test/nets/plain/bench/fifo20.ll_net
 	mv gmon.out gmon.out.1
-	./src/main test/nets/cont/pep/parrow.ll_net
-	mv gmon.out gmon.out.2
-	#./src/main test/nets/cont/bench/buf100.ll_net
-	./src/main test/nets/cont/pep/ab_gesc.ll_net
-	mv gmon.out gmon.out.3
-	gprof src/main gmon.out.* > s
+	gprof src/main gmon.out.* > out
 
 g : $(TARGETS)
 	gdb ./src/main
@@ -85,7 +80,7 @@ g : $(TARGETS)
 test : $(TEST_R) $(TEST_UNF_R)
 	@echo " DIF ..."
 	@echo > t.diff
-	@for n in $(TEST_NETS:%.ll_net=%); do diff -Naur $$n.r $$n.unf.r >> t.diff; done; true;
+	@for n in $(TEST_NETS:%.ll_net=%); do diff -Na $$n.r $$n.unf.r >> t.diff; done; true;
 
 times : $(TIME_NETS:%.ll_net=%.time)
 

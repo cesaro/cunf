@@ -11,8 +11,10 @@
 #include "pe.h"
 
 struct comb_entry {
-	struct ec *r;
-	struct place *p;
+	int size;
+	int nr;
+	int i;
+	struct ec **tab;
 };
 
 struct comb {
@@ -20,7 +22,6 @@ struct comb {
 	int pre_size;
 	int size;
 
-	int m;
 	struct ec *r;
 	struct trans *t;
 };
@@ -98,120 +99,6 @@ static void _pe_q_insert (struct h * h)
 	pe.q.tab[idx] = h;
 }
 
-static struct ec * _pe_comb_ent_next_r (struct ec *r)
-{
-	struct cond *c;
-	struct ls *n;
-
-	ASSERT (r);
-	ASSERT (r->c);
-	ASSERT (r->c->fp);
-
-	/* if r is not the last ec. in the list of ecs. associated to
-	 * r->c, return the next */
-	if (r->nod.next) return ls_i (struct ec, r->nod.next, nod);
-
-	/* otherwise, search for the next condition associated to the same
-	 * place that holds at least one ec. */
-	for (n = r->c->pnod.next; n; n = n->next) {
-		c = ls_i (struct cond, n, pnod);
-		if (c->ecl.next) break;
-	}
-	if (! n) return 0;
-
-	/* and get the first enriched condition associated to it */
-	ASSERT (c);
-	ASSERT (c->ecl.next);
-	ASSERT (c->fp == r->c->fp);
-	return ls_i (struct ec, c->ecl.next, nod);
-}
-
-static void _pe_comb_ent_init (int i)
-{
-	struct place *p;
-	struct cond *c;
-	struct ec *r;
-	struct ls *n;
-
-	ASSERT (i >= 0 && i < pe.comb.size);
-	DPRINT ("  Comb %d %s init ", i, pe.comb.tab[i].p->name);
-
-	/* no enriched conditions available if there are no conditions
-	 * associated to this place */
-	p = pe.comb.tab[i].p;
-	if (p->conds.next == 0) {
-		pe.comb.tab[i].r = 0;
-		DPRINT ("0\n");
-		return;
-	}
-
-	/* search for the first condition having at least one enriched
-	 * condition associated */
-	for (n = p->conds.next; n; n = n->next) {
-		c = ls_i (struct cond, n, pnod);
-		if (c->ecl.next) break;
-	}
-	if (! n) {
-		pe.comb.tab[i].r = 0;
-		DPRINT ("0\n");
-		return;
-	}
-
-	/* and the first enriched condition associated to c */
-	ASSERT (c);
-	ASSERT (c->ecl.next);
-	ASSERT (c->fp == pe.comb.tab[i].p);
-	r = ls_i (struct ec, c->ecl.next, nod);
-
-	/* search for an ec. suitable for this slot in the comb */
-	if (i < pe.comb.pre_size) {
-		while (r && r->m != pe.comb.m) r = _pe_comb_ent_next_r (r);
-	} else {
-		while (r && (r->m != pe.comb.m || ! EC_ISGEN (r))) {
-			r = _pe_comb_ent_next_r (r);
-		}
-	}
-
-	ASSERT (!r || r->c);
-	ASSERT (!r || r->c->fp == p);
-	ASSERT (!r || r->m == pe.comb.m);
-	if (i >= pe.comb.pre_size) { ASSERT (!r || EC_ISGEN (r)); }
-	pe.comb.tab[i].r = r;
-#ifdef CONFIG_DEBUG
-	if (r) db_r (r); else DPRINT ("0\n");
-#endif
-}
-
-void _pe_comb_ent_next (int i)
-{
-	struct ec *r;
-
-	ASSERT (i >= 0 && i < pe.comb.size);
-	ASSERT (pe.comb.tab[i].r);
-	ASSERT (pe.comb.tab[i].r->c->fp == pe.comb.tab[i].p);
-	DPRINT ("  Comb %d %s next ", i, pe.comb.tab[i].p->name);
-
-	r = pe.comb.tab[i].r;
-	if (i < pe.comb.pre_size) {
-		do {
-			r = _pe_comb_ent_next_r (r);
-		} while (r && r->m != pe.comb.m);
-	} else {
-		do {
-			r = _pe_comb_ent_next_r (r);
-		} while (r && (r->m != pe.comb.m || ! EC_ISGEN (r)));
-	}
-
-	ASSERT (!r || r->c);
-	ASSERT (!r || r->c->fp == pe.comb.tab[i].p);
-	ASSERT (!r || r->m == pe.comb.m);
-	if (i >= pe.comb.pre_size) { ASSERT (!r || EC_ISGEN (r)); }
-	pe.comb.tab[i].r = r;
-#ifdef CONFIG_DEBUG
-	if (r) db_r (r); else DPRINT ("0\n");
-#endif
-}
-
 static struct event * _pe_comb_instance_of (void)
 {
 	struct trans *t;
@@ -232,7 +119,7 @@ static struct event * _pe_comb_instance_of (void)
 
 	pe.comb.r->c->m = m;
 	for (i = 0; i < pe.comb.size; i++) {
-		pe.comb.tab[i].r->c->m = m;
+		pe.comb.tab[i].tab[pe.comb.tab[i].i]->c->m = m;
 	}
 
 	for (n = t->events.next; n; n = n->next) {
@@ -292,14 +179,14 @@ static struct event * _pe_comb_new_event (void)
 
 	/* set up preset */
 	for (i = 0; i < pe.comb.pre_size; i++) {
-		c = pe.comb.tab[i].r->c;
+		c = pe.comb.tab[i].tab[pe.comb.tab[i].i]->c;
 		al_add (&e->pre, c);
 		al_add (&c->post, e);
 	}
 
 	/* set up context */
 	for (; i < pe.comb.size; i++) {
-		c = pe.comb.tab[i].r->c;
+		c = pe.comb.tab[i].tab[pe.comb.tab[i].i]->c;
 		al_add (&e->cont, c);
 		al_add (&c->cont, e);
 	}
@@ -341,15 +228,17 @@ static struct h * _pe_comb_new_hist (struct event *e)
 	h_add (h, r->h);
 	al_add (&h->ecl, pe.comb.r);
 	for (i = 0; i < pe.comb.size; i++) {
-		ASSERT (i < pe.comb.pre_size || EC_ISGEN (pe.comb.tab[i].r));
-		for (r = pe.comb.tab[i].r; r->h == 0; r = r->r2) {
+		ASSERT (i < pe.comb.pre_size ||
+				EC_ISGEN (pe.comb.tab[i].tab[pe.comb.tab[i].i]));
+		for (r = pe.comb.tab[i].tab[pe.comb.tab[i].i]; r->h == 0;
+				r = r->r2) {
 			ASSERT (r->r1);
 			ASSERT (EC_ISREAD (r->r1));
 			ASSERT (r->r1->h);
 			h_add (h, r->r1->h);
 		}
 		h_add (h, r->h);
-		al_add (&h->ecl, pe.comb.tab[i].r);
+		al_add (&h->ecl, pe.comb.tab[i].tab[pe.comb.tab[i].i]);
 	}
 
 	/* check if the new history is a duplicate */
@@ -359,7 +248,7 @@ static struct h * _pe_comb_new_hist (struct event *e)
 	}
 
 	/* compute the marking associated to that history, the size of the
-	 * history, determine if the history is a cutoff and return */
+	 * history and return */
 	h_marking (h);
 	return h;
 }
@@ -373,7 +262,8 @@ static void _pe_comb_solution ()
 	int i;
 	DPRINT ("  Solution %s, ", pe.comb.t->name);
 	db_r2 (0, pe.comb.r, "");
-	for (i = 0; i < pe.comb.size; i++) db_r2 (" ", pe.comb.tab[i].r, "");
+	for (i = 0; i < pe.comb.size; i++) db_r2 (" ",
+			pe.comb.tab[i].tab[pe.comb.tab[i].i], "");
 	DPRINT ("\n");
 #endif
 
@@ -384,9 +274,28 @@ static void _pe_comb_solution ()
 	if (h) _pe_q_insert (h);
 }
 
+static void _pe_comb_ent_add (int i, struct ec *r)
+{
+	ASSERT (i >= 0 && i < pe.comb.size);
+	ASSERT (pe.comb.tab[i].nr <= pe.comb.tab[i].size);
+	ASSERT (pe.comb.tab[i].size >= 1);
+	ASSERT (i < pe.comb.pre_size || EC_ISGEN (r));
+
+	/* make room for a new entry */
+	if (pe.comb.tab[i].nr == pe.comb.tab[i].size) {
+		pe.comb.tab[i].size <<= 1;
+		pe.comb.tab[i].tab = gl_realloc (pe.comb.tab[i].tab,
+				pe.comb.tab[i].size * sizeof (struct ec *));
+	}
+
+	/* append the entry at the end of the array */
+	pe.comb.tab[i].tab[pe.comb.tab[i].nr] = r;
+	pe.comb.tab[i].nr++;
+}
+
 static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t)
 {
-	int i, m;
+	int i, m, idx;
 	struct place *pp;
 	struct ec *rp;
 
@@ -401,18 +310,18 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t)
 
 	pe.comb.size = 0;
 	pe.comb.pre_size = 0;
-	pe.comb.m = m;
 	pe.comb.r = r;
 	pe.comb.t = t;
-	
+
 	for (i = t->pre.deg - 1; i >= 0; i--) {
 		pp = (struct place *) t->pre.adj[i];
 		if (pp == p) continue;
 
-		pe.comb.tab[pe.comb.size].p = pp;
+		pp->m = m;
+		pp->comb_idx = pe.comb.size;
+		pe.comb.tab[pe.comb.size].nr = 0;
 		pe.comb.size++;
 		pe.comb.pre_size++;
-		pp->m = m;
 		DPRINT (" %s", pp->name);
 	}
 
@@ -420,16 +329,22 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t)
 		pp = (struct place *) t->cont.adj[i];
 		if (pp == p) continue;
 
-		pe.comb.tab[pe.comb.size].p = pp;
-		pe.comb.size++;
 		pp->m = m;
+		pp->comb_idx = pe.comb.size;
+		pe.comb.tab[pe.comb.size].nr = 0;
+		pe.comb.size++;
 		DPRINT (" %s", pp->name);
 	}
 	DPRINT (")\n");
 
 	for (i = r->co.deg - 1; i >= 0; i--) {
 		rp = (struct ec *) r->co.adj[i];
-		if (rp->c->fp->m == m) rp->m = m;
+		if (rp->c->fp->m == m) {
+			idx = rp->c->fp->comb_idx;
+			if (idx < pe.comb.pre_size || EC_ISGEN (rp)) {
+				_pe_comb_ent_add (idx, rp);
+			}
+		}
 	}
 }
 
@@ -443,37 +358,37 @@ static void _pe_comb_explore (void)
 	}
 
 	i = 0;
-	_pe_comb_ent_init (0);
+	pe.comb.tab[0].i = pe.comb.tab[0].nr - 1;
 
-	while (pe.comb.tab[0].r) {
+	while (pe.comb.tab[0].i >= 0) {
 		for (j = 0; j < i; j++) {
-			if (! co_test (pe.comb.tab[i].r, pe.comb.tab[j].r)) {
-				break;
-			}
+			if (! co_test (pe.comb.tab[i].tab[pe.comb.tab[i].i],
+					pe.comb.tab[j].tab[pe.comb.tab[j].i]))
+						break;
 		}
 
 		if (j == i) {
 			if (i + 1 == pe.comb.size) {
 				_pe_comb_solution ();
-				_pe_comb_ent_next (i);
+				pe.comb.tab[i].i--;
 			} else {
 				i++;
-				_pe_comb_ent_init (i);
+				pe.comb.tab[i].i = pe.comb.tab[i].nr - 1;
 			}
 		} else {
-			_pe_comb_ent_next (i);
+			pe.comb.tab[i].i--;
 		}
 
-		while (i >= 1 && pe.comb.tab[i].r == 0) {
+		while (i >= 1 && pe.comb.tab[i].i < 0) {
 			i--;
-			_pe_comb_ent_next (i);
+			pe.comb.tab[i].i--;
 		}
 	}
 }
 
 void pe_init (void)
 {
-	int max;
+	int i, max;
 	struct trans *t;
 	struct ls *n;
 
@@ -494,6 +409,11 @@ void pe_init (void)
 	/* initialize the comb with proper sizes */
 	max += 2;
 	pe.comb.tab = gl_malloc (sizeof (struct comb_entry) * max);
+	for (i = 0; i < max; i++) {
+		pe.comb.tab[i].size = 4096;
+		pe.comb.tab[i].tab = gl_realloc (0,
+				4096 * sizeof (struct ec*));
+	}
 }
 
 void pe_term (void)
