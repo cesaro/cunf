@@ -110,6 +110,7 @@ static void _unfold_enriched (struct h *h)
 	/* then, do the same with cont(e) :) */
 	for (i = e->cont.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->cont.adj[i];
+		if (c->fp->post.deg == 0) continue;
 		r = ec_alloc (c, h);
 		co_add (r);
 		pe_update_read (r);

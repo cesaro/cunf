@@ -15,14 +15,15 @@ struct comb_entry {
 	int nr;
 	int i;
 	struct ec **tab;
+	int ispre;
 };
 
 struct comb {
 	struct comb_entry *tab;
-	int pre_size;
 	int size;
 
 	struct ec *r;
+	int ispre;
 	struct trans *t;
 };
 
@@ -72,8 +73,7 @@ static void _pe_q_insert (struct h * h)
 
 	/* if we reached the maximum depth (-d option) or we already found the
 	 * stop transition (-T option), skip the insertion */
-	/* FIXME -- comparing to the size is not the same as to depth */
-	if (u.depth && h->size > u.depth) return;
+	if (u.depth && h->depth > u.depth) return;
 	if (pe.q.skip) return;
 	
 	/* when the -T is used and u.stoptr is found, empty the queue to make
@@ -148,8 +148,6 @@ static struct event * _pe_comb_new_event (void)
 	t = pe.comb.t;
 	ASSERT (t);
 	ASSERT (t->pre.deg + t->cont.deg == pe.comb.size + 1);
-	ASSERT (t->pre.deg == pe.comb.pre_size || t->pre.deg ==
-			pe.comb.pre_size + 1);
 
 	/* allocate and initialize the event */
 	e = gl_malloc (sizeof (struct event));
@@ -169,7 +167,7 @@ static struct event * _pe_comb_new_event (void)
 	e->iscutoff = 1;
 
 	/* add pe.comb.r->c to either the preset or context of e */
-	if (pe.comb.pre_size != t->pre.deg) {
+	if (pe.comb.ispre) {
 		al_add (&e->pre, pe.comb.r->c);
 		al_add (&pe.comb.r->c->post, e);
 	} else {
@@ -177,19 +175,18 @@ static struct event * _pe_comb_new_event (void)
 		al_add (&pe.comb.r->c->cont, e);
 	}
 
-	/* set up preset */
-	for (i = 0; i < pe.comb.pre_size; i++) {
+	/* set up preset and context */
+	for (i = 0; i < pe.comb.size; i++) {
 		c = pe.comb.tab[i].tab[pe.comb.tab[i].i]->c;
-		al_add (&e->pre, c);
-		al_add (&c->post, e);
+		if (pe.comb.tab[i].ispre) {
+			al_add (&e->pre, c);
+			al_add (&c->post, e);
+		} else {
+			al_add (&e->cont, c);
+			al_add (&c->cont, e);
+		}
 	}
 
-	/* set up context */
-	for (; i < pe.comb.size; i++) {
-		c = pe.comb.tab[i].tab[pe.comb.tab[i].i]->c;
-		al_add (&e->cont, c);
-		al_add (&c->cont, e);
-	}
 	ASSERT (e->pre.deg == t->pre.deg);
 	ASSERT (e->cont.deg == t->cont.deg);
 
@@ -228,7 +225,7 @@ static struct h * _pe_comb_new_hist (struct event *e)
 	h_add (h, r->h);
 	al_add (&h->ecl, pe.comb.r);
 	for (i = 0; i < pe.comb.size; i++) {
-		ASSERT (i < pe.comb.pre_size ||
+		ASSERT (pe.comb.tab[i].ispre ||
 				EC_ISGEN (pe.comb.tab[i].tab[pe.comb.tab[i].i]));
 		for (r = pe.comb.tab[i].tab[pe.comb.tab[i].i]; r->h == 0;
 				r = r->r2) {
@@ -279,7 +276,7 @@ static void _pe_comb_ent_add (int i, struct ec *r)
 	ASSERT (i >= 0 && i < pe.comb.size);
 	ASSERT (pe.comb.tab[i].nr <= pe.comb.tab[i].size);
 	ASSERT (pe.comb.tab[i].size >= 1);
-	ASSERT (i < pe.comb.pre_size || EC_ISGEN (r));
+	ASSERT (pe.comb.tab[i].ispre || EC_ISGEN (r));
 
 	/* make room for a new entry */
 	if (pe.comb.tab[i].nr == pe.comb.tab[i].size) {
@@ -293,7 +290,27 @@ static void _pe_comb_ent_add (int i, struct ec *r)
 	pe.comb.tab[i].nr++;
 }
 
-static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t)
+void _pe_comb_sort (void)
+{
+	int i, j;
+	struct comb_entry e;
+
+	for (i = 1; i < pe.comb.size; i++) {
+		e = pe.comb.tab[i];
+		for (j = i - 1; j >= 0; j--) {
+			if (pe.comb.tab[j].size <= e.size) break;
+			pe.comb.tab[j + 1] = pe.comb.tab[j];
+		}
+		pe.comb.tab[j + 1] = e;
+	}
+
+	for (i = 1; i < pe.comb.size; i++) {
+		ASSERT (pe.comb.tab[i - 1].size <= pe.comb.tab[i].size);
+	}
+}
+
+static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t,
+		int ispre)
 {
 	int i, m, idx;
 	struct place *pp;
@@ -309,7 +326,7 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t)
 	ASSERT (m > 0);
 
 	pe.comb.size = 0;
-	pe.comb.pre_size = 0;
+	pe.comb.ispre = ispre;
 	pe.comb.r = r;
 	pe.comb.t = t;
 
@@ -320,8 +337,8 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t)
 		pp->m = m;
 		pp->comb_idx = pe.comb.size;
 		pe.comb.tab[pe.comb.size].nr = 0;
+		pe.comb.tab[pe.comb.size].ispre = 1;
 		pe.comb.size++;
-		pe.comb.pre_size++;
 		DPRINT (" %s", pp->name);
 	}
 
@@ -332,6 +349,7 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t)
 		pp->m = m;
 		pp->comb_idx = pe.comb.size;
 		pe.comb.tab[pe.comb.size].nr = 0;
+		pe.comb.tab[pe.comb.size].ispre = 0;
 		pe.comb.size++;
 		DPRINT (" %s", pp->name);
 	}
@@ -341,11 +359,13 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t)
 		rp = (struct ec *) r->co.adj[i];
 		if (rp->c->fp->m == m) {
 			idx = rp->c->fp->comb_idx;
-			if (idx < pe.comb.pre_size || EC_ISGEN (rp)) {
+			if (pe.comb.tab[idx].ispre || EC_ISGEN (rp)) {
 				_pe_comb_ent_add (idx, rp);
 			}
 		}
 	}
+
+	_pe_comb_sort ();
 }
 
 static void _pe_comb_explore (void)
@@ -491,13 +511,13 @@ void pe_update_gen (struct ec * r)
 	p = r->c->fp;
 	for (i = p->post.deg - 1; i >= 0; i--) {
 		t = (struct trans *) p->post.adj[i];
-		_pe_comb_init (r, p, t);
+		_pe_comb_init (r, p, t, 1);
 		_pe_comb_explore ();
 	}
 
 	for (i = p->cont.deg - 1; i >= 0; i--) {
 		t = (struct trans *) p->cont.adj[i];
-		_pe_comb_init (r, p, t);
+		_pe_comb_init (r, p, t, 0);
 		_pe_comb_explore ();
 	}
 }
@@ -515,7 +535,7 @@ void pe_update_read (struct ec * r)
 	p = r->c->fp;
 	for (i = p->post.deg - 1; i >= 0; i--) {
 		t = (struct trans *) p->post.adj[i];
-		_pe_comb_init (r, p, t);
+		_pe_comb_init (r, p, t, 1);
 		_pe_comb_explore ();
 	}
 }

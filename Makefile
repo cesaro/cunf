@@ -98,5 +98,31 @@ testclean :
 	@rm -f $(TEST_UNF_R)
 	@echo Cleaning of test results done.
 
+allclean :
+	rm -f test/nets/small/*.r
+	rm -f test/nets/small/*.dot
+	rm -f test/nets/small/*.pdf
+	
+	rm -f test/nets/cont/pep/*.r
+	rm -f test/nets/cont/pep/*.dot
+	rm -f test/nets/cont/pep/*.pdf
+	rm -f test/nets/cont/bench/*.r
+	rm -f test/nets/cont/bench/*.dot
+	rm -f test/nets/cont/bench/*.pdf
+	
+	rm -f test/nets/plain/pep/*.r
+	rm -f test/nets/plain/pep/*.dot
+	rm -f test/nets/plain/pep/*.pdf
+	rm -f test/nets/plain/bench/*.r
+	rm -f test/nets/plain/bench/*.dot
+	rm -f test/nets/plain/bench/*.pdf
+	
+	rm -f test/nets/pr/pep/*.r
+	rm -f test/nets/pr/pep/*.dot
+	rm -f test/nets/pr/pep/*.pdf
+	rm -f test/nets/pr/bench/*.r
+	rm -f test/nets/pr/bench/*.dot
+	rm -f test/nets/pr/bench/*.pdf
+
 -include $(DEPS)
 

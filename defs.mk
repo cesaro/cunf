@@ -72,6 +72,10 @@ STRIP:=$(CROSS)strip
 	@echo " DOT $<"
 	@dot -T pdf < $< > $@
 
+%.jpg : %.dot
+	@echo " DOT $<"
+	@dot -T jpg < $< > $@
+
 %.dot : %.ll_net
 	@echo " N2D $<"
 	@test/net2dot $< > $@
@@ -84,7 +88,8 @@ STRIP:=$(CROSS)strip
 %.time : %.ll_net
 	@tools/time.sh src/main $<
 	@#tools/time.sh tools/mole-20060323 $<
-	@#tools/time.sh tools/cunf-10 $<
+	@#tools/time.sh tools/cunf-r17 $<
+	@#time src/main $<
 
 %.ll_net : %.xml
 	@echo " P2P $<"

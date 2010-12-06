@@ -22,7 +22,7 @@ static void _co_add_compound (struct ec *r)
 	m = ++u.mark;
 	ASSERT (m > 0);
 
-	/* FIXME r is also concurrent to r itself !!! */
+	al_add (&r->co, r);
 	
 	for (i = r->r1->co.deg - 1; i >= 0; i--) {
 		rp = (struct ec *) r->r1->co.adj[i];
