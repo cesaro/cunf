@@ -1,6 +1,6 @@
 
 /* test and debug */
-#undef CONFIG_DEBUG
+#define CONFIG_DEBUG
 
 /* unfold order */
 #undef CONFIG_MCMILLAN

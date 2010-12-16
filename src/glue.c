@@ -17,8 +17,8 @@ void * gl_malloc (int size)
 	void * ptr;
 
 	ptr = malloc (size);
-	if (ptr == 0) gl_err ("No more memory");
 	// DEBUG ("ptr=%p size=%d", ptr, size);
+	if (ptr == 0 && size) gl_err ("No more memory");
 	return ptr;
 }
 
@@ -27,8 +27,8 @@ void * gl_realloc (void * ptr, int size)
 	void * ptr2;
 
 	ptr2 = realloc (ptr, size);
-	if (ptr2 == 0) gl_err ("No more memory");
 	// DEBUG ("ptr=%p size=%d ptr2=%p", ptr, size, ptr2);
+	if (ptr2 == 0 && size) gl_err ("No more memory");
 	return ptr2;
 }
 

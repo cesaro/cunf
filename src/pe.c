@@ -101,26 +101,47 @@ static void _pe_q_insert (struct h * h)
 
 static struct event * _pe_comb_instance_of (void)
 {
+	int m, i, idx, more;
 	struct trans *t;
 	struct event *e;
 	struct cond *c;
 	struct ls *n;
-	int m, i;
 
 	/* given transition pe.comb.t and conditions pe.comb.r and pe.comb.tab,
-	 * determine wether there is already an occurence of t firing from thos
-	 * conditions */
+	 * determine whether there is already an occurrence of t firing from
+	 * those conditions */
 
-	t = pe.comb.t;
-	ASSERT (pe.comb.size + 1 == t->pre.deg + t->cont.deg);
+	/* optimz: if pe.comb.r->c is in preset of such event, and its preset
+	 * is empty, indeed no such event exist! */
+	if (pe.comb.ispre) {
+		if (pe.comb.r->c->post.deg == 0) return 0;
+	} else {
+		if (pe.comb.r->c->cont.deg == 0) return 0;
+	}
+
+	/* optimz: if every condition in the comb has currently only one
+	 * history, then for sure t has no occurrences */
+	ASSERT (pe.comb.r->c->ecl.next == &pe.comb.r->nod);
+	more = pe.comb.r->nod.next != 0;
 
 	m = ++u.mark;
 	ASSERT (m > 0);
-
 	pe.comb.r->c->m = m;
 	for (i = 0; i < pe.comb.size; i++) {
-		pe.comb.tab[i].tab[pe.comb.tab[i].i]->c->m = m;
+		idx = pe.comb.tab[i].i;
+		pe.comb.tab[i].tab[idx]->c->m = m;
+
+		/* optimz: if it is not the first or not the last, then there
+		 * is more than one enriched condition */
+		if (pe.comb.tab[i].tab[idx]->c->ecl.next !=
+			&pe.comb.tab[i].tab[idx]->nod ||
+			pe.comb.tab[i].tab[idx]->nod.next != 0) more++;
 	}
+
+	/* optimz: if only one h. per cond., then there is no occurrence of t */
+	if (more == 0) return 0;
+	t = pe.comb.t;
+	ASSERT (pe.comb.size + 1 == t->pre.deg + t->cont.deg);
 
 	for (n = t->events.next; n; n = n->next) {
 		e = ls_i (struct event, n, tnod);
@@ -264,7 +285,7 @@ static void _pe_comb_solution ()
 	DPRINT ("\n");
 #endif
 
-	e = _pe_comb_instance_of ();
+	e = u.net.isplain ? 0 : _pe_comb_instance_of ();
 	if (! e) e = _pe_comb_new_event ();
 
 	h = _pe_comb_new_hist (e);

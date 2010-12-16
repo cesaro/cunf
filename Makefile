@@ -69,9 +69,41 @@ _e : $(TARGETS)
 	./src/main test/nets/plain/bench/rw_1w3r.ll_net
 	./src/main test/nets/plain/bench/rw_2w1r.ll_net
 
-gp : $(TARGETS)
-	./src/main test/nets/plain/bench/fifo20.ll_net
+prof : $(TARGETS)
+	src/main test/nets/plain/bench/bds_1.sync.ll_net
 	mv gmon.out gmon.out.1
+	src/main test/nets/plain/bench/buf100.ll_net
+	mv gmon.out gmon.out.2
+	src/main test/nets/plain/bench/byzagr4_1b.ll_net
+	mv gmon.out gmon.out.3
+	src/main test/nets/plain/bench/dpd_7.sync.ll_net
+	mv gmon.out gmon.out.4
+	src/main test/nets/plain/bench/dph_7.dlmcs.ll_net
+	mv gmon.out gmon.out.5
+	src/main test/nets/plain/bench/elevator_4.ll_net
+	mv gmon.out gmon.out.6
+	src/main test/nets/plain/bench/fifo20.ll_net
+	mv gmon.out gmon.out.7
+	src/main test/nets/plain/bench/ftp_1.sync.ll_net
+	mv gmon.out gmon.out.8
+	src/main test/nets/plain/bench/furnace_3.ll_net
+	mv gmon.out gmon.out.9
+	src/main test/nets/plain/bench/key_3.sync.ll_net
+	mv gmon.out gmon.out.10
+	src/main test/nets/plain/bench/key_4.fsa.ll_net
+	mv gmon.out gmon.out.11
+	src/main test/nets/plain/bench/q_1.ll_net
+	mv gmon.out gmon.out.12
+	src/main test/nets/plain/bench/q_1.sync.ll_net
+	mv gmon.out gmon.out.13
+	src/main test/nets/plain/bench/rw_12.ll_net
+	mv gmon.out gmon.out.14
+	src/main test/nets/plain/bench/rw_12.sync.ll_net
+	mv gmon.out gmon.out.15
+	src/main test/nets/plain/bench/rw_1w3r.ll_net
+	mv gmon.out gmon.out.16
+	src/main test/nets/plain/bench/rw_2w1r.ll_net
+	mv gmon.out gmon.out.17
 	gprof src/main gmon.out.* > out
 
 g : $(TARGETS)

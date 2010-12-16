@@ -25,13 +25,14 @@ void nc_create_net()
 	ls_init (&u.net.trans);
 	u.net.numpl = u.net.numtr = 0;
 	u.net.t0 = 0;
+	u.net.isplain = 1;
 }
 
 void nc_create_unfolding()
 {
 	ls_init (&u.unf.conds);
 	ls_init (&u.unf.events);
-	u.unf.numco = u.unf.numev = u.unf.numh = 0;
+	u.unf.numco = u.unf.numev = u.unf.numh = u.unf.numduph = 0;
 	u.unf.e0 = 0;
 }
 
@@ -80,12 +81,13 @@ struct trans * nc_create_transition (void)
 /* nc_create_arc							    */
 /* Create an arc between two nodes (place->transition or transition->place) */
 
-void nc_create_arc (struct al * src_post, struct al * dst_pre,
+int nc_create_arc (struct al * src_post, struct al * dst_pre,
 		void * src, void * dst)
 {
-	if (al_test (src_post, dst)) return;
+	if (al_test (src_post, dst)) return 0;
 	al_add (src_post, dst);
 	al_add (dst_pre, src);
+	return 1;
 }
 
 /*****************************************************************************/

@@ -73,6 +73,7 @@ static void _unfold_combine (struct ec *r)
 		rp = ls_i (struct ec, n, nod);
 		if (EC_ISGEN (rp) || r == rp) continue;
 		if (co_test (r, rp)) {
+			if (ec_included (r, rp)) continue;
 			rpp = ec_alloc2 (r, rp);
 			co_add (rpp);
 			pe_update_read (rpp);
@@ -102,6 +103,7 @@ static void _unfold_enriched (struct h *h)
 	t = e->ft;
 	for (i = e->post.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->post.adj[i];
+		if (c->fp->post.deg + c->fp->cont.deg == 0) continue;
 		r = ec_alloc (c, h);
 		co_add (r);
 		pe_update_gen (r);
@@ -271,6 +273,7 @@ void unfold (void)
 	nc_create_unfolding ();
 	marking_init ();
 	pe_init ();
+	h_init ();
 	_unfold_init ();
 
 	while (1) {
@@ -287,6 +290,7 @@ void unfold (void)
 		}
 	}
 
+	h_term ();
 	pe_term ();
 	/* __test (); */
 	/* db_h2dot (); */

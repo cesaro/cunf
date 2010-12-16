@@ -40,6 +40,8 @@ struct h {
 #endif
 };
 
+void h_init (void);
+void h_term (void);
 struct h * h_alloc (struct event * e);
 struct h * h_dup (struct h * h);
 void h_free (struct h *h);

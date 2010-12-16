@@ -62,6 +62,7 @@ struct net {
 	struct ls trans;	/* list of transitions */
 	int numpl, numtr;	/* number of places/transitions in net*/
 	struct trans *t0;	/* fake trans. generating initial marking */
+	int isplain;		/* true if there is no read arcs */
 };
 
 struct unf {
@@ -69,6 +70,7 @@ struct unf {
 	struct ls events;	/* list of events */
 	int numco, numev;	/* number of conditions/events in net	*/
 	int numh;		/* number of histories */
+	int numduph;		/* number of duplicated histories */
 	struct event *e0;	/* event generating the minimal conditions */
 };
 

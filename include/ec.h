@@ -20,6 +20,7 @@ struct ec {
 
 struct ec * ec_alloc (struct cond * c, struct h * h);
 struct ec * ec_alloc2 (struct ec *r1, struct ec *r2);
+int ec_included (struct ec *r, struct ec *rp);
 
 #define EC_ISGEN(r)	((r)->h != 0 && (r)->c->pre == (r)->h->e)
 #define EC_ISREAD(r)	((r)->h != 0 && (r)->c->pre != (r)->h->e)

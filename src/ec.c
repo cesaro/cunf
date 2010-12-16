@@ -45,4 +45,26 @@ struct ec * ec_alloc2 (struct ec *r1, struct ec *r2)
 	return r;
 }
 
+int ec_included (struct ec *r, struct ec *rp)
+{
+	struct dls l;
+	int m;
 
+	/* check wether rp's history is included in r's history */
+
+	ASSERT (EC_ISREAD (r) && ! EC_ISCOMP (r));
+	ASSERT (EC_ISREAD (rp) || EC_ISCOMP (rp));
+
+	h_list (&l, r->h);
+	ASSERT (l.next);
+	m = dls_i (struct h, l.next, auxnod)->m;
+
+	for (; rp->h == 0; rp = rp->r2) {
+		ASSERT (rp->r1);
+		ASSERT (EC_ISREAD (rp->r1));
+		ASSERT (rp->r1->h);
+		if (rp->r1->h->m == m) return 1;
+	}
+	if (rp->h->m == m) return 1;
+	return 0;
+}

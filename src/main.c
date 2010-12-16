@@ -40,6 +40,71 @@ void usage (const char *myname)
 
 void write_dot (const char * filename)
 {
+	struct event *e;
+	struct cond *c;
+	struct ls *n;
+	int i, m;
+	FILE *f;
+
+#define P(args...) fprintf (f, ##args)
+
+	f = fopen (filename, "w");
+	if (f == 0) {
+		gl_err ("'%s': %s", filename, strerror (errno));
+		return;
+	}
+
+	m = ++u.mark;
+	ASSERT (m > 0);
+	for (i = u.unf.e0->post.deg - 1; i >= 0; i--) {
+		c = (struct cond *) u.unf.e0->post.adj[i];
+		c->m = m;
+	}
+
+	P ("digraph x {\nnode [shape=box];\n");
+	for (n = u.unf.events.next; n; n = n->next) {
+		e = ls_i (struct event, n, nod);
+		if (e->id == 0) continue;
+		P ("e%d [label=\"%s:e%d\"];\n", e->id, e->ft->name, e->id);
+	}
+
+	P ("node [shape=circle];\n");
+	for (n = u.unf.conds.next; n; n = n->next) {
+		c = ls_i (struct cond, n, nod);
+		P (c->m == m ? "c%d [label=\"%s:c%d\"]; /* initial */\n" :
+				"c%d [label=\"%s:c%d\"];\n",
+				c->id, c->fp->name, c->id);
+	}
+
+	for (n = u.unf.events.next; n; n = n->next) {
+		e = ls_i (struct event, n, nod);
+		if (e->id == 0) continue;
+		for (i = e->post.deg - 1; i >= 0; i--) {
+			c = (struct cond *) e->post.adj[i];
+			P ("e%d -> c%d;\n", e->id, c->id);
+		}
+	}
+
+	for (n = u.unf.events.next; n; n = n->next) {
+		e = ls_i (struct event, n, nod);
+		if (e->id == 0) continue;
+		for (i = e->pre.deg - 1; i >= 0; i--) {
+			c = (struct cond *) e->pre.adj[i];
+			P ("c%d -> e%d;\n", c->id, e->id);
+		}
+		for (i = e->cont.deg - 1; i >= 0; i--) {
+			c = (struct cond *) e->cont.adj[i];
+			P ("c%d -> e%d [arrowhead=none];\n", c->id, e->id);
+		}
+	}
+
+	P ("}\n");
+	i = fclose (f);
+	if (i == EOF) gl_err ("'%s': %s", filename, strerror (errno));
+}
+
+void write_dot_fancy (const char * filename)
+{
 	int i, m, enr, hnr;
 	struct dls l, *ln;
 	struct h *h, *hp;
@@ -47,8 +112,6 @@ void write_dot (const char * filename)
 	struct cond *c;
 	struct ls *n;
 	FILE *f;
-
-#define P(args...) fprintf (f, ##args)
 
 	f = fopen (filename, "w");
 	if (f == 0) {
@@ -155,6 +218,7 @@ void write_dot (const char * filename)
 	}
 
 	ASSERT (enr == u.unf.numev - 1);
+	ASSERT (hnr == u.unf.numh - u.unf.numduph - 1);
 	P ("\t <br align=\"left\"/>\n");
 	P ("\t%d transitions<br align=\"left\"/>\n"
 			"\t%d places<br align=\"left\"/>\n"
@@ -165,7 +229,7 @@ void write_dot (const char * filename)
 			u.net.numpl,
 			u.unf.numev - 1,
 			u.unf.numco,
-			hnr);
+			u.unf.numh - u.unf.numduph - 1);
 #ifdef CONFIG_MCMILLAN
 	P ("\tUsing McMillan order<br align=\"left\"/>\n");
 #else
@@ -176,9 +240,6 @@ void write_dot (const char * filename)
 
 	i = fclose (f);
 	if (i == EOF) gl_err ("'%s': %s", filename, strerror (errno));
-
-	PRINT ("  Done, %d events, %d conditions, %d histories.\n",
-			u.unf.numev - 1, u.unf.numco, hnr);
 }
 
 int main (int argc, char **argv)
@@ -230,10 +291,18 @@ int main (int argc, char **argv)
 
 	DPRINT ("  Reading net from '%s'\n", llnet);
 	read_pep_net (llnet);
+	DPRINT ("  It is a %s net\n", u.net.isplain ? "plain" : "contextual");
 	nc_static_checks (sptr);
 	unfold ();
 	DPRINT ("  Writing unfolding to '%s'\n", dotfile);
+#ifdef CONFIG_DEBUG
+	write_dot_fancy (dotfile);
+#else
 	write_dot (dotfile);
+#endif
+	PRINT ("  Done, %d events, %d conditions, %d histories.\n",
+			u.unf.numev - 1, u.unf.numco,
+			u.unf.numh - u.unf.numduph - 1);
 	return EXIT_SUCCESS;
 }
 

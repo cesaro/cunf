@@ -546,6 +546,7 @@ static int _insert_arc()
 
 static int _insert_ra()
 {
+	int ret;
 	int tr = rd_co->x, pl = rd_co->y;
 
 	if (!tr || (tr > AnzTrNamen) || !TrArray[tr])
@@ -561,8 +562,9 @@ static int _insert_ra()
 	nc_create_arc(&(TrArray[tr]->postset),&(PlArray[pl]->preset),
 			  TrArray[tr],PlArray[pl]);
 #endif
-	nc_create_arc (&TrArray[tr]->cont, &PlArray[pl]->cont,
+	ret = nc_create_arc (&TrArray[tr]->cont, &PlArray[pl]->cont,
 			TrArray[tr], PlArray[pl]);
+	if (ret) u.net.isplain = 0;
 	return 0;
 }
 

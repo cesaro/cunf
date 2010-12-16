@@ -71,7 +71,7 @@ struct nl* nl_insert (struct nl **list, void *node)
  * a negative value, 0 or a positive value if n1 < n2, n1 == n2 or n1 > n2 */
 
 struct nl* nl_insert2 (struct nl **list, void *node,
-		int (* cmp) (void *n1, void *n2))
+		int (* cmp) (const void *n1, const void *n2))
 {
 	while (*list && cmp (node, (*list)->node) > 0) list = &((*list)->next);
 

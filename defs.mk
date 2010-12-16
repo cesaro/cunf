@@ -56,32 +56,32 @@ OBJDUMP:=$(CROSS)objdump
 STRIP:=$(CROSS)strip
 
 %.d : %.c
-	@echo " DEP $<"
+	@echo "DEP $<"
 	@set -e; $(CC) -MM -MT $*.o $(CPPFLAGS) $< | \
 	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' > $@;
 
 .c.o:
-	@echo " CC  $<"
+	@echo "CC  $<"
 	@$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 %.out : %.cml
-	@echo " CNF $<"
+	@echo "CNF $<"
 	@./tools/cml2/cmlcompile.py -o $@ $<
 
 %.pdf : %.dot
-	@echo " DOT $<"
+	@echo "DOT $<"
 	@dot -T pdf < $< > $@
 
 %.jpg : %.dot
-	@echo " DOT $<"
+	@echo "DOT $<"
 	@dot -T jpg < $< > $@
 
 %.dot : %.ll_net
-	@echo " N2D $<"
+	@echo "N2D $<"
 	@test/net2dot $< > $@
 
 %.unf.dot : %.ll_net
-	@echo " UNF $<"
+	@echo "UNF $<"
 	@src/main $<
 	@#src/main $< 2>&1 | grep Done
 
@@ -92,14 +92,14 @@ STRIP:=$(CROSS)strip
 	@#time src/main $<
 
 %.ll_net : %.xml
-	@echo " P2P $<"
+	@echo "P2P $<"
 	@tools/pnml2pep.pl < $< > $@
 
 %.r : %.dot
-	@echo " RS  $<"
+	@echo "RS  $<"
 	@tools/rs.pl $< > $@
 
 %-pr.ll_net : %.ll_net
-	@echo " PR  $<"
+	@echo "PR  $<"
 	@tools/prenc.pl < $< > $@
 

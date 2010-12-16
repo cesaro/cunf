@@ -38,15 +38,91 @@ static void _co_add_compound (struct ec *r)
 	}
 }
 
+#if 0
+static void _co_add_siblings (struct ec *r)
+{
+	struct ec *rp;
+	struct event *e;
+	struct cond *c;
+	struct ls *n;
+	int i;
+
+	e = r->h->e;
+	for (i = e->post.deg - 1; i >= 0; i--) {
+		c = e->post.adj[i];
+		if (c == r->c) continue;
+		for (n = c->ecl.next; n; n = n->next) {
+			rp = ls_i (struct ec, n, nod);
+			if (rp->h == r->h) {
+				al_add (&r->co, rp);
+				al_add (&rp->co, r);
+			}
+		}
+	}
+
+	for (i = e->cont.deg - 1; i >= 0; i--) {
+		c = e->cont.adj[i];
+		if (c == r->c) continue;
+		for (n = c->ecl.next; n; n = n->next) {
+			rp = ls_i (struct ec, n, nod);
+			if (rp->h == r->h) {
+				al_add (&r->co, rp);
+				al_add (&rp->co, r);
+			}
+		}
+	}
+}
+
+static void _co_add_inter_mrk (struct ec *ri, int mm, int *nr)
+{
+	register int j;
+	register int k;
+	register struct ec *rp;
+	register int m1;
+	register int m;
+
+	k = *nr;
+	m = mm;
+	m1 = mm - 1;
+	for (j = ri->co.deg - 1; j >= 0 && k; j--) {
+		rp = (struct ec *) ri->co.adj[j];
+		if (rp->m == m1) {
+			rp->m = m;
+			k--;
+		}
+	}
+	*nr -= k;
+}
+
+static int _co_add_inter (struct ec *r, int mm, int *nr)
+{
+	int i, m;
+	struct ec *ri;
+
+	m = mm;
+	for (i = 1; i < r->h->ecl.deg - 1; i++) {
+		ri = (struct ec *) r->h->ecl.adj[i];
+		m = ++u.mark;
+		_co_add_inter_mrk (ri, m, nr);
+	}
+	return m;
+}
+#endif
+
 void co_add (struct ec *r)
 {
-	struct ec *rp, *rpp, *ri;
+	struct ec *rpp, *ri;
 	struct event *e, *ep;
 	struct cond *c;
 	struct h *hp;
 	struct ls *n;
-	int m;
-	int i, j;
+	int i, nr;
+
+	register int j;
+	register int m1;
+	register struct ec *rp;
+	register int k;
+	register int m;
 
 	/* notation:
 	 * r   is rho = (c, H)
@@ -122,7 +198,9 @@ void co_add (struct ec *r)
 	/* 7. mark with m all enriched conditions r' in co(r_0) such that no
 	 * event in H' reading some condition of cut(H') is marked with m and
 	 * such that c' is not marked with m */
+	/* optimz: keep account of the number of marked ecs. */
 	ri = (struct ec *) r->h->ecl.adj[0];
+	k = 0;
 	ASSERT (ri);
 	for (i = ri->co.deg - 1; i >= 0; i--) {
 		rp = (struct ec *) ri->co.adj[i];
@@ -142,34 +220,46 @@ void co_add (struct ec *r)
 			}
 			if (j >= 0) break;
 		}
-		if (! rpp) rp->m = m;
+		if (! rpp) {
+			rp->m = m; 
+			k++;
+		}
 	}
 
-	/* 8. for every r_1, r_2, ..., r_{n-1} in r->h->ecl, and for every r'
+	/* m = _co_add_inter (r, m, &nr); */
+
+	/* 8. for every r_1, r_2, ..., r_{n-2} in r->h->ecl, and for every r'
 	 * in co(r_i), mark r' with m only if r' is marked with (m-1) */
 	for (i = 1; i < r->h->ecl.deg - 1; i++) {
 		ri = (struct ec *) r->h->ecl.adj[i];
 
 		/* generate a new mark */
+		m1 = m;
 		m = ++u.mark;
 		ASSERT (m > 0);
 
 		/* for all r' in co(r_i), mark if marked in the previous
 		 * iteration */
-		for (j = ri->co.deg - 1; j >= 0; j--) {
+		nr = k;
+		for (j = ri->co.deg - 1; j >= 0 && k; j--) {
 			rp = (struct ec *) ri->co.adj[j];
-			if (rp->m == m - 1) rp->m = m;
+			if (rp->m == m1) {
+				rp->m = m;
+				k--;
+			}
 		}
+		k = nr - k;
 	}
 
 	/* 9. all those events r' marked with m in co(r_{n-1}) are all the
 	 * events in the current prefix of the unfolding concurrent to r */
 	ri = (struct ec *) r->h->ecl.adj[r->h->ecl.deg - 1];
-	for (i = ri->co.deg - 1; i >= 0; i--) {
+	for (i = ri->co.deg - 1; i >= 0 && k; i--) {
 		rp = (struct ec *) ri->co.adj[i];
 		if (rp->m == m) {
 			al_add (&r->co, rp);
 			al_add (&rp->co, r);
+			k--;
 		}
 	}
 }
