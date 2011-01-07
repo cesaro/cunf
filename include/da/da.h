@@ -29,16 +29,16 @@ struct da {
 	} while (0)
 
 #define da_i(d,i,t) \
-		(((t *) (d)->tab) + i)
+		(* (((t *) (d)->tab) + i))
 
 #define da_push(d,i,e,t) \
 	do { \
 		if ((i) == (d)->len) da_trunc (d, (d)->len << 1, t); \
-		*da_i (d, i, t) = e; \
+		da_i (d, i, t) = e; \
 		i++; \
 	} while (0);
 
 #define da_pop(d,i,t) \
-		((i) < (d)->len ? *da_i (d, i++, t) : 0)
+		((i) < (d)->len ? &da_i (d, i++, t) : 0)
 
 #endif

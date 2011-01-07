@@ -120,7 +120,7 @@ void al_cpy (struct al * dst, const struct al * src)
 	memcpy (dst->adj, src->adj, src->deg * sizeof (struct al *));
 }
 
-int al_test (const struct al * n, const void * ptr)
+int al_test (register const struct al * n, register const void * ptr)
 {
 	register int i;
 

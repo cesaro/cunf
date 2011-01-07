@@ -82,8 +82,8 @@ STRIP:=$(CROSS)strip
 
 %.unf.dot : %.ll_net
 	@echo "UNF $<"
-	@src/main $<
-	@#src/main $< 2>&1 | grep Done
+	@#src/main $<
+	@src/main $< 2>&1 | grep Done
 
 %.time : %.ll_net
 	@tools/time.sh src/main $<

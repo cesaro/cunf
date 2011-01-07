@@ -14,7 +14,7 @@ fake :
 	@echo $(DEPS)
 
 $(TARGETS) : % : %.o $(OBJS)
-	@echo " LD  $@"
+	@echo "LD  $@"
 	@$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $^ $(LDFLAGS) 
 
 e : $(TARGETS)

@@ -151,7 +151,7 @@ static void _h_parikh_trans2vector (struct h *h)
 
 	h->parikh.tab = gl_malloc (h->parikh.size * sizeof (struct parikh));
 	for (i = 0; i < h->parikh.size; i++) {
-		t = * da_i (&tda, i, struct trans *);
+		t = da_i (&tda, i, struct trans *);
 		DEBUG ("i %d t %s id %d count1 %d", i, t->name, t->id, t->parikhcnt1);
 		h->parikh.tab[i].t = t;
 		h->parikh.tab[i].count = t->parikhcnt1;
@@ -376,29 +376,56 @@ static int _h_confl_cnd_check (struct nl *conds, struct dls *l, int m)
 }
 #endif
 
-void _h_list (struct dls *l, struct h *h, int m, int mexcl)
+void h_list (struct dls *l, struct h *h)
 {
 	struct dls *n;
-	struct h *hp, *hpp;
-	int i;
-
-	/* explore history h and, excluding events marked with mexcl, mark
-	 * events with m and insert in the list l */
-	ASSERT (m > 0);
-
+	register struct h *hp;
+	register struct h *hpp;
+	register int i;
+	register int m;
+ 
+	/* explore history h and and insert into list l */
+	m = ++u.mark;
+ 	ASSERT (m > 0);
+ 
 	dls_init (l);
-	if (h->m != mexcl) {
-		h->m = m;
-		dls_append (l, &h->auxnod);
-	}
+	h->m = m;
+	dls_append (l, &h->auxnod);
 	for (n = l->next; n; n = n->next) {
 		hp = dls_i (struct h, n, auxnod);
+ 		ASSERT (hp->m == m);
+ 		for (i = hp->nod.deg - 1; i >= 0; i--) {
+ 			hpp = (struct h *) hp->nod.adj[i];
+			if (hpp->m == m) continue;
+ 			hpp->m = m;
+			dls_append (l, &hpp->auxnod);
+ 		}
+ 	}
+ }
+
+void h_mark (struct h *h, register int m)
+{
+	int fst;
+	register int i;
+	register struct h *hp;
+	register struct h *hpp;
+	register int lst;
+
+	/* explore history h and mark events with m */
+	ASSERT (m > 0);
+
+	fst = lst = 0;
+	h->m = m;
+	da_push (&hda, lst, h, struct h *);
+	while (fst < lst) {
+		hp = da_i (&hda, fst++, struct h *);
 		ASSERT (hp->m == m);
+
 		for (i = hp->nod.deg - 1; i >= 0; i--) {
 			hpp = (struct h *) hp->nod.adj[i];
-			if (hpp->m == m || hpp->m == mexcl) continue;
+			if (hpp->m == m) continue;
 			hpp->m = m;
-			dls_append (l, &hpp->auxnod);
+			da_push (&hda, lst, hpp, struct h *);
 		}
 	}
 }
@@ -740,14 +767,21 @@ void h_marking_new (struct h *h)
 
 void h_marking (struct h *h)
 {
-	int i, j, m, s, fst, lst;
-	struct h *hp, *hpp;
+	int m2, s, fst, lst;
+	struct h *hpp;
 	struct nl *l;
-	struct event *e;
-	struct cond *c;
+
+	register int i;
+	register int j;
+	register int m;
+	register struct cond *c;
+	register struct event *e;
+	register struct h * hp;
 
 	m = ++u.mark;
+	m2 = ++u.mark;
 	ASSERT (m > 0);
+	ASSERT (m2 > 0);
 
 	fst = lst = 0;
 	h->e->m = m;
@@ -755,7 +789,7 @@ void h_marking (struct h *h)
 	s = 1;
 	_h_parikh_init (h);
 	while (fst < lst) {
-		hp = da_pop (&hda, fst, struct h *);
+		hp = da_i (&hda, fst++, struct h *);
 		ASSERT (hp->e->m == m);
 
 		_h_parikh_add (h, hp->e->ft);
@@ -768,8 +802,7 @@ void h_marking (struct h *h)
 		}
 
 		for (i = hp->e->pre.deg - 1; i >= 0; i--) {
-			c = (struct cond *) hp->e->pre.adj[i];
-			c->m = m;
+			((struct cond *) hp->e->pre.adj[i])->m = m;
 		}
 	}
 	_h_parikh_trans2vector (h);
@@ -778,23 +811,29 @@ void h_marking (struct h *h)
 	fst = 0;
 	if (u.net.isplain) {
 		while (fst < lst) {
-			hp = da_pop (&hda, fst, struct h *);
-			for (i = hp->e->post.deg - 1; i >= 0; i--) {
-				c = (struct cond *) hp->e->post.adj[i];
+			e = da_i (&hda, fst++, struct h *)->e;
+			for (i = e->post.deg - 1; i >= 0; i--) {
+				c = (struct cond *) e->post.adj[i];
 				if (c->m != m) nl_insert (&l, c->fp);
 			}
 		}
 	} else {
 		while (fst < lst) {
-			hp = da_pop (&hda, fst, struct h *);
-			ASSERT (hp->e->m == m);
-			for (i = hp->e->post.deg - 1; i >= 0; i--) {
-				c = (struct cond *) hp->e->post.adj[i];
+			e = da_i (&hda, fst++, struct h *)->e;
+			for (i = e->post.deg - 1; i >= 0; i--) {
+				c = (struct cond *) e->post.adj[i];
 				if (c->m == m) continue;
+				c->m = m2;
 				nl_insert (&l, c->fp);
-				for (j = c->cont.deg - 1; j >= 0; j--) {
-					e = (struct event *) c->cont.adj[j];
-					if (e->m == m) al_add (&h->rd, e);
+			}
+		}
+		fst = 0;
+		while (fst < lst) {
+			e = da_i (&hda, fst++, struct h *)->e;
+			for (i = e->cont.deg - 1; i >= 0; i--) {
+				if (((struct cond *) e->cont.adj[i])->m == m2){
+					al_add (&h->rd, e);
+					break;
 				}
 			}
 		}
@@ -946,14 +985,6 @@ int h_isdup (struct h *h)
 	}
 	return 0;
 #endif
-}
-
-void h_list (struct dls *l, struct h *h)
-{
-	int m;
-
-	m = ++u.mark;
-	_h_list (l, h, m, m);
 }
 
 int h_cmp (struct h *h1, struct h *h2)

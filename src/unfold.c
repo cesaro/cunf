@@ -60,24 +60,26 @@ static void _unfold_postset (struct event *e)
 	}
 }
 
-static void _unfold_combine (struct ec *r)
+static void _unfold_combine (register struct ec *r)
 {
 	struct ec *rpp;
-	struct ec *rp;
-	struct ls *n;
+
+	register struct ec *rp;
+	register struct cond *c;
+	register int i;
 
 	ASSERT (r);
 	ASSERT (r->c);
+	c = r->c;
 
-	for (n = r->c->ecl.next; n; n = n->next) {
-		rp = ls_i (struct ec, n, nod);
-		if (EC_ISGEN (rp) || r == rp) continue;
-		if (co_test (r, rp)) {
-			if (ec_included (r, rp)) continue;
-			rpp = ec_alloc2 (r, rp);
-			co_add (rpp);
-			pe_update_read (rpp);
-		}
+	for (i = r->co.deg - 1; i >= 0; i--) {
+		rp = (struct ec *) r->co.adj[i];
+		if (rp->c != c || EC_ISGEN (rp) || r == rp) continue;
+		if (ec_included (r, rp)) continue;
+
+		rpp = ec_alloc2 (r, rp);
+		co_add (rpp);
+		pe_update_read (rpp);
 	}
 }
 

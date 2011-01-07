@@ -267,6 +267,7 @@ void co_add (struct ec *r)
 int co_test (struct ec *r, struct ec *rp)
 {
 	ASSERT (al_test (&r->co, rp) == al_test (&rp->co, r));
-	return al_test (&r->co, rp);
+	return r->co.deg < rp->co.deg ?
+		al_test (&r->co, rp) : al_test (&rp->co, r);
 }
 

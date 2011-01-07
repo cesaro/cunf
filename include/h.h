@@ -51,6 +51,7 @@ int h_isdup (struct h *h);
 void h_marking (struct h *h);
 
 void h_list (struct dls *l, struct h *h);
+void h_mark (struct h *h, int m);
 int h_cmp (struct h *h1, struct h *h2);
 
 #endif
