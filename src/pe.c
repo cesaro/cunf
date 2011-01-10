@@ -319,14 +319,14 @@ void _pe_comb_sort (void)
 	for (i = 1; i < pe.comb.size; i++) {
 		e = pe.comb.tab[i];
 		for (j = i - 1; j >= 0; j--) {
-			if (pe.comb.tab[j].size <= e.size) break;
+			if (pe.comb.tab[j].nr <= e.nr) break;
 			pe.comb.tab[j + 1] = pe.comb.tab[j];
 		}
 		pe.comb.tab[j + 1] = e;
 	}
 
 	for (i = 1; i < pe.comb.size; i++) {
-		ASSERT (pe.comb.tab[i - 1].size <= pe.comb.tab[i].size);
+		ASSERT (pe.comb.tab[i - 1].nr <= pe.comb.tab[i].nr);
 	}
 }
 
