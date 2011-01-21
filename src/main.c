@@ -297,6 +297,7 @@ int main (int argc, char **argv)
 	DPRINT ("  Writing unfolding to '%s'\n", dotfile);
 #ifdef CONFIG_DEBUG
 	write_dot_fancy (dotfile);
+	db_mem ();
 #else
 	write_dot (dotfile);
 #endif

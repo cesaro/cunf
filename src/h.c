@@ -152,7 +152,6 @@ static void _h_parikh_trans2vector (struct h *h)
 	h->parikh.tab = gl_malloc (h->parikh.size * sizeof (struct parikh));
 	for (i = 0; i < h->parikh.size; i++) {
 		t = da_i (&tda, i, struct trans *);
-		DEBUG ("i %d t %s id %d count1 %d", i, t->name, t->id, t->parikhcnt1);
 		h->parikh.tab[i].t = t;
 		h->parikh.tab[i].count = t->parikhcnt1;
 		t->parikhcnt1 = 0; /* very important! */
@@ -859,6 +858,20 @@ void h_marking (struct h *h)
 	ASSERT (s >= 2 || h->id == 0);
 	h->size = s;
 	h->marking = l;
+
+	DPRINT ("+ History h%d/e%d:%s; size %d; depth %d; readers %d; "
+			"ecs %d; marking ",
+			h->id,
+			h->e->id,
+			h->e->ft->name,
+			h->size,
+			h->depth,
+			h->rd.deg,
+			h->ecl.deg);
+#ifdef CONFIG_DEBUG
+	marking_print (h);
+#endif
+	DPRINT ("\n");
 }
 
 #if 0

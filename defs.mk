@@ -2,6 +2,7 @@
 # traditional variables
 CFLAGS:=-Wall -Wextra -O3
 #CFLAGS:=-Wall -Wextra -pg
+#CFLAGS:=-Wall -Wextra
 #CFLAGS:=-Wall -Wextra -g
 CPPFLAGS:=-I include/
 LDFLAGS:=
@@ -90,6 +91,9 @@ STRIP:=$(CROSS)strip
 	@#tools/time.sh tools/mole-20060323 $<
 	@#tools/time.sh tools/cunf-r17 $<
 	@#time src/main $<
+
+%.info : %.ll_net
+	@test/info $< | tools/distrib.py
 
 %.ll_net : %.xml
 	@echo "P2P $<"

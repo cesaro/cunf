@@ -311,7 +311,7 @@ static void _pe_comb_ent_add (int i, struct ec *r)
 	pe.comb.tab[i].nr++;
 }
 
-void _pe_comb_sort (void)
+static void _pe_comb_sort (void)
 {
 	int i, j;
 	struct comb_entry e;

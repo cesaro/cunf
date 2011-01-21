@@ -45,6 +45,7 @@ void db_r (struct ec *r);
 void db_r2 (const char *str1, struct ec *r, const char *str2);
 void db_hgraph (void);
 void db_h2dot (void);
+void db_mem (void);
 
 #endif
 

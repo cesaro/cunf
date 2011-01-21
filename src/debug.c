@@ -1,4 +1,10 @@
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+#include <errno.h>
 #include "config.h"
 #include "global.h"
 #include "debug.h"
@@ -290,3 +296,23 @@ void db_h2dot (void)
 	printf ("}\n\n");
 }
 
+void db_mem (void)
+{
+	char buff[4096];
+	int fd, ret;
+
+	fd = open ("/proc/self/status", O_RDONLY);
+	if (fd < 0) {
+		gl_warn ("'/proc/self/status': %s", strerror (errno));
+		return;
+	}
+
+	ret = read (fd, buff, 4096);
+	close (fd);
+	if (ret >= 4096) {
+		PRINT ("Bug in db_mem !!\n");
+		exit (1);
+	}
+	buff[ret] = 0;
+	PRINT ("%s", buff);
+}
