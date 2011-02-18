@@ -1,4 +1,18 @@
 
+# Copyright (C) 2010, 2011  Cesar Rodriguez <cesar.rodriguez@lsv.ens-cachan.fr>
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or any later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+# more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program.  If not, see <http://www.gnu.org/licenses/>.
+
 include defs.mk
 
 .PHONY: fake all g test times clean distclean testclean
@@ -19,55 +33,6 @@ $(TARGETS) : % : %.o $(OBJS)
 
 e : $(TARGETS)
 	./src/main test/nets/cont/pep/sdl_arq.ll_net
-
-_e : $(TARGETS)
-	./src/main test/nets/plain/pep/sem.ll_net
-	./src/main test/nets/plain/pep/elevator.ll_net
-	./src/main test/nets/plain/pep/do_od.ll_net
-	./src/main test/nets/plain/pep/peterson.ll_net
-	./src/main test/nets/plain/pep/mutual.ll_net
-	./src/main test/nets/plain/bench/buf100.ll_net
-	./src/main test/nets/plain/pep/parrow.ll_net
-	./src/main test/nets/plain/pep/reader_writer_2.ll_net
-
-	./src/main test/nets/cont/pep/do_od.ll_net
-	./src/main test/nets/cont/pep/peterson_pfa.ll_net
-	./src/main test/nets/cont/pep/peterson.ll_net
-	./src/main test/nets/cont/pep/mutual.ll_net
-
-	./src/main test/nets/small/asymcnfl.ll_net
-	./src/main test/nets/small/conc.ll_net
-	./src/main test/nets/small/test1.ll_net
-	./src/main test/nets/small/fig2.ll_net
-	./src/main test/nets/small/pag9.ll_net
-	./src/main test/nets/small/fig1.ll_net
-	./src/main test/nets/small/fig1-cp.ll_net
-	./src/main test/nets/small/fig1-pr.ll_net
-	./src/main test/nets/small/erv-size-parih.ll_net
-	./src/main test/nets/small/erv-foata.ll_net
-	./src/main test/nets/small/mcmillan-erv.ll_net
-	./src/main test/nets/small/2readers.ll_net
-	./src/main test/nets/small/8readers.ll_net
-	./src/main test/nets/small/peupdate.ll_net
-	./src/main test/nets/small/peupdate-bug.ll_net
-
-	./src/main test/nets/plain/bench/buf100.ll_net
-	./src/main test/nets/plain/bench/byzagr4_1b.ll_net
-	./src/main test/nets/plain/bench/dph_7.dlmcs.ll_net
-	./src/main test/nets/plain/bench/elevator_4.ll_net
-	./src/main test/nets/plain/bench/elevator_4.mci
-	./src/main test/nets/plain/bench/fifo20.ll_net
-	./src/main test/nets/plain/bench/fifo20.mci
-	./src/main test/nets/plain/bench/ftp_1.sync.ll_net
-	./src/main test/nets/plain/bench/furnace_3.ll_net
-	./src/main test/nets/plain/bench/key_3.sync.ll_net
-	./src/main test/nets/plain/bench/key_4.fsa.ll_net
-	./src/main test/nets/plain/bench/q_1.ll_net
-	./src/main test/nets/plain/bench/q_1.sync.ll_net
-	./src/main test/nets/plain/bench/rw_12.ll_net
-	./src/main test/nets/plain/bench/rw_12.sync.ll_net
-	./src/main test/nets/plain/bench/rw_1w3r.ll_net
-	./src/main test/nets/plain/bench/rw_2w1r.ll_net
 
 prof : $(TARGETS)
 	src/main test/nets/plain/bench/bds_1.sync.ll_net
