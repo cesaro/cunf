@@ -88,7 +88,7 @@ void _read_PEP_file(char *filename, char **types,
 
 	/* Open the file, read the header. */
 	if (!(infile = fopen(filename, "r")))
-		gl_err("could not open file for reading");
+		gl_err ("'%s': cannot open for reading", filename);
 
 	ReadCmdToken(infile);
 	if (strcmp(sbuf, "PEP")) gl_err ("keyword `PEP' expected");

@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,26 +34,34 @@ struct u u;
 
 /*****************************************************************************/
 
-void usage (const char *myname)
+void usage (void)
 {
 	fprintf(stderr,
-		"%s -- low level net unfolder\n\n"
-		"Usage: %s [options] <LLnetfile> [FileOptions]\n\n"
+"\n"
+"The cunf tool -- a low level contextual Petri net unfolder\n"
+"\n"
+"Copyright (C) 2011  Cesar Rodriguez <cesar.rodriguez@lsv.ens-cachan.fr>\n"
+"Laboratoire de Specification et Verification (LSV), ENS Cachan, France\n"
+"\n"
+"This program comes with ABSOLUTELY NO WARRANTY.  This is free software, and you\n"
+"are welcome to redistribute it under certain conditions.  You should have\n"
+"received a copy of the GNU General Public License along with this program.  If\n"
+"not, see <http://www.gnu.org/licenses/>.\n"
+"\n"
+"\n"
+"Usage: cunf [OPTIONS] NETFILE\n"
+"\n"
+"Argument NETFILE is a path to the .ll_net input file.  Allowed OPTIONS are:\n"
+" -T NAME      Stop when transition NAME is inserted\n"
+" -d DEPTH     Unfold up to given DEPTH\n"
+" -m FILE      Output file to store the unfolding in.  If not provided,\n"
+"              defaults to NETFILE with the last 7 characters removed\n"
+"              (extension '.ll_net') plus the suffix '.unf.dot'\n"
+"\n"
+"For more information, see http://www.lsv.ens-cachan.fr/Software/cunf/\n"
+"Revision 35, compiled %s\n", __DATE__);
 
-	"     Options:\n"
-	"      -T <name>      stop when transition <name> is inserted\n"
-	"      -d <depth>     unfold up to given depth\n"
-	"      -i             interactive mode\n\n"
-
-	"     FileOptions:\n"
-	"      -m <filename>  file to store the unfolding in\n\n"
-
-	"Unless specified otherwise, all filenames will default to\n"
-	"the basename of <LLnetfile> plus appropriate extensions.\n\n"
-
-	"Version 2, " __DATE__ "\n", myname, myname);
-
-	exit (EXIT_SUCCESS);
+	exit (EXIT_FAILURE);
 }
 
 void write_dot (const char * filename)
@@ -261,62 +270,62 @@ void write_dot_fancy (const char * filename)
 
 int main (int argc, char **argv)
 {
-	int	 i;
-	char    *llnet = NULL, *dotfile;
-	char    **dptr = &llnet;
-	char	*tmpname, *idx, *sptr;
+	int opt, l;
+	char *stoptr, *inpath, *outpath;
 
 	/* initialize global parameters */
-	u.stoptr = 0;
-	u.depth = 0;
-	u.interactive = 0;
-
 	u.mark = 1;
 
 	/* parse command line */
-	sptr = 0;
-	for (i = 1; i < argc; i++)
-		if (!strcmp(argv[i],"-m"))
-			dptr = &dotfile;
-		else if (!strcmp(argv[i],"-T"))
-			sptr = argv[++i];
-		else if (!strcmp(argv[i],"-d"))
-			u.depth = atoi(argv[++i]);
-		else if (!strcmp(argv[i],"-i"))
-			u.interactive = 1;
-		else
-		{
-			if (!dptr) usage(argv[0]);
-			*dptr = argv[i];
-
-			tmpname = gl_malloc (strlen(argv[i]) + 16);
-			strcpy(tmpname,argv[i]);
-			idx = strrchr(tmpname,'.');
-			if (!idx) strcat(tmpname,".");
-			idx = strrchr(tmpname,'.');
-
-			if (dptr == &llnet)
-			{
-				strcpy(idx,".unf.dot");
-				dotfile = gl_strdup (tmpname);
-			}
-
-			dptr = NULL;
+	stoptr = 0;
+	inpath = 0;
+	outpath = 0;
+	u.stoptr = 0;
+	u.depth = 0;
+	while (1) {
+		opt = getopt (argc, argv, "m:T:d:");
+		if (opt == -1) break;
+		switch (optopt) {
+		case 'm' :
+			inpath = optarg;
+			break;
+		case 'T' :
+			stoptr = optarg;
+			break;
+		case 'd' :
+			u.depth = atoi (optarg);
+			break;
+		default :
+			usage ();
 		}
+	}
+	if (optind != argc - 1) usage ();
+	inpath = argv[argc - 1];
 
-	if (!llnet) usage (argv[0]);
+	/* set default file name for the output */
+	if (! outpath) {
+		l = strlen (inpath);
+		outpath = gl_malloc (l + 16);
+		strcpy (outpath, inpath);
+		strcpy (outpath + (l > 7 ? l - 7 : l), ".unf.dot");
+	}
 
-	DPRINT ("  Reading net from '%s'\n", llnet);
-	read_pep_net (llnet);
+	/* load the input net */
+	DPRINT ("  Reading net from '%s'\n", inpath);
+	read_pep_net (inpath);
 	DPRINT ("  It is a %s net\n", u.net.isplain ? "plain" : "contextual");
-	nc_static_checks (sptr);
+	nc_static_checks (stoptr);
+
+	/* unfold */
 	unfold ();
-	DPRINT ("  Writing unfolding to '%s'\n", dotfile);
+
+	/* write the output net */
+	DPRINT ("  Writing unfolding to '%s'\n", outpath);
 #ifdef CONFIG_DEBUG
-	write_dot (dotfile);
+	write_dot (outpath);
 	db_mem ();
 #else
-	write_dot (dotfile);
+	write_dot (outpath);
 #endif
 	PRINT ("  Done, %d events, %d conditions, %d histories.\n",
 			u.unf.numev - 1, u.unf.numco,

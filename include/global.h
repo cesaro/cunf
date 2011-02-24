@@ -99,7 +99,7 @@ struct u {
 
 	struct trans * stoptr;
 	int depth;
-	int interactive;
+	/* int interactive; */
 };
 
 struct u u;

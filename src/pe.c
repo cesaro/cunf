@@ -93,6 +93,11 @@ static void _pe_q_insert (struct h * h)
 	if (u.depth && h->depth > u.depth) return;
 	if (pe.q.skip) return;
 	
+	/* make room for a new item and proceed with the insertion */
+	pe.q.size++;
+	idx = pe.q.size;
+	_pe_q_alloc ();
+
 	/* when the -T is used and u.stoptr is found, empty the queue to make
 	 * sure that the corresponding event is processed immediately. Also,
 	 * prevent any further additions to the PE queue. */
@@ -102,11 +107,6 @@ static void _pe_q_insert (struct h * h)
 		pe.q.tab[1] = h;
 		return;
 	}
-
-	/* ok, make room for a new item and proceed with the insertion */
-	pe.q.size++;
-	idx = pe.q.size;
-	_pe_q_alloc ();
 
 	/* insert the new element at the end, then move upwards as needed */
 	for (; idx > 1; idx /= 2) {
