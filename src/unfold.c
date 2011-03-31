@@ -94,6 +94,7 @@ static void _unfold_combine (register struct ec *r)
 		if (rp->c != c || EC_ISGEN (rp) || r == rp) continue;
 		if (ec_included (r, rp)) continue;
 
+		u.unf.numcompecs++;
 		rpp = ec_alloc2 (r, rp);
 		co_add (rpp);
 		pe_update_read (rpp);
@@ -123,7 +124,9 @@ static void _unfold_enriched (struct h *h)
 	for (i = e->post.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->post.adj[i];
 		if (c->fp->post.deg + c->fp->cont.deg == 0) continue;
+
 		r = ec_alloc (c, h);
+		u.unf.numgenecs++;
 		co_add (r);
 		pe_update_gen (r);
 	}
@@ -132,7 +135,9 @@ static void _unfold_enriched (struct h *h)
 	for (i = e->cont.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->cont.adj[i];
 		if (c->fp->post.deg == 0) continue;
+
 		r = ec_alloc (c, h);
+		u.unf.numreadecs++;
 		co_add (r);
 		pe_update_read (r);
 		_unfold_combine (r);

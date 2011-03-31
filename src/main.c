@@ -92,6 +92,8 @@ void write_dot (const char * filename)
 		e = ls_i (struct event, n, nod);
 		if (e->id == 0) continue;
 		P ("e%d [label=\"%s:e%d\"];\n", e->id, e->ft->name, e->id);
+		/* printf ("event.pre %d event.cont %d event.post %d\n",
+				e->pre.deg, e->cont.deg, e->post.deg); */
 	}
 
 	P ("node [shape=circle];\n");
@@ -100,6 +102,13 @@ void write_dot (const char * filename)
 		P (c->m == m ? "c%d [label=\"%s:c%d\"]; /* initial */\n" :
 				"c%d [label=\"%s:c%d\"];\n",
 				c->id, c->fp->name, c->id);
+		/* printf ("cond.pre 1 cond.cont %d cond.post %d\n",
+				c->cont.deg, c->post.deg);
+		struct ls * nn;
+		for (nn = c->ecl.next; nn; nn = nn->next) {
+			struct ec * r = ls_i (struct ec, nn, nod);
+			printf ("ec.co %d ec.gen %d ec.read %d ec.comp %d\n", r->co.deg, EC_ISGEN (r), EC_ISREAD (r), EC_ISCOMP (r));
+		} */
 	}
 
 	for (n = u.unf.events.next; n; n = n->next) {
@@ -285,9 +294,9 @@ int main (int argc, char **argv)
 	while (1) {
 		opt = getopt (argc, argv, "m:T:d:");
 		if (opt == -1) break;
-		switch (optopt) {
+		switch (opt) {
 		case 'm' :
-			inpath = optarg;
+			outpath = optarg;
 			break;
 		case 'T' :
 			stoptr = optarg;
@@ -327,6 +336,9 @@ int main (int argc, char **argv)
 #else
 	write_dot (outpath);
 #endif
+
+	/* PRINT ("xxx gen\tread\tcomp\trd\tsd\n");
+	PRINT ("xxx %d\t%d\t%d\t%d\t%d\n", u.unf.numgenecs, u.unf.numreadecs, u.unf.numcompecs, u.unf.numrd, u.unf.numsd); */
 	PRINT ("  Done, %d events, %d conditions, %d histories.\n",
 			u.unf.numev - 1, u.unf.numco,
 			u.unf.numh - u.unf.numduph - 1);

@@ -847,7 +847,10 @@ void h_marking (struct h *h)
 		while (fst < lst) {
 			e = da_i (&hda, fst++, struct h *)->e;
 			for (i = e->cont.deg - 1; i >= 0; i--) {
-				if (((struct cond *) e->cont.adj[i])->m == m2){
+				c = (struct cond *) e->cont.adj[i];
+				/* optimz: e not interesting if fp (c) has
+ 				 * empty postset */
+				if (c->m == m2 && c->fp->post.deg != 0) {
 					al_add (&h->rd, e);
 					break;
 				}
@@ -875,6 +878,9 @@ void h_marking (struct h *h)
 	ASSERT (s >= 2 || h->id == 0);
 	h->size = s;
 	h->marking = l;
+
+	u.unf.numrd += h->rd.deg;
+	u.unf.numsd += h->sd.deg;
 
 	DPRINT ("+ History h%d/e%d:%s; size %d; depth %d; readers %d; "
 			"ecs %d; marking ",

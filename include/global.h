@@ -88,6 +88,14 @@ struct unf {
 	int numco, numev;	/* number of conditions/events in net	*/
 	int numh;		/* number of histories */
 	int numduph;		/* number of duplicated histories */
+	int numcutoffs;		/* number of cutoff histories */
+	int numgenecs;		/* number of generating ecs */
+	int numreadecs;		/* number of reading ecs */
+	int numcompecs;		/* number of compound ecs */
+
+	int numrd;
+	int numsd;
+
 	struct event *e0;	/* event generating the minimal conditions */
 };
 
