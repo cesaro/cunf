@@ -224,62 +224,6 @@ static int __compare (int * events, int nr, struct dls *l) {
 	return 1;
 }
 
-#if 0
-	int eid = 112;
-	int nr = 67;
-	int events[] = {54, 23, 2, 61, 53, 109, 46, 72, 40, 77, 41, 55, 3, 52,
-	110, 1, 59, 103, 36, 82, 19, 60, 18, 44, 74, 20, 29, 100, 9, 12, 58, 8,
-	62, 57, 76, 104, 50, 56, 35, 31, 6, 63, 39, 21, 4, 112, 67, 32, 80, 16,
-	107, 24, 13, 48, 10, 14, 28, 5, 15, 7, 17, 11, 66, 65, 69, 45, 0};
-
-	h21
-	int eid = 20;
-	int nr = 18;
-	int events[] = {20, 0, 1, 12, 13, 14, 15, 16, 17, 19, 2, 3, 4, 5, 6, 7, 8, 9};
-
-	h127
-	int eid = 56;
-	int nr = 36;
-	int events[] = {0, 1, 32, 35, 36, 4, 40, 10, 11, 12, 13, 14, 2, 20, 21,
-	23, 24, 29, 3, 31, 41, 46, 15, 16, 17, 18, 19, 5, 50, 52, 55, 56, 6, 7,
-	8, 9};
-
-#endif
-
-void __test (void) {
-	struct event *e;
-	struct ls *n;
-	struct h *h;
-	struct dls l;
-	int i;
-
-	int eid = 93;
-	int nr = 38;
-	int events[] = {2, 6, 4, 3, 1, 59, 27, 204, 245, 264, 78, 16, 93, 26,
-	20, 91, 13, 10, 9, 12, 28, 5, 198, 47, 226, 15, 169, 123, 8, 111, 165,
-	7, 11, 143, 66, 31, 22, 0};
-
-	e = 0;
-	for (n = u.unf.events.next; n; n = n->next) {
-		e = ls_i (struct event, n, nod);
-		if (e->id == eid) break;
-	}
-	ASSERT (n && e->id == eid);
-
-	for (i = e->hist.deg - 1; i >= 0; i--) {
-		h = (struct h *) e->hist.adj[i];
-		h_list (&l, h);
-		if (__compare (events, nr, &l)) break;
-	}
-
-	if (i >= 0) {
-		DPRINT ("found! h%d\n", h->id);
-		BREAK (1);
-	} else {
-		DPRINT ("not found :(\n");
-	}
-}
-
 void unfold (void)
 {
 	struct h *h;
@@ -316,8 +260,5 @@ void unfold (void)
 
 	h_term ();
 	pe_term ();
-	/* __test (); */
-	/* db_h2dot (); */
 }
-
 
