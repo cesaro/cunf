@@ -205,25 +205,6 @@ static void _unfold_progress (struct h *h)
 	}
 }
 
-static int __compare (int * events, int nr, struct dls *l) {
-	int len, i;
-	struct h *h;
-
-	len = 0;
-	for (l = l->next; l; l = l->next) {
-		len++;
-		for (i = nr - 1; i >= 0; i--) {
-			h = dls_i (struct h, l, auxnod);
-			if (events[i] == h->e->id) break;
-		}
-		if (i < 0) return 0;
-	}
-	if (len != nr) return 0;
-
-	/* found! */
-	return 1;
-}
-
 void unfold (void)
 {
 	struct h *h;

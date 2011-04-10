@@ -49,6 +49,7 @@ TEST_UNF_R:=$(patsubst %.ll_net,%.unf.r,$(TEST_NETS))
 
 # measuring time
 TIME_NETS:=$(patsubst %.xml,%.ll_net,$(wildcard test/nets/small/*xml))
+TIME_NETS+=$(patsubst %.xml,%.ll_net,$(wildcard test/nets/param/*.xml))
 TIME_NETS+=$(wildcard test/nets/plain/pep/*.ll_net)
 TIME_NETS+=$(wildcard test/nets/plain/bench/*.ll_net)
 TIME_NETS+=$(wildcard test/nets/cont/pep/*.ll_net)

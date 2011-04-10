@@ -36,7 +36,7 @@ struct hash {
 
 struct hash hash;
 
-static int _marking_hash (const struct nl *l)
+int marking_hash (const struct nl *l)
 {
 	unsigned int val, i;
 
@@ -58,7 +58,8 @@ void marking_init (void)
 	 * h.tab is a vector of lists; h.tab[i] is a singly-linked list storing
 	 * all the pairs (marking,history) with the same marking */
 	
-	hash.size = 1 + u.net.numpl * 4;
+	/* FIXME use prime numbers! */
+	hash.size = 1 + u.net.numpl * 800;
 	hash.tab = gl_malloc (hash.size * sizeof (struct ls));
 	for (i = hash.size - 1; i >= 0; i--) ls_init (hash.tab + i);
 }
@@ -74,7 +75,8 @@ int marking_find (const struct h *h)
 	 * h->marking to be in the table
 	 */
 
-	n = hash.tab + _marking_hash (h->marking);
+	ASSERT (marking_hash (h->marking) == h->hash);
+	n = hash.tab + h->hash;
 	for (n = n->next; n; n = n->next) {
 		he = ls_i (struct hash_entry, n, nod);
 		ret = nl_compare (he->h->marking, h->marking);
@@ -94,20 +96,24 @@ void marking_add (struct h *h)
 	ASSERT (h->marking);
 	ASSERT (h->corr != 0); /* histories always initialized as cutoffs */
 
+	/* h->corr = 0;
+	return; */
+
 	/* add the marking h->marking to the hash table if there is no
 	 * other history h' such that h->marking = h'->marking; if such h'
 	 * exists, then h is a cutoff; the function returns 1 iff h is a cutoff
 	 */
 
 	/* determine if the marking h->marking is in the hash table */
-	buckl = hash.tab + _marking_hash (h->marking);
+	ASSERT (marking_hash (h->marking) == h->hash);
+	buckl = hash.tab + h->hash;
 	for (n = buckl->next; n; n = n->next) {
 		he = ls_i (struct hash_entry, n, nod);
 		ret = nl_compare (he->h->marking, h->marking);
 		if (ret == 0) break;
 	}
 
-#if CONFIG_MCMILLAN
+#ifdef CONFIG_MCMILLAN
 	/* if it is the case, and the corresponding history is smaller,
 	 * according to the McMillan's order, then it is a cutoff */
 	if (n && h_cmp (he->h, h) < 0) {

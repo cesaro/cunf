@@ -20,8 +20,10 @@
 #define _MARKING_H_
 
 #include "h.h"
+#include "nodelist.h"
 
 void marking_init (void);
+int marking_hash (const struct nl *l);
 int marking_find (const struct h *h);
 void marking_add (struct h *h);
 void marking_print (const struct h *h);

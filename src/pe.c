@@ -276,15 +276,16 @@ static struct h * _pe_comb_new_hist (struct event *e)
 		al_add (&h->ecl, pe.comb.tab[i].tab[pe.comb.tab[i].i]);
 	}
 
+	/* compute the marking associated to that history, the marking hash,
+	 * lists r(h), s(h), the size of the history and return */
+	h_marking (h);
+
 	/* check if the new history is a duplicate */
 	if (h_isdup (h)) {
 		h_free (h);
 		return 0;
 	}
 
-	/* compute the marking associated to that history, the size of the
-	 * history and return */
-	h_marking (h);
 	return h;
 }
 

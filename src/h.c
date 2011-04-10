@@ -583,6 +583,7 @@ void h_marking (struct h *h)
 	ASSERT (s >= 2 || h->id == 0);
 	h->size = s;
 	h->marking = l;
+	h->hash = marking_hash (l);
 
 	u.unf.numrd += h->rd.deg;
 	u.unf.numsd += h->sd.deg;
@@ -606,8 +607,8 @@ int h_isdup (struct h *h)
 {
 	/* history h is a duplicate if there exists another (different) history
 	 * associated to event h->e with the same events as h */
-	int i;
-	struct h *hp;
+	register int i;
+	register struct h *hp;
 	struct dls l1;
 	struct dls l2;
 	struct dls l12;
@@ -620,6 +621,8 @@ int h_isdup (struct h *h)
 	for (i = h->e->hist.deg - 1; i >= 0; i--) {
 		hp = (struct h *) h->e->hist.adj[i];
 		if (h == hp) continue;
+		if (h->hash != hp->hash) continue;
+		if (nl_compare (h->marking, hp->marking) != 0) continue;
 
 		/* generate three different marks */
 		m1 = ++u.mark;

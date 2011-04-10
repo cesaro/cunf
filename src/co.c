@@ -26,7 +26,9 @@
 static void _co_add_compound (struct ec *r)
 {
 	struct ec *rp;
-	int i, m;
+	int i;
+	static int m = 0;
+	static struct ec *r1 = 0;
 
 	/* r is concurrent to r' iff all ec r_1 ... r_n defining the compound
 	 * ec. r are concurrent to r' */
@@ -36,15 +38,26 @@ static void _co_add_compound (struct ec *r)
 	ASSERT (r->r1->co.deg >= 1);
 	ASSERT (r->r2->co.deg >= 1);
 
-	m = ++u.mark;
-	ASSERT (m > 0);
-
-	al_add (&r->co, r);
+	/* optmz: if the last call was for an enriched condition derived from
+	 * the same reading condition r->r1, the array r->r1->co is already marked :)
+	 */
+	if (r1 != r->r1) {
+		r1 = r->r1;
+		m = ++u.mark;
+		ASSERT (m > 0);
 	
-	for (i = r->r1->co.deg - 1; i >= 0; i--) {
-		rp = (struct ec *) r->r1->co.adj[i];
-		rp->m = m;
+		al_add (&r->co, r);
+		
+		for (i = r->r1->co.deg - 1; i >= 0; i--) {
+			rp = (struct ec *) r->r1->co.adj[i];
+			/* optmz: we can skip including in the conc. relation those
+			 * reading or compound ecs. derived from the same condition
+			 * r->c (since they will never be used to compute pe or extend
+			 * the concurrency relation) */
+			if (rp->c != r->c || EC_ISGEN (rp)) rp->m = m;
+		}
 	}
+	ASSERT (m > 0);
 
 	for (i = r->r2->co.deg - 1; i >= 0; i--) {
 		rp = (struct ec *) r->r2->co.adj[i];

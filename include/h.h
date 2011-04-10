@@ -45,6 +45,7 @@ struct h {
 	struct al rd;		/* events in h reading the cut of h */
 	struct al sd;		/* events in h reading from pre(h->e) */
 	struct nl *marking;	/* marking associated to the history */
+	int hash;		/* hash value of the marking (see marking_hash) */
 	struct h *corr;		/* if h is cutoff, corresponding history */
 	struct {
 		int size;

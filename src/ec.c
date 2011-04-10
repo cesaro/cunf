@@ -66,7 +66,10 @@ int ec_included (struct ec *r, register struct ec *rp)
 {
 	register int m;
 
-	/* check whether r's history is included in rp's history */
+	/* r is a reading ec.; rp is a reading or compound ec.; check whether
+	 * one of the readers in rp is included in r's history and return 1 if
+	 * yes; in such case, there is another compound ec which can be
+	 * combined with r to produce a genuine compound ec. */
 
 	ASSERT (EC_ISREAD (r) && ! EC_ISCOMP (r));
 	ASSERT (EC_ISREAD (rp) || EC_ISCOMP (rp));
@@ -84,4 +87,3 @@ int ec_included (struct ec *r, register struct ec *rp)
 	if (rp->h->m == m) return 1;
 	return 0;
 }
-
