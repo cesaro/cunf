@@ -96,6 +96,9 @@ struct unf {
 	int numrd;
 	int numsd;
 
+	long usrtime;		/* user time of the process (in ms) */
+	long vmsize;		/* current virtual memory size (in kb) */
+
 	struct event *e0;	/* event generating the minimal conditions */
 };
 

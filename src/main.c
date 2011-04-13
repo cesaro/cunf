@@ -16,11 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <sys/resource.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #include "glue.h"
 #include "debug.h"
@@ -277,6 +279,55 @@ void write_dot_fancy (const char * filename)
 	if (i == EOF) gl_err ("'%s': %s", filename, strerror (errno));
 }
 
+void rusage (void)
+{
+	struct rusage r;
+	char buff[128];
+	int ret;
+
+	u.unf.usrtime = 0;
+	u.unf.vmsize = 0;
+	ret = getrusage (RUSAGE_SELF, &r);
+	if (ret >= 0) {
+		/* in linux this is 0; in mac os this is the maxrss in bytes */
+		u.unf.vmsize = r.ru_maxrss / 1024;
+		u.unf.usrtime = r.ru_utime.tv_sec * 1000 +
+				r.ru_utime.tv_usec / 1000;
+	}
+
+	/* this will only work in linux, in macos vmsize is set to maxrss */
+	ret = open ("/proc/self/statm", O_RDONLY);
+	if (ret < 0) return;
+	read (ret, buff, 128);
+	close (ret);
+	buff[127] = 0;
+	u.unf.vmsize = strtoul (buff, 0, 10) * sysconf (_SC_PAGESIZE) >> 10;
+}
+
+char * peakmem (void)
+{
+	static char b[16];
+	char buff[4096];
+	char *s;
+	int fd, ret;
+
+	fd = open ("/proc/self/status", O_RDONLY);
+	if (fd < 0) return "?";
+
+	ret = read (fd, buff, 4096);
+	close (fd);
+	if (ret >= 4096) {
+		PRINT ("Bug in peakmem!!\n");
+		exit (1);
+	}
+	buff[ret] = 0;
+	s = strstr (buff, "VmPeak:\t");
+	if (! s) return "?";
+	s[16] = 0;
+	sprintf (b, "%u", atoi (s + 8));
+	return b;
+}
+
 int main (int argc, char **argv)
 {
 	int opt, l;
@@ -337,11 +388,24 @@ int main (int argc, char **argv)
 	write_dot (outpath);
 #endif
 
-	/* PRINT ("xxx gen\tread\tcomp\trd\tsd\n");
-	PRINT ("xxx %d\t%d\t%d\t%d\t%d\n", u.unf.numgenecs, u.unf.numreadecs, u.unf.numcompecs, u.unf.numrd, u.unf.numsd); */
-	PRINT ("  Done, %d events, %d conditions, %d histories.\n",
-			u.unf.numev - 1, u.unf.numco,
-			u.unf.numh - u.unf.numduph - 1);
+	/* int s = 1000 * 1000 * 500;
+	char * p = malloc (s);
+	for (s--; s; s--) p[s] = 'c'; */
+	rusage ();
+	PRINT ("time\tmem\thist\tevents\tcond\tnocut\tgen\tread\tcomp\trd\tsd\tnet\n");
+	PRINT ("%.2f\t%ld\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\n",
+		u.unf.usrtime / 1000.0,
+		u.unf.vmsize / 1024,
+		u.unf.numh - u.unf.numduph - 1,
+		u.unf.numev - 1,
+		u.unf.numco,
+		u.unf.numh - u.unf.numduph - 1 - u.unf.numcutoffs,
+		u.unf.numgenecs,
+		u.unf.numreadecs,
+		u.unf.numcompecs,
+		u.unf.numrd,
+		u.unf.numsd,
+		inpath);
 	return EXIT_SUCCESS;
 }
 
