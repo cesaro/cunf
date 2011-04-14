@@ -85,16 +85,22 @@ struct net {
 struct unf {
 	struct ls conds;	/* list of conditions */
 	struct ls events;	/* list of events */
-	int numco, numev;	/* number of conditions/events in net	*/
+	int numcond, numev;	/* number of conditions/events in net	*/
 	int numh;		/* number of histories */
 	int numduph;		/* number of duplicated histories */
 	int numcutoffs;		/* number of cutoff histories */
-	int numgenecs;		/* number of generating ecs */
-	int numreadecs;		/* number of reading ecs */
-	int numcompecs;		/* number of compound ecs */
+	int numgen;		/* number of generating ecs */
+	int numread;		/* number of reading ecs */
+	int numcomp;		/* number of compound ecs */
 
-	int numrd;
-	int numsd;
+	int numr;		/* number of pairs in the R relation */
+	int nums;		/* number of pairs in the S relation */
+	unsigned long long numco; /* number of pairs in the concurrency rel. */
+	unsigned long long nummrk; /* number of conditions in the marking lists */
+
+	int numepost;		/* number of conditions event postsets */
+	int numecont;		/* number of conditions event contexts */
+	int numepre;		/* number of conditions event presets */
 
 	long usrtime;		/* user time of the process (in ms) */
 	long vmsize;		/* current virtual memory size (in kb) */

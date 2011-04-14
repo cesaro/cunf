@@ -1,0 +1,268 @@
+PEP
+PetriBox
+FORMAT_N
+PL
+1"Sfgr"M1m1
+2"Scdg"
+3"Sefr"M1m1
+4"Sdcg"
+5"Sbgg"
+6"Sabg"
+7"Scdr"M1m1
+8"Sbag"
+9"Ka"
+10"Sder"M1m1
+11"Kc"M1m1
+12"Kd"M1m1
+13"Ke"
+14"Kf"M1m1
+15"Sabr"M1m1
+16"Sbar"M1m1
+17"Sgfg"
+18"Kb"M1m1
+19"Sdeg"
+20"Kg"M1m1
+21"Sedg"
+22"Sgfr"M1m1
+23"Sbgr"M1m1
+24"Sgbg"
+25"Sbcg"
+26"Wa"
+27"Sfer"M1m1
+28"Scbg"
+29"Sedr"M1m1
+30"Wg"M1m1
+31"Sgbr"M1m1
+32"Sbcr"M1m1
+33"BlockA"M1m1
+34"Sdcr"M1m1
+35"BlockC"
+36"BlockD"
+37"P35"M1m1
+38"BlockE"M1m1
+39"Sfgg"
+40"BlockF"
+41"Sefg"
+42"BlockG"
+43"BlockB"
+44"Sfeg"
+45"P171"
+TR
+1"Gba"935@577b"Signal B -> A gruen"
+2"Ggb"749@289b"Signal G -> B gruen"
+91"Gbc"411@339b"Signal B -> C gruen"
+92"Fcd"314@353b"Fahre von C nach D"
+93"Rfe"294@131b"Signal F -> E rot"
+94"Ggf"572@87b"Signal G -> F gruen"a7@-25
+95"Rfg"637@224b"Signal F -> G rot"a-20@10
+96"Fcb"320@577b"Fahre von C nach B"
+97"Gbg"850@230b"Signal B -> G gruen"
+98"Wga"813@380b"Weiche nach A stellen"
+99"Gcb"391@488b"Signal C -> B gruen"
+100"Fdc"15@434b"Fahre von D nach C"
+101"Gcd"168@402b"Signal C -> D gruen"
+102"Fde"154@307b"Fahre von D nach E"
+103"Rgf"548@58b"Signal G -> F rot"
+104"Rbg"846@191b"Signal B -> G rot"
+105"Rcb"414@521b"Signal C -> B rot"
+106"Gdc"137@436b"Signal D  -> C gruen"a1@-27
+107"Fed"15@194b"Fahre von E nach D"
+108"Gde"253@246b"Signal D -> E gruen"
+109"Fef"310@182b"Fahre von E nach F"
+110"Rab"848@598b"Signal A -> B rot"
+111"Fab"735@664b"Fahre von A nach B"
+112"Rdc"126@477b"Signal D -> C rot"a2@-20
+113"Ged"78@288b"Signal E -> D gruen"
+114"Rde"214@235b"Signal D ->E rot"
+115"Gef"442@186b"Signal E -> F gruen"a3@-14
+116"Ffg"593@137b"Fahre von F nach G"
+117"Ffe"241@20b"Fahre von F nach E"
+118"Rba"996@597b"Signal B -> A rot"a-3@-15
+119"Rgb"749@335b"Signal G -> B rot"a5@-13
+120"Rbc"413@381b"Signal B -> C rot"a-31@-22
+121"Fba"1008@440b"Fahre von B nach A"a-25@-31
+122"Wag"848@342b"Weiche nach G stellen"
+123"Fbc"539@385b"Fahre von B nach C"
+124"Red"108@269b"Signal E -> D rot"
+125"Gfe"220@120b"Signal F -> E gruen"a19@-18
+126"Ref"426@145b"Signal E -> F rot"a-22@-27
+127"Gfg"661@192b"Signal F -> G gruen"a-8@-15
+128"Fgb"649@275b"Fahre von G nach B"a18@-17
+129"Gab"834@561b"Signal A -> B gruen"
+130"Fbg"1000@211b"Fahre von B nach G"
+131"Fgf"649@12b"Fahre von G nach F"
+132"Rcd"166@369b"Signal C -> D rot"
+% --------- Transition -> Place Arcs ---------
+TP
+123<18
+111<43
+121<33
+118<16
+117<14
+93<13
+127<39
+122<30
+2<24
+100<12
+113<21
+110<15
+101<2
+131<20
+107<13
+104<20
+125<44
+102<10
+1<26
+95<1
+97<30
+128<43
+116<42
+112<11
+96<43
+124<29
+123<32
+92<36
+118<9
+99<28
+107<29
+119<31
+130<42
+106<4
+108<19
+126<3
+123<35
+92<7
+121<16
+94<17
+102<12
+102<38
+132<12
+129<26
+2<30
+100<35
+104<23
+1<8
+97<5
+117<27
+128<20
+130<23
+121<18
+120<32
+131<40
+109<13
+116<1
+132<7
+124<12
+120<11
+111<9
+98<26
+112<34
+131<22
+103<14
+91<25
+117<38
+109<40
+114<10
+128<31
+105<18
+96<11
+126<14
+115<41
+0<0
+111<15
+130<18
+103<22
+129<6
+92<11
+109<3
+95<20
+116<14
+100<34
+105<37
+119<18
+98<18
+114<13
+107<36
+122<18
+110<18
+96<37
+93<27
+PT
+42>131
+18>129
+26>122
+5>130
+17>103
+21>107
+24>128
+11>91
+2>132
+4>112
+14>115
+44>117
+6>110
+25>123
+32>91
+6>111
+28>96
+39>95
+25>120
+30>2
+16>1
+22>94
+8>118
+13>125
+13>108
+11>106
+35>96
+15>129
+14>94
+18>98
+31>2
+28>105
+37>99
+3>115
+38>109
+33>111
+20>127
+18>2
+21>124
+19>102
+41>109
+10>108
+24>119
+34>106
+5>104
+17>131
+40>116
+12>101
+18>122
+9>1
+1>127
+43>121
+23>97
+29>113
+26>1
+43>130
+30>97
+39>116
+18>99
+36>102
+20>97
+27>125
+40>117
+44>93
+19>114
+2>92
+26>129
+4>100
+43>123
+42>128
+35>92
+38>107
+12>113
+8>121
+36>100
+7>101
+30>98
+41>126

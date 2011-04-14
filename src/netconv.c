@@ -32,12 +32,18 @@ void nc_create_unfolding()
 {
 	ls_init (&u.unf.conds);
 	ls_init (&u.unf.events);
-	u.unf.numco = u.unf.numev = u.unf.numh = 0;
+	u.unf.numcond = u.unf.numev = u.unf.numh = 0;
 	u.unf.numduph = u.unf.numcutoffs = 0;
-	u.unf.numgenecs = u.unf.numreadecs = u.unf.numcompecs = 0;
+	u.unf.numgen = u.unf.numread = u.unf.numcomp = 0;
 
-	u.unf.numrd = 0;
-	u.unf.numsd = 0;
+	u.unf.numr = 0;
+	u.unf.nums = 0;
+	u.unf.numco = 0;
+	u.unf.nummrk = 0;
+
+	u.unf.numepost = 0;
+	u.unf.numecont = 0;
+	u.unf.numepre = 0;
 
 	u.unf.e0 = 0;
 }

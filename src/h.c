@@ -431,34 +431,6 @@ struct h * h_alloc (struct event * e)
 	return h;
 }
 
-struct h * h_dup (struct h * h)
-{
-	struct h *nh;
-
-	nh = gl_malloc (sizeof (struct h));
-	nh->id = u.unf.numh++;
-	nh->e = h->e;
-	nh->m = 0;
-	nh->depth = h->depth;
-	nh->marking = 0;
-	nh->parikh.tab = 0;
-
-	/* see annotation in h_alloc */
-	nh->corr = nh;
-
-	/* size and parikh.size can still be garbage (see h_marking) */
-
-	al_init (&nh->nod);
-	al_cpy (&nh->nod, &h->nod);
-	al_init (&nh->ecl);
-	al_cpy (&nh->ecl, &h->ecl);
-	al_init (&nh->rd);
-	al_init (&nh->sd);
-
-	al_add (&nh->e->hist, nh);
-	return nh;
-}
-
 void h_free (struct h *h)
 {
 	al_rem (&h->e->hist, h);
@@ -535,7 +507,10 @@ void h_marking (struct h *h)
 			e = da_i (&hda, fst++, struct h *)->e;
 			for (i = e->post.deg - 1; i >= 0; i--) {
 				c = (struct cond *) e->post.adj[i];
-				if (c->m != m) nl_insert (&l, c->fp);
+				if (c->m != m) {
+					nl_insert (&l, c->fp);
+					u.unf.nummrk++;
+				}
 			}
 		}
 	} else {
@@ -546,6 +521,7 @@ void h_marking (struct h *h)
 				if (c->m == m) continue;
 				c->m = m2;
 				nl_insert (&l, c->fp);
+				u.unf.nummrk++;
 			}
 		}
 		fst = 0;
@@ -585,8 +561,8 @@ void h_marking (struct h *h)
 	h->marking = l;
 	h->hash = marking_hash (l);
 
-	u.unf.numrd += h->rd.deg;
-	u.unf.numsd += h->sd.deg;
+	u.unf.numr += h->rd.deg;
+	u.unf.nums += h->sd.deg;
 
 	DPRINT ("+ History h%d/e%d:%s; size %d; depth %d; readers %d; "
 			"ecs %d; marking ",

@@ -46,7 +46,7 @@ static struct cond * _unfold_new_cond (struct event *e, struct place *p)
 	c->m = 0;
 
 	/* also the condition number */
-	c->id = u.unf.numco++;
+	c->id = u.unf.numcond++;
 
 	/* finally, update the preset of c, the postset of e and append the
 	 * condition to the list p->conds only if e is not a cutoff */
@@ -94,7 +94,7 @@ static void _unfold_combine (register struct ec *r)
 		if (rp->c != c || EC_ISGEN (rp) || r == rp) continue;
 		if (ec_included (r, rp)) continue;
 
-		u.unf.numcompecs++;
+		u.unf.numcomp++;
 		rpp = ec_alloc2 (r, rp);
 		co_add (rpp);
 		pe_update_read (rpp);
@@ -116,6 +116,10 @@ static void _unfold_enriched (struct h *h)
 	ASSERT (h->e->iscutoff == 0);
 	ASSERT (h->e->post.deg == h->e->ft->post.deg);
 
+	/* if the prefix must not go beyond some depth and h already has that
+	 * depth, then no history generated using h need to be inserted */
+	if (u.depth && h->depth >= u.depth) return;
+
 	/* append a new enriched condition r for each c in post(e), compute the
 	 * concurrency relation for r and use r to update pe with new possible
 	 * extensions */
@@ -126,7 +130,7 @@ static void _unfold_enriched (struct h *h)
 		if (c->fp->post.deg + c->fp->cont.deg == 0) continue;
 
 		r = ec_alloc (c, h);
-		u.unf.numgenecs++;
+		u.unf.numgen++;
 		co_add (r);
 		pe_update_gen (r);
 	}
@@ -137,7 +141,7 @@ static void _unfold_enriched (struct h *h)
 		if (c->fp->post.deg == 0) continue;
 
 		r = ec_alloc (c, h);
-		u.unf.numreadecs++;
+		u.unf.numread++;
 		co_add (r);
 		pe_update_read (r);
 		_unfold_combine (r);

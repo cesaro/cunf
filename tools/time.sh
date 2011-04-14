@@ -14,37 +14,28 @@
 # You should have received a copy of the GNU General Public License along with
 # this program.  If not, see <http://www.gnu.org/licenses/>.
 
-T="/usr/bin/time"
-F="command %C\nstatus %x\nelapsed %e\nuser %U"
-
-if [ "$#" != "2" ]; then
-	echo "Usage: time.sh UNFOLDER NET"
+if [ "$#" -lt "1" ]; then
+	echo "Usage: time.sh CMD"
 	exit 1
 fi
 
-OUT=`$T -f "$F" "$1" "$2" 2>&1`
+function output2table {
+	REPLY=x
+	while true; do
+		read
+		K=`echo "$REPLY" | sed 's/\t.*//'`
+		V=`echo "$REPLY" | sed 's/.*\t//'`
+		if test "$K" == 'xj1234'; then
+			echo "status$HDR"
+			echo "$V$ROW"
+			return
+		fi
+		HDR="$HDR	$K"
+		ROW="$ROW	$V"
+	done
+}
 
-# cunf: Done, 4 events, 7 conditions, 7 histories.
-# mole: Done, 4 events, 7 conditions.
+{ $@ 2>&1; echo "xj1234	$?"; } | output2table
 
-H=`echo "$OUT" | grep "Done, " | grep " histories" | sed 's/.*, \(.*\) histories.*/\1/'`
-if [ "$H" = "" ]; then
-	H=`echo "$OUT" | grep "Done, " | sed 's/.*, \(.*\) events.*/\1/'`
-fi
-S=`echo "$OUT" | grep "^status " | sed 's/status //'`
-E=`echo "$OUT" | grep "^elapsed " | sed 's/elapsed //'`
-U=`echo "$OUT" | grep "^user " | sed 's/user //'`
-
-if [ "$H" = "" ]; then H="?"; fi
-if [ "$S" = "" ]; then S="?"; fi
-if [ "$E" = "" ]; then E="?"; fi
-if [ "$U" = "" ]; then U="?"; fi
-
-# stdout: status histories user elapsed net
-# stderr: output
-
-echo "$OUT" >&2
-/bin/echo -e "stat\thist\tuser\telapsed\tnet"
-/bin/echo -e "$S\t$H\t$U\t$E\t$2"
 exit 0
 

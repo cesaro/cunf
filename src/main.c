@@ -94,8 +94,9 @@ void write_dot (const char * filename)
 		e = ls_i (struct event, n, nod);
 		if (e->id == 0) continue;
 		P ("e%d [label=\"%s:e%d\"];\n", e->id, e->ft->name, e->id);
-		/* printf ("event.pre %d event.cont %d event.post %d\n",
-				e->pre.deg, e->cont.deg, e->post.deg); */
+		u.unf.numepost += e->post.deg;
+		u.unf.numecont += e->cont.deg;
+		u.unf.numepre += e->pre.deg;
 	}
 
 	P ("node [shape=circle];\n");
@@ -104,13 +105,6 @@ void write_dot (const char * filename)
 		P (c->m == m ? "c%d [label=\"%s:c%d\"]; /* initial */\n" :
 				"c%d [label=\"%s:c%d\"];\n",
 				c->id, c->fp->name, c->id);
-		/* printf ("cond.pre 1 cond.cont %d cond.post %d\n",
-				c->cont.deg, c->post.deg);
-		struct ls * nn;
-		for (nn = c->ecl.next; nn; nn = nn->next) {
-			struct ec * r = ls_i (struct ec, nn, nod);
-			printf ("ec.co %d ec.gen %d ec.read %d ec.comp %d\n", r->co.deg, EC_ISGEN (r), EC_ISREAD (r), EC_ISCOMP (r));
-		} */
 	}
 
 	for (n = u.unf.events.next; n; n = n->next) {
@@ -175,6 +169,9 @@ void write_dot_fancy (const char * filename)
 				e->ft->name,
 				e->id,
 				e->iscutoff ? " shape=Msquare" : "");
+		u.unf.numepost += e->post.deg;
+		u.unf.numecont += e->cont.deg;
+		u.unf.numepre += e->pre.deg;
 	}
 
 	P ("\n\t/* conditions */\n");
@@ -265,7 +262,7 @@ void write_dot_fancy (const char * filename)
 			u.net.numtr,
 			u.net.numpl,
 			u.unf.numev - 1,
-			u.unf.numco,
+			u.unf.numcond,
 			u.unf.numh - u.unf.numduph - 1);
 #ifdef CONFIG_MCMILLAN
 	P ("\tUsing McMillan order<br align=\"left\"/>\n");
@@ -289,13 +286,14 @@ void rusage (void)
 	u.unf.vmsize = 0;
 	ret = getrusage (RUSAGE_SELF, &r);
 	if (ret >= 0) {
-		/* in linux this is 0; in mac os this is the maxrss in bytes */
+		/* in linux this is 0; in mac os this is the maxrss in kb */
 		u.unf.vmsize = r.ru_maxrss / 1024;
 		u.unf.usrtime = r.ru_utime.tv_sec * 1000 +
 				r.ru_utime.tv_usec / 1000;
 	}
 
-	/* this will only work in linux, in macos vmsize is set to maxrss */
+	/* this will only work in linux, in macos u.unf.vmsize is set to maxrss
+	 * in kb */
 	ret = open ("/proc/self/statm", O_RDONLY);
 	if (ret < 0) return;
 	read (ret, buff, 128);
@@ -388,24 +386,60 @@ int main (int argc, char **argv)
 	write_dot (outpath);
 #endif
 
-	/* int s = 1000 * 1000 * 500;
-	char * p = malloc (s);
-	for (s--; s; s--) p[s] = 'c'; */
 	rusage ();
-	PRINT ("time\tmem\thist\tevents\tcond\tnocut\tgen\tread\tcomp\trd\tsd\tnet\n");
-	PRINT ("%.2f\t%ld\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\n",
+	PRINT ("time\t%.2f\n"
+		"mem\t%ld\n"
+
+		"hist\t%d\n"
+		"events\t%d\n"
+		"cond\t%d\n"
+		"noncff\t%d\n"
+
+		"gen\t%d\n"
+		"read\t%d\n"
+		"comp\t%d\n"
+
+		"r(h)\t%.2f\n"
+		"s(h)\t%.2f\n"
+		"co(r)\t%.2f\n"
+		"mrk(h)\t%.2f\n"
+
+		"pre(e)\t%.2f\n"
+		"ctx(e)\t%.2f\n"
+		"pst(e)\t%.2f\n"
+
+		"allhist\t%d\n"
+		"duphist\t%d\n"
+		"cutoffs\t%d\n"
+		"net\t%s\n",
+
 		u.unf.usrtime / 1000.0,
 		u.unf.vmsize / 1024,
+
 		u.unf.numh - u.unf.numduph - 1,
 		u.unf.numev - 1,
-		u.unf.numco,
+		u.unf.numcond,
 		u.unf.numh - u.unf.numduph - 1 - u.unf.numcutoffs,
-		u.unf.numgenecs,
-		u.unf.numreadecs,
-		u.unf.numcompecs,
-		u.unf.numrd,
-		u.unf.numsd,
+
+		u.unf.numgen,
+		u.unf.numread,
+		u.unf.numcomp,
+
+		u.unf.numr / (float) (u.unf.numh - 1),
+		u.unf.nums / (float) (u.unf.numh - 1),
+		u.unf.numco / 
+			(float) (u.unf.numgen + u.unf.numread + u.unf.numcomp),
+		u.unf.nummrk / (float) (u.unf.numh - 1),
+		u.unf.numepre / (float) (u.unf.numev - 1),
+		u.unf.numecont / (float) (u.unf.numev - 1),
+		u.unf.numepost / (float) (u.unf.numev - 1),
+
+
+		u.unf.numh - 1,
+		u.unf.numduph,
+		u.unf.numcutoffs,
 		inpath);
+
 	return EXIT_SUCCESS;
 }
 

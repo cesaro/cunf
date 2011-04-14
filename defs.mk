@@ -48,17 +48,17 @@ TEST_R:=$(patsubst %.ll_net,%.r,$(TEST_NETS))
 TEST_UNF_R:=$(patsubst %.ll_net,%.unf.r,$(TEST_NETS))
 
 # measuring time
-TIME_NETS:=$(patsubst %.xml,%.ll_net,$(wildcard test/nets/small/*xml))
-TIME_NETS+=$(patsubst %.xml,%.ll_net,$(wildcard test/nets/param/*.xml))
+#TIME_NETS:=$(patsubst %.xml,%.ll_net,$(wildcard test/nets/small/*xml))
+#TIME_NETS+=$(patsubst %.xml,%.ll_net,$(wildcard test/nets/param/*.xml))
 TIME_NETS+=$(wildcard test/nets/plain/pep/*.ll_net)
-TIME_NETS+=$(wildcard test/nets/plain/bench/*.ll_net)
-TIME_NETS+=$(wildcard test/nets/plain/more/*.ll_net)
+#TIME_NETS+=$(wildcard test/nets/plain/bench/*.ll_net)
+#TIME_NETS+=$(wildcard test/nets/plain/more/*.ll_net)
 TIME_NETS+=$(wildcard test/nets/cont/pep/*.ll_net)
-TIME_NETS+=$(wildcard test/nets/cont/bench/*.ll_net)
-TIME_NETS+=$(wildcard test/nets/cont/more/*.ll_net)
+#TIME_NETS+=$(wildcard test/nets/cont/bench/*.ll_net)
+#TIME_NETS+=$(wildcard test/nets/cont/more/*.ll_net)
 TIME_NETS+=$(wildcard test/nets/pr/pep/*.ll_net)
-TIME_NETS+=$(wildcard test/nets/pr/bench/*.ll_net)
-TIME_NETS+=$(wildcard test/nets/pr/more/*.ll_net)
+#TIME_NETS+=$(wildcard test/nets/pr/bench/*.ll_net)
+#TIME_NETS+=$(wildcard test/nets/pr/more/*.ll_net)
 
 # define the toolchain
 CROSS:=
@@ -98,7 +98,7 @@ CPP:=$(CROSS)cpp
 	@src/main $<
 
 %.time : %.ll_net
-	@src/main $< 2>&1
+	@tools/time.sh src/main $< 2>&1
 
 %.info : %.ll_net
 	@test/info $< | tools/distrib.py

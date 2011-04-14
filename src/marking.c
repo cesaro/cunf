@@ -131,6 +131,7 @@ void marking_add (struct h *h)
 		nl_delete (h->marking);
 		h->marking = 0;
 		h->corr = he->h;
+		u.unf.numcutoffs++;
 		return;
 	}
 

@@ -7,12 +7,14 @@ while (<>) {
 
 while (<>) {
 	last if /PT/;
+	next if ! /^\d+<\d+/;
 	($tr,$pl) = /^(\d*)<(\d*)/;
 	$trpl{"$tr.$pl"} = "";
 }
 
 while (<>) {
 	last if /^[A-Z]/;
+	next if ! /^\d+>\d+/;
 	($pl,$tr) = /^(\d*)>(\d*)/;
 	$pltr{"$pl.$tr"} = "";
 }

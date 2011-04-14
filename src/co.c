@@ -66,6 +66,7 @@ static void _co_add_compound (struct ec *r)
 			al_add (&rp->co, r);
 		}
 	}
+	u.unf.numco += r->co.deg * 2 - 1;
 }
 
 void co_add (struct ec *r)
@@ -132,7 +133,10 @@ void co_add (struct ec *r)
 
 	/* 2. we now deal with histories H' smaller than H in \prec, if they
 	 * exist */
-	if (r->h->id == 0) return;	
+	if (r->h->id == 0) {
+		u.unf.numco += r->co.deg;
+		return;
+	}
 	ASSERT (r->h->ecl.deg >= 1);
 
 	/* 3. generate mark m */
@@ -221,6 +225,7 @@ void co_add (struct ec *r)
 			k--;
 		}
 	}
+	u.unf.numco += r->co.deg * 2 - 1;
 }
 
 int co_test (struct ec *r, struct ec *rp)
