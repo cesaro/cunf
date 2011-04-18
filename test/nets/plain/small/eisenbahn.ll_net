@@ -1,8 +1,6 @@
 PEP
 PetriBox
 FORMAT_N
-%%% Net output from Net?LEdit
-% --------- Places ---------
 PL
 159"BlockA"1065@656b"Zug in Block A"M1m1
 1"Sfgr"597@200b"Signal F -> G rot"a-47@-19M1m1
@@ -48,7 +46,6 @@ PL
 103"Sbag"950@524b"Signal B -> A gruen"a-34@-15
 167"Sefg"369@164b"Signal E-> F gruen"a16@-10
 170"Sfeg"284@60b"Signal F->E gruen"
-% --------- Transitions ---------
 TR
 1"Gba"935@577b"Signal B -> A gruen"
 2"Ggb"749@289b"Signal G -> B gruen"
@@ -94,7 +91,6 @@ TR
 130"Fbg"1000@211b"Fahre von B nach G"
 131"Fgf"649@12b"Fahre von G nach F"
 132"Rcd"166@369b"Signal C -> D rot"
-% --------- Transition -> Place Arcs ---------
 TP
 1<103
 1<152J893@534
@@ -188,7 +184,6 @@ TP
 131<146
 132<138
 132<102
-% --------- Place -> Transition Arcs ---------
 PT
 159>111
 1>127

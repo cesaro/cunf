@@ -61,7 +61,7 @@ void usage (void)
 "              (extension '.ll_net') plus the suffix '.unf.dot'\n"
 "\n"
 "For more information, see http://www.lsv.ens-cachan.fr/Software/cunf/\n"
-"Branch eager r37, compiled %s\n", __DATE__);
+"Branch eager r41, compiled %s\n", __DATE__);
 
 	exit (EXIT_FAILURE);
 }

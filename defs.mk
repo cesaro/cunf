@@ -38,27 +38,23 @@ TARGETS:=$(patsubst %.o,%,$(MOBJS))
 DEPS:=$(patsubst %.o,%.d,$(OBJS) $(MOBJS))
 
 # testing
-TEST_NETS:=$(patsubst %.xml,%.ll_net,$(wildcard test/nets/small/*xml))
-TEST_NETS+=$(wildcard test/nets/plain/pep/*.ll_net)
-TEST_NETS+=$(wildcard test/nets/cont/pep/*.ll_net)
-TEST_NETS+=$(wildcard test/nets/pr/pep/*.ll_net)
-TEST_NETS:=$(filter-out %buf100.ll_net, $(TEST_NETS))
-
+TEST_NETS:=$(shell tools/testnets.sh)
 TEST_R:=$(patsubst %.ll_net,%.r,$(TEST_NETS))
 TEST_UNF_R:=$(patsubst %.ll_net,%.unf.r,$(TEST_NETS))
 
-# measuring time
-#TIME_NETS:=$(patsubst %.xml,%.ll_net,$(wildcard test/nets/small/*xml))
-#TIME_NETS+=$(patsubst %.xml,%.ll_net,$(wildcard test/nets/param/*.xml))
-TIME_NETS+=$(wildcard test/nets/plain/pep/*.ll_net)
-#TIME_NETS+=$(wildcard test/nets/plain/bench/*.ll_net)
-#TIME_NETS+=$(wildcard test/nets/plain/more/*.ll_net)
-TIME_NETS+=$(wildcard test/nets/cont/pep/*.ll_net)
-#TIME_NETS+=$(wildcard test/nets/cont/bench/*.ll_net)
-#TIME_NETS+=$(wildcard test/nets/cont/more/*.ll_net)
-TIME_NETS+=$(wildcard test/nets/pr/pep/*.ll_net)
-#TIME_NETS+=$(wildcard test/nets/pr/bench/*.ll_net)
-#TIME_NETS+=$(wildcard test/nets/pr/more/*.ll_net)
+# measuring times
+#TIME_NETS:=$(patsubst %.xml,%.ll_net,$(wildcard test/nets/param/*.xml))
+TIME_NETS+=$(wildcard test/nets/plain/small/*.ll_net)
+TIME_NETS+=$(wildcard test/nets/cont/small/*.ll_net)
+TIME_NETS+=$(wildcard test/nets/pr/small/*.ll_net)
+
+TIME_NETS+=$(wildcard test/nets/plain/med/*.ll_net)
+TIME_NETS+=$(wildcard test/nets/cont/med/*.ll_net)
+TIME_NETS+=$(wildcard test/nets/pr/med/*.ll_net)
+
+TIME_NETS+=$(wildcard test/nets/plain/large/*.ll_net)
+TIME_NETS+=$(wildcard test/nets/cont/large/*.ll_net)
+TIME_NETS+=$(wildcard test/nets/pr/large/*.ll_net)
 
 # define the toolchain
 CROSS:=

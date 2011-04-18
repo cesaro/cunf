@@ -15,7 +15,7 @@
 
 include defs.mk
 
-.PHONY: fake all g test times clean distclean testclean
+.PHONY: fake all g test times clean distclean
 
 all: $(TARGETS)
 
@@ -31,46 +31,6 @@ $(TARGETS) : % : %.o $(OBJS)
 	@echo "LD  $@"
 	@$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $^ $(LDFLAGS) 
 
-e : $(TARGETS)
-	./src/main test/nets/cont/pep/sdl_arq.ll_net
-
-prof : $(TARGETS)
-	src/main test/nets/plain/bench/bds_1.sync.ll_net
-	mv gmon.out gmon.out.1
-	src/main test/nets/plain/bench/buf100.ll_net
-	mv gmon.out gmon.out.2
-	src/main test/nets/plain/bench/byzagr4_1b.ll_net
-	mv gmon.out gmon.out.3
-	src/main test/nets/plain/bench/dpd_7.sync.ll_net
-	mv gmon.out gmon.out.4
-	src/main test/nets/plain/bench/dph_7.dlmcs.ll_net
-	mv gmon.out gmon.out.5
-	src/main test/nets/plain/bench/elevator_4.ll_net
-	mv gmon.out gmon.out.6
-	src/main test/nets/plain/bench/fifo20.ll_net
-	mv gmon.out gmon.out.7
-	src/main test/nets/plain/bench/ftp_1.sync.ll_net
-	mv gmon.out gmon.out.8
-	src/main test/nets/plain/bench/furnace_3.ll_net
-	mv gmon.out gmon.out.9
-	src/main test/nets/plain/bench/key_3.sync.ll_net
-	mv gmon.out gmon.out.10
-	src/main test/nets/plain/bench/key_4.fsa.ll_net
-	mv gmon.out gmon.out.11
-	src/main test/nets/plain/bench/q_1.ll_net
-	mv gmon.out gmon.out.12
-	src/main test/nets/plain/bench/q_1.sync.ll_net
-	mv gmon.out gmon.out.13
-	src/main test/nets/plain/bench/rw_12.ll_net
-	mv gmon.out gmon.out.14
-	src/main test/nets/plain/bench/rw_12.sync.ll_net
-	mv gmon.out gmon.out.15
-	src/main test/nets/plain/bench/rw_1w3r.ll_net
-	mv gmon.out gmon.out.16
-	src/main test/nets/plain/bench/rw_2w1r.ll_net
-	mv gmon.out gmon.out.17
-	gprof src/main gmon.out.* > out
-
 g : $(TARGETS)
 	gdb ./src/main
 
@@ -81,45 +41,50 @@ test : $(TEST_R) $(TEST_UNF_R)
 
 times : $(TIME_NETS:%.ll_net=%.time)
 
-
 clean :
 	@rm -f $(TARGETS) $(MOBJS) $(OBJS)
 	@echo Cleaning done.
 
 distclean : clean
 	@rm -f $(DEPS)
+	@rm -f test/nets/tiny/*.r
+	@rm -f test/nets/tiny/*.dot
+	@rm -f test/nets/tiny/*.pdf
+	
+	@rm -f test/nets/other/*.r
+	@rm -f test/nets/other/*.dot
+	@rm -f test/nets/other/*.pdf
+	
+	@rm -f test/nets/cont/small/*.r
+	@rm -f test/nets/cont/small/*.dot
+	@rm -f test/nets/cont/small/*.pdf
+	@rm -f test/nets/cont/med/*.r
+	@rm -f test/nets/cont/med/*.dot
+	@rm -f test/nets/cont/med/*.pdf
+	@rm -f test/nets/cont/large/*.r
+	@rm -f test/nets/cont/large/*.dot
+	@rm -f test/nets/cont/large/*.pdf
+	
+	@rm -f test/nets/plain/small/*.r
+	@rm -f test/nets/plain/small/*.dot
+	@rm -f test/nets/plain/small/*.pdf
+	@rm -f test/nets/plain/med/*.r
+	@rm -f test/nets/plain/med/*.dot
+	@rm -f test/nets/plain/med/*.pdf
+	@rm -f test/nets/plain/large/*.r
+	@rm -f test/nets/plain/large/*.dot
+	@rm -f test/nets/plain/large/*.pdf
+	
+	@rm -f test/nets/pr/small/*.r
+	@rm -f test/nets/pr/small/*.dot
+	@rm -f test/nets/pr/small/*.pdf
+	@rm -f test/nets/pr/med/*.r
+	@rm -f test/nets/pr/med/*.dot
+	@rm -f test/nets/pr/med/*.pdf
+	@rm -f test/nets/pr/large/*.r
+	@rm -f test/nets/pr/large/*.dot
+	@rm -f test/nets/pr/large/*.pdf
 	@echo Mr. Proper done.
-
-testclean :
-	@#rm -f $(TEST_R) $(TEST_UNF_R)
-	@rm -f $(TEST_UNF_R)
-	@echo Cleaning of test results done.
-
-allclean :
-	rm -f test/nets/small/*.r
-	rm -f test/nets/small/*.dot
-	rm -f test/nets/small/*.pdf
-	
-	rm -f test/nets/cont/pep/*.r
-	rm -f test/nets/cont/pep/*.dot
-	rm -f test/nets/cont/pep/*.pdf
-	rm -f test/nets/cont/bench/*.r
-	rm -f test/nets/cont/bench/*.dot
-	rm -f test/nets/cont/bench/*.pdf
-	
-	rm -f test/nets/plain/pep/*.r
-	rm -f test/nets/plain/pep/*.dot
-	rm -f test/nets/plain/pep/*.pdf
-	rm -f test/nets/plain/bench/*.r
-	rm -f test/nets/plain/bench/*.dot
-	rm -f test/nets/plain/bench/*.pdf
-	
-	rm -f test/nets/pr/pep/*.r
-	rm -f test/nets/pr/pep/*.dot
-	rm -f test/nets/pr/pep/*.pdf
-	rm -f test/nets/pr/bench/*.r
-	rm -f test/nets/pr/bench/*.dot
-	rm -f test/nets/pr/bench/*.pdf
 
 -include $(DEPS)
 
