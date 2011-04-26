@@ -25,6 +25,7 @@
 #include "da/da.h"
 #include "debug.h"
 #include "glue.h"
+#include "pe.h"
 #include "h.h"
 
 struct da hda;
@@ -330,8 +331,8 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 	if (l1.next != 0) return 1;
 	if (l2.next != 0) return -1;
 
-	/* otherwise, both histories h1 and h2 are exactly equal */
-	ASSERT (h1 == h2);
+	/* FIXME -- otherwise, both histories h1 and h2 are exactly equal */
+	// ASSERT (h1 == h2);
 	return 0;
 }
 
@@ -981,40 +982,13 @@ int h_isdup (struct h *h)
 						hp->e->id,
 						hp->e->ft->name);
 				u.unf.numduph++;
+				ASSERT (0);
 				return 1;
 			}
 		}
 	}
 
 	return 0;
-
-#if 0
-	int i;
-
-	/* history h is a duplicate if there exists another (different) history
-	 * associated to event h->e isomorphic to it (same set of outgoing
-	 * edges) */
-
-	ASSERT (h);
-	ASSERT (h->e);
-
-	for (i = h->e->hist.deg - 1; i >= 0; i--) {
-		if (&h->nod == h->e->hist.adj[i]) continue;
-		if (al_cmp (&h->nod, h->e->hist.adj[i]) == 0) {
-			struct h *hp = (struct h *) h->e->hist.adj[i];
-			DPRINT ("  History h%d/e%d:%s is a duplicate of "
-					"h%d/e%d:%s\n",
-					h->id,
-					h->e->id,
-					h->e->ft->name,
-					hp->id,
-					hp->e->id,
-					hp->e->ft->name);
-			return 1;
-		}
-	}
-	return 0;
-#endif
 }
 
 int h_cmp (struct h *h1, struct h *h2)

@@ -56,8 +56,9 @@ struct cond {
 	struct place *fp;	/* associated place */
 	struct ls pnod;		/* conditions assoc. to same place */
 	struct ls ecl;		/* list of associated enriched conditions */
-	int    id;		/* internal numeric identifier */
-	int    m;		/* general purpose mark */
+	int id;			/* internal numeric identifier */
+	int m;			/* general purpose mark */
+	int cnt;		/* see ec_conc */
 };
 
 struct event {
@@ -69,9 +70,9 @@ struct event {
 	struct al hist;		/* histories associated to the event */
 	struct trans *ft;	/* associated transition */
 	struct ls tnod;		/* events associated to same place */
-	int    id;		/* event identifier */
-	int iscutoff;
-	int m;
+	int id;			/* event identifier */
+	int iscutoff;		/* true if all histories are cutoffs */
+	int m;			/* general purpose mark */
 };
 
 struct net {
@@ -88,6 +89,10 @@ struct unf {
 	int numco, numev;	/* number of conditions/events in net	*/
 	int numh;		/* number of histories */
 	int numduph;		/* number of duplicated histories */
+	int numcutoffs;		/* number of cutoff histories */
+	int numgenecs;		/* number of generating ecs */
+	int numreadecs;		/* number of reading ecs */
+	int numcompecs;		/* number of compound ecs */
 	struct event *e0;	/* event generating the minimal conditions */
 };
 

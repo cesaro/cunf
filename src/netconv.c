@@ -32,7 +32,9 @@ void nc_create_unfolding()
 {
 	ls_init (&u.unf.conds);
 	ls_init (&u.unf.events);
-	u.unf.numco = u.unf.numev = u.unf.numh = u.unf.numduph = 0;
+	u.unf.numco = u.unf.numev = u.unf.numh = 0;
+	u.unf.numduph = u.unf.numcutoffs = 0;
+	u.unf.numgenecs = u.unf.numreadecs = u.unf.numcompecs = 0;
 	u.unf.e0 = 0;
 }
 
@@ -99,7 +101,7 @@ void nc_static_checks (const char * stoptr)
 	ASSERT (u.stoptr == 0);
 	for (n = u.net.trans.next; n; n = n->next) {
 		t = ls_i (struct trans, n, nod);
-		if (t->pre.deg == 0 && t != u.net.t0) {
+		if (t->pre.deg == 0 && t != u.net.t0 && t->post.deg != 0) {
 			gl_warn ("%s is not restricted", t->name);
 		}
 		if (stoptr && !strcmp (t->name, stoptr)) {

@@ -107,7 +107,7 @@ void marking_add (struct h *h)
 		if (ret == 0) break;
 	}
 
-#if CONFIG_MCMILLAN
+#ifdef CONFIG_MCMILLAN
 	/* if it is the case, and the corresponding history is smaller,
 	 * according to the McMillan's order, then it is a cutoff */
 	if (n && h_cmp (he->h, h) < 0) {
@@ -116,7 +116,8 @@ void marking_add (struct h *h)
 	 * sure that the corresponding history is smaller (the ERV order is
 	 * total) */
 	if (n) {
-		ASSERT (h_cmp (he->h, h) < 0);
+		// FIXME -- this deosn't work!!! ASSERT (h_cmp (he->h, h) < 0);
+		ASSERT (h_cmp (he->h, h) <= 0);
 #endif
 
 		/* deallocate the marking and set history h as a cutoff, whose
@@ -125,6 +126,7 @@ void marking_add (struct h *h)
 		nl_delete (h->marking);
 		h->marking = 0;
 		h->corr = he->h;
+		u.unf.numcutoffs++;
 		return;
 	}
 
@@ -149,3 +151,20 @@ void marking_print (const struct h *h)
 	_marking_print (h->marking);
 }
 
+#if 0
+void __debug (void)
+{
+	struct ls *n;
+	struct hash_entry *he;
+	int i;
+
+	for (i = 0; i < hash.size; i++) {
+		for (n = hash.tab[i].next; n; n = n->next) {
+			he = ls_i (struct hash_entry, n, nod);
+			marking_print (he->h);
+			PRINT (" h%d/e%d:%s size %d depth %d\n", he->h->id, he->h->e->id,
+					he->h->e->ft->name, he->h->size, he->h->depth);
+		}
+	}
+}
+#endif

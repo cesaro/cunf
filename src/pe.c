@@ -22,7 +22,7 @@
 #include "ls/ls.h"
 #include "debug.h"
 #include "glue.h"
-#include "co.h"
+#include "ec.h"
 #include "h.h"
 
 #include "pe.h"
@@ -393,17 +393,61 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t,
 	}
 	DPRINT (")\n");
 
-	for (i = r->co.deg - 1; i >= 0; i--) {
-		rp = (struct ec *) r->co.adj[i];
-		if (rp->c->fp->m == m) {
+	if (ispre) {
+		for (i = r->co.deg - 1; i >= 0; i--) {
+			rp = (struct ec *) r->co.adj[i];
+			if (! EC_BIT (rp)) continue;
+			rp = EC_PTR (rp);
+			if (rp->c->fp->m != m) continue;
 			idx = rp->c->fp->comb_idx;
-			if (pe.comb.tab[idx].ispre || EC_ISGEN (rp)) {
-				_pe_comb_ent_add (idx, rp);
+			if (pe.comb.tab[idx].ispre) {
+				if (ec_asymconc_tst (rp, r)) {
+					_pe_comb_ent_add (idx, rp);
+				}
+			} else {
+				if (EC_ISGEN (rp)) {
+					_pe_comb_ent_add (idx, rp);
+				}
+			}
+		}
+	} else {
+		for (i = r->co.deg - 1; i >= 0; i--) {
+			rp = EC_PTR (r->co.adj[i]);
+			if (rp->c->fp->m != m) continue;
+			idx = rp->c->fp->comb_idx;
+			if (pe.comb.tab[idx].ispre) {
+				if (ec_asymconc_tst (rp, r)) {
+					_pe_comb_ent_add (idx, rp);
+				}
+			} else {
+				if (EC_ISGEN (rp)) {
+					_pe_comb_ent_add (idx, rp);
+				}
 			}
 		}
 	}
 
 	_pe_comb_sort ();
+}
+
+static int _pe_comb_test (int i, int j)
+{
+	struct ec *r;
+	struct ec *rp;
+	int rispre, rpispre;
+
+	r = pe.comb.tab[i].tab[pe.comb.tab[i].i];
+	rispre = pe.comb.tab[i].ispre;
+	rp = pe.comb.tab[j].tab[pe.comb.tab[j].i];
+	rpispre = pe.comb.tab[j].ispre;
+
+	if (rpispre) {
+		if (! ec_asymconc_tst (rp, r)) return 0;
+		if (rispre && ! u.net.isplain) return ec_asymconc_tst (r, rp);
+		return 1;
+	} else {
+		return rispre ? ec_asymconc_tst (r, rp) : ec_conc_tst (r, rp);
+	}
 }
 
 static void _pe_comb_explore (void)
@@ -420,9 +464,7 @@ static void _pe_comb_explore (void)
 
 	while (pe.comb.tab[0].i >= 0) {
 		for (j = 0; j < i; j++) {
-			if (! co_test (pe.comb.tab[i].tab[pe.comb.tab[i].i],
-					pe.comb.tab[j].tab[pe.comb.tab[j].i]))
-						break;
+			if (! _pe_comb_test (i, j)) break;
 		}
 
 		if (j == i) {
@@ -524,12 +566,18 @@ static void __pe_debug (struct ec *r) {
 /* + Condition {c0:P12, h1/e1:T0} type G|R|C co */
 
 	int i;
+	struct ec *rp;
+	char * str;
 
 	db_r2 ("+ Condition ", r, " type ");
 	DPRINT ("%s co \n", EC_ISCOMP (r) ? "C" :
 			EC_ISREAD (r) ? "R" : "G");
 	
-	for (i = r->co.deg - 1; i >= 0; i--) db_r2 ("   ", r->co.adj[i], 0);
+	for (i = r->co.deg - 1; i >= 0; i--) {
+		rp = (struct ec *) r->co.adj[i];
+		str = ec_asymconc_tst (EC_PTR (rp), r) ? "*\n" : "\n";
+		db_r2 ("   ", rp, str);
+	}
 }
 #else
 #define __pe_debug(r)
@@ -578,3 +626,7 @@ void pe_update_read (struct ec * r)
 	}
 }
 
+void pe_skip (void)
+{
+	pe.q.skip = 1;
+}

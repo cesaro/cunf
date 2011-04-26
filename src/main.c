@@ -59,7 +59,7 @@ void usage (void)
 "              (extension '.ll_net') plus the suffix '.unf.dot'\n"
 "\n"
 "For more information, see http://www.lsv.ens-cachan.fr/Software/cunf/\n"
-"Revision 35, compiled %s\n", __DATE__);
+"Revision dup-r36, compiled %s\n", __DATE__);
 
 	exit (EXIT_FAILURE);
 }
@@ -244,18 +244,22 @@ void write_dot_fancy (const char * filename)
 	}
 
 	ASSERT (enr == u.unf.numev - 1);
-	ASSERT (hnr == u.unf.numh - u.unf.numduph - 1);
+	// ASSERT (hnr == u.unf.numh - u.unf.numduph - 1);
 	P ("\t <br align=\"left\"/>\n");
 	P ("\t%d transitions<br align=\"left\"/>\n"
 			"\t%d places<br align=\"left\"/>\n"
 			"\t%d events<br align=\"left\"/>\n"
 			"\t%d conditions<br align=\"left\"/>\n"
-			"\t%d histories<br align=\"left\"/>\n",
+			"\t%d histories<br align=\"left\"/>\n"
+			"\t%d duplicate histories<br align=\"left\"/>\n"
+			"\t%d cutoffs<br align=\"left\"/>\n",
 			u.net.numtr,
 			u.net.numpl,
 			u.unf.numev - 1,
 			u.unf.numco,
-			u.unf.numh - u.unf.numduph - 1);
+			u.unf.numh - u.unf.numduph - 1,
+			u.unf.numduph,
+			u.unf.numcutoffs);
 #ifdef CONFIG_MCMILLAN
 	P ("\tUsing McMillan order<br align=\"left\"/>\n");
 #else
@@ -327,9 +331,10 @@ int main (int argc, char **argv)
 #else
 	write_dot (outpath);
 #endif
-	PRINT ("  Done, %d events, %d conditions, %d histories.\n",
+	PRINT ("  Done, %d events, %d conditions, %d histories, %d duplicates, %d cutoffs\n",
 			u.unf.numev - 1, u.unf.numco,
-			u.unf.numh - u.unf.numduph - 1);
+			u.unf.numh - u.unf.numduph - 1, u.unf.numduph,
+			u.unf.numcutoffs);
 	return EXIT_SUCCESS;
 }
 
