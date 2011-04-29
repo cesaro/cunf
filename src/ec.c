@@ -19,6 +19,7 @@
 #include "global.h"
 #include "ls/ls.h"
 #include "al/al.h"
+#include "debug.h"
 #include "glue.h"
 #include "ec.h"
 #include "pe.h"
@@ -94,28 +95,42 @@ struct ec * ec_alloc2 (struct ec *r1, struct ec *r2)
 
 int ec_included (struct ec *r, register struct ec *rp)
 {
-	register int m;
+	static int m = 0;
+	static struct ec *lastr = 0;
+	int i;
 
-	/* check whether r's history is included in rp's history */
+	/* r is a reading ec.; rp is a reading or compound ec. associated to
+	 * the same condition; check whether one of the readers in rp is
+	 * included in r's history and return 1 if yes; in such case, there is
+	 * another compound ec which can be combined with r to produce a
+	 * genuine compound ec.  To check that, it is enough to mark r(r->h),
+	 * not r->h */
 
 	ASSERT (EC_ISREAD (r) && ! EC_ISCOMP (r));
 	ASSERT (EC_ISREAD (rp) || EC_ISCOMP (rp));
+	ASSERT (r->c == rp->c);
 
-	m = ++u.mark;
-	ASSERT (m > 0);
-	h_mark (r->h, m);
+	/* mark r(r->h) only in the first call */
+	if (lastr != r) {
+		lastr = r;
+		m = ++u.mark;
+		ASSERT (m > 0);
+		for (i = r->h->rd.deg - 1; i >= 0; i--) {
+			((struct event *) r->h->rd.adj[i])->m = m;
+		}
+	}
 
 	for (; rp->h == 0; rp = rp->r2) {
 		ASSERT (rp->r1);
 		ASSERT (EC_ISREAD (rp->r1));
 		ASSERT (rp->r1->h);
-		if (rp->r1->h->m == m) return 1;
+		if (rp->r1->h->e->m == m) return 1;
 	}
-	if (rp->h->m == m) return 1;
+	if (rp->h->e->m == m) return 1;
 	return 0;
 }
 
-static void _ec_conc_compound_00 (struct ec *r, struct ec *rp)
+static int _ec_conc_compound_00 (struct ec *r, struct ec *rp)
 {
 	static struct ec *lastr = 0;
 	struct event *e;
@@ -125,6 +140,7 @@ static void _ec_conc_compound_00 (struct ec *r, struct ec *rp)
 
 	ASSERT (r);
 	ASSERT (EC_ISCOMP (r));
+	rp = EC_PTR (rp);
 
 	if (lastr != r) {
 		lastr = r;
@@ -147,49 +163,17 @@ static void _ec_conc_compound_00 (struct ec *r, struct ec *rp)
 		e = (struct event *) rd->adj[i];
 		if (e->m == m) continue;
 		for (j = e->cont.deg - 1; j >= 0; j--) {
-			if (e->cont.adj[j] == r->c) {
-				al_add (&r->co, EC_BITSET (rp, 0));
-				return;
-			}
+			if (e->cont.adj[j] == r->c) return 0;
 		}
 	}
 
-	al_add (&r->co, EC_BITSET (rp, 1));
-}
-
-static int _ec_conc_compound_r1andr2 (struct ec *r1, struct ec *r2,
-	       	struct ec *rp)
-{
-	int i;
-
-	ASSERT (EC_PTR (rp) == rp);
-	ASSERT (EC_PTR (r1) == r1);
-	ASSERT (EC_PTR (r2) == r2);
-
-	r1 = EC_BITSET (r1, 1);
-	r2 = EC_BITSET (r2, 1);
-
-	for (i = rp->co.deg - 1; i >= 0; i--) {
-		if (rp->co.adj[i] == r1) {
-			for (; i >= 0; i--) {
-				if (rp->co.adj[i] == r2) return 1;
-			}
-			return 0;
-		}
-		if (rp->co.adj[i] == r2) {
-			for (; i >= 0; i--) {
-				if (rp->co.adj[i] == r1) return 1;
-			}
-			return 0;
-		}
-	}
-	return 0;
+	return 1;
 }
 
 static void _ec_conc_compound (struct ec *r)
 {
 	struct ec *rp;
-	int i, m, mbit, bit;
+	int x, i, m, bit0, bit1;
 
 	/* r is r1 \cup r2
 	 * r || r' iff r1 || r' and r2 || r'
@@ -203,19 +187,18 @@ static void _ec_conc_compound (struct ec *r)
 	ASSERT (r->r1->co.deg >= 1);
 	ASSERT (r->r2->co.deg >= 1);
 
-	/* generate two marks */
+	/* generate four marks */
 	m = ++u.mark;
+	u.mark += 3;
 	ASSERT (m > 0);
-	mbit = ++u.mark;
-	ASSERT (mbit > 0);
 
-	al_add (&r->co, EC_BITSET (r, 1));
-	
-	/* mark with m or mbit in co(r1) depending on EC_BIT (rp) */
+	al_add (&r->co, EC_BITSET (r, 3));
+
+	/* mark with m, m+1, m+2 or m+3 in co(r1) depending on EC_BITS (rp) */
 	for (i = r->r1->co.deg - 1; i >= 0; i--) {
 		rp = (struct ec *) r->r1->co.adj[i];
-		EC_PTR (rp)->m = m + EC_BIT (rp);
-		//ASSERT (EC_BIT (rp) == 0 || EC_BIT (rp) == 1);
+		EC_PTR (rp)->m = m + EC_BITS (rp);
+		ASSERT (EC_BITS (rp) <= 3);
 	}
 
 	/* enumerate co(r2) and set up the asymmetric concurrency
@@ -223,20 +206,15 @@ static void _ec_conc_compound (struct ec *r)
 	for (i = r->r2->co.deg - 1; i >= 0; i--) {
 		rp = (struct ec *) r->r2->co.adj[i];
 
-		if (EC_PTR (rp)->m == mbit) {
-			al_add (&r->co, EC_BITSET (rp, 1));
-			bit = _ec_conc_compound_r1andr2 (r->r1, r->r2, EC_PTR(rp));
-			al_add (&(EC_PTR (rp)->co), EC_BITSET (r, bit));
-		} else if (EC_PTR (rp)->m == m) {
-			bit = _ec_conc_compound_r1andr2 (r->r1, r->r2, EC_PTR(rp));
-			al_add (&(EC_PTR (rp)->co), EC_BITSET (r, bit));
-			if (EC_BIT (rp)) {
-				al_add (&r->co, EC_BITSET (rp, 1));
-			} else {
-				ASSERT (EC_PTR (rp) == rp);
-				_ec_conc_compound_00 (r, rp);
-			}
-		}
+		/* recover the bits in co(r1) and compute the bits for co (r) */
+		x = EC_PTR (rp)->m - m;
+		if (x < 0 || x > 3) continue;
+
+		bit0 = (x & 1) || EC_BIT0 (rp) || _ec_conc_compound_00 (r, rp);
+		bit1 = (x & 2) && EC_BIT1 (rp);
+
+		al_add (&r->co, EC_BITSET (rp, 2 * bit1 + bit0));
+		al_add (&EC_PTR(rp)->co, EC_BITSET (r, 2 * bit0 + bit1));
 	}
 }
 
@@ -251,7 +229,7 @@ static void _ec_conc_siblings (struct ec *r)
 	/* set r || rp, and r // rp, and rp // r for all rp sharing the same
 	 * history than r, including r */
 
-	al_add (&r->co, EC_BITSET (r, 1));
+	al_add (&r->co, EC_BITSET (r, 3));
 
 	e = r->h->e;
 	for (i = e->post.deg - 1; i >= 0; i--) {
@@ -260,8 +238,8 @@ static void _ec_conc_siblings (struct ec *r)
 		for (n = c->ecl.next; n; n = n->next) {
 			rp = ls_i (struct ec, n, nod);
 			if (rp->h == r->h) {
-				al_add (&r->co, EC_BITSET (rp, 1));
-				al_add (&rp->co, EC_BITSET (r, 1));
+				al_add (&r->co, EC_BITSET (rp, 3));
+				al_add (&rp->co, EC_BITSET (r, 3));
 			}
 		}
 	}
@@ -272,8 +250,8 @@ static void _ec_conc_siblings (struct ec *r)
 		for (n = c->ecl.next; n; n = n->next) {
 			rp = ls_i (struct ec, n, nod);
 			if (rp->h == r->h) {
-				al_add (&r->co, EC_BITSET (rp, 1));
-				al_add (&rp->co, EC_BITSET (r, 1));
+				al_add (&r->co, EC_BITSET (rp, 3));
+				al_add (&rp->co, EC_BITSET (r, 3));
 			}
 		}
 	}
@@ -368,9 +346,6 @@ static void _ec_conc_bgr (struct ec *r, int mblack, int mgreen, int mred)
 					c->m = mred;
 				}
 			}
-			/* if (r->c->id == 1163 && r->h->id == 749) {
-				if (c->id == 58) DEBUG ("(c1163,h749): e%d reads c58; cnt %d", e->id, c->cnt);
-			} */
 		}
 	}
 }
@@ -381,26 +356,21 @@ static void _ec_conc_add (struct ec *r, struct ec *rp, int mblack, int mgreen,
 	struct event * e;
 	struct cond *c;
 	struct al *rd;
-	int i, j, x, bit;
+	int i, j, x, bit0, bit1;
 
-	//if (rp->c->m == mblack) db_r2 ("Discarding ", rp, " because black\n");
 	if (rp->c->m == mblack) return;
 
-	bit = 1;
+	bit0 = 1;
 	x = 0;
 	rd = EC_ISCOMP (rp) ? &rp->rd : &rp->h->rd;
 	for (i = rd->deg - 1; i >= 0; i--) {
 		e = (struct event *) rd->adj[i];
-		//if (e->m == mgreen) db_r2 ("Discarding ", rp, " because green\n");
 		if (e->m == mgreen) return;
 		if (e->m == mred) {
 			for (j = e->cont.deg - 1; j >= 0; j--) {
 				c = (struct cond *) e->cont.adj[j];
 				if (c == rp->c) {
 					x += 1;
-					/* if (rp->c->id == 58 && rp->h && rp->h->id == 351) {
-						DEBUG ("(c58,h351): e%d red and reads c%d; x %d", e->id, c->id, x);
-					} */
 					break;
 				}
 			}
@@ -408,24 +378,16 @@ static void _ec_conc_add (struct ec *r, struct ec *rp, int mblack, int mgreen,
 			for (j = e->cont.deg - 1; j >= 0; j--) {
 				c = (struct cond *) e->cont.adj[j];
 				if (c == r->c) {
-					bit = 0;
+					bit0 = 0;
 					break;
 				}
 			}
 		}
 	}
 
-	/* if (rp->c->id == 58 && rp->h && rp->h->id == 351) {
-		TRACE (bit, "d");
-		TRACE (x, "d");
-		TRACE (rp->c->m, "d");
-		TRACE (mred, "d");
-		TRACE (rp->c->cnt, "d");
-		TRACE (rp->c->m == mred && rp->c->cnt != x ? 0 : 1, "d");
-	} */
-	al_add (&r->co, EC_BITSET (rp, bit));
-	bit = rp->c->m == mred && rp->c->cnt != x ? 0 : 1;
-	al_add (&rp->co, EC_BITSET (r, bit));
+	bit1 = rp->c->m != mred || rp->c->cnt == x;
+	al_add (&r->co, EC_BITSET (rp, 2 * bit1 + bit0));
+	al_add (&rp->co, EC_BITSET (r, 2 * bit0 + bit1));
 }
 
 void ec_conc (struct ec *r)
@@ -487,31 +449,32 @@ void ec_conc (struct ec *r)
 	}
 }
 
-int ec_conc_tst (struct ec *r, register struct ec *rp)
+int ec_conc_tst (register struct ec *r, register struct ec *rp)
 {
-	register struct ec *rpp;
-	register struct al *l;
+	struct ec *auxr;
+	register unsigned long  mask;
 	register int i;
 
-	rpp = EC_BITSET (rp, 1);
+	ASSERT (EC_PTR (r) == r);
 
-	ASSERT (EC_PTR (r) == r && EC_PTR (rp) == rp);
-	ASSERT ((al_test (&r->co, rp) || al_test (&r->co, rpp)) ==
-			(al_test (&rp->co, r) || al_test (&rp->co, rpp)));
-
-	l = r->co.deg < rp->co.deg ? &r->co : &rp->co;
-	for (i = l->deg - 1; i >= 0; i--) {
-		if (l->adj[i] == rp || l->adj[i] == rpp) return 1;
+	mask = EC_BITS (rp);
+	if (r->co.deg > EC_PTR (rp)->co.deg) {
+		mask = 2 * (mask & 1) + ((mask & 2) >> 1);
+		auxr = r;
+		r = EC_PTR (rp);
+		rp = EC_BITSET (auxr, mask);
 	}
-	return 0;
-}
 
-int ec_asymconc_tst (register struct ec *r, register struct ec *rp)
-{
-	register int i;
-
-	ASSERT (EC_PTR (r) == r && EC_PTR (rp) == rp);
-	rp = EC_BITSET (rp, 1);
-	for (i = r->co.deg - 1; i >= 0; i--) if (r->co.adj[i] == rp) return 1;
+	if (mask == 3) {
+		for (i = r->co.deg - 1; i >= 0; i--) {
+			if (r->co.adj[i] == rp) return 1;
+		}
+	} else {
+		mask = ~0 - 3 + mask;
+		for (i = r->co.deg - 1; i >= 0; i--) {
+			if ((((unsigned long) r->co.adj[i]) & mask) == 
+						(unsigned long) rp) return 1;
+		}
+	}
 	return 0;
 }

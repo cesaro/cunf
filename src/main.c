@@ -59,7 +59,7 @@ void usage (void)
 "              (extension '.ll_net') plus the suffix '.unf.dot'\n"
 "\n"
 "For more information, see http://www.lsv.ens-cachan.fr/Software/cunf/\n"
-"Revision dup-r36, compiled %s\n", __DATE__);
+"Revision dup-r37, compiled %s\n", __DATE__);
 
 	exit (EXIT_FAILURE);
 }
@@ -331,10 +331,10 @@ int main (int argc, char **argv)
 #else
 	write_dot (outpath);
 #endif
-	PRINT ("  Done, %d events, %d conditions, %d histories, %d duplicates, %d cutoffs\n",
+	PRINT ("events\t%d\nconds\t%d\nhist\t%d\ndups\t%d\ncutffs\t%d\nnet\t%s\n",
 			u.unf.numev - 1, u.unf.numco,
 			u.unf.numh - u.unf.numduph - 1, u.unf.numduph,
-			u.unf.numcutoffs);
+			u.unf.numcutoffs, inpath);
 	return EXIT_SUCCESS;
 }
 

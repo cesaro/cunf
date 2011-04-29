@@ -21,6 +21,7 @@
 #include "global.h"
 #include "ls/ls.h"
 #include "al/al.h"
+#include "da/da.h"
 #include "debug.h"
 #include "glue.h"
 #include "pe.h"
@@ -79,24 +80,32 @@ static void _unfold_postset (struct event *e)
 
 static void _unfold_combine (register struct ec *r)
 {
-	struct ec *rpp;
-
 	register struct ec *rp;
 	register struct cond *c;
-	register int i;
+	register int i, j;
+	static struct da l;
+	static int init = 1;
 
 	ASSERT (r);
 	ASSERT (r->c);
 	c = r->c;
 
+	/* compute those rp from co(r) which can be combined with r */
+	if (init) {
+		init = 0;
+		da_init (&l, struct ec *);
+	}
+	j = 0;
 	for (i = r->co.deg - 1; i >= 0; i--) {
 		rp = (struct ec *) r->co.adj[i];
 		if (rp->c != c || EC_ISGEN (rp) || r == rp) continue;
-		if (ec_included (r, rp)) continue;
+		if (! ec_included (r, rp)) da_push (&l, j, rp, struct ec *);
+	}
 
-		rpp = ec_alloc2 (r, rp);
-		ec_conc (rpp);
-		pe_update_read (rpp);
+	for (j--; j >= 0; j--) {
+		rp = ec_alloc2 (r, da_i (&l, j, struct ec *));
+		ec_conc (rp);
+		pe_update_read (rp);
 	}
 }
 

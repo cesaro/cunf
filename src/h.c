@@ -945,52 +945,6 @@ void h_marking (struct h *h)
 }
 #endif
 
-int h_isdup (struct h *h)
-{
-	/* history h is a duplicate if there exists another (different) history
-	 * associated to event h->e with the same events as h */
-	int i;
-	struct h *hp;
-	struct dls l1;
-	struct dls l2;
-	struct dls l12;
-	int m1, m2, m12;
-
-	ASSERT (h);
-	ASSERT (h->e);
-
-	/* check that every history pointed by h->e->hist is different to h */
-	for (i = h->e->hist.deg - 1; i >= 0; i--) {
-		hp = (struct h *) h->e->hist.adj[i];
-		if (h == hp) continue;
-
-		/* generate three different marks */
-		m1 = ++u.mark;
-		m2 = ++u.mark;
-		m12 = ++u.mark;
-
-		_h_lists (h, hp, &l1, &l2, &l12, m1, m2, m12); /* very expensive! */
-		if (l1.next == l1.prev && l2.next == l2.prev) {
-			if (dls_i (struct h, l1.next, auxnod) == h &&
-					dls_i (struct h, l2.next, auxnod) == hp) {
-				DPRINT ("  History h%d/e%d:%s is a duplicate of "
-						"h%d/e%d:%s\n",
-						h->id,
-						h->e->id,
-						h->e->ft->name,
-						hp->id,
-						hp->e->id,
-						hp->e->ft->name);
-				u.unf.numduph++;
-				ASSERT (0);
-				return 1;
-			}
-		}
-	}
-
-	return 0;
-}
-
 int h_cmp (struct h *h1, struct h *h2)
 {
 	int i, min;

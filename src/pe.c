@@ -276,12 +276,6 @@ static struct h * _pe_comb_new_hist (struct event *e)
 		al_add (&h->ecl, pe.comb.tab[i].tab[pe.comb.tab[i].i]);
 	}
 
-	/* check if the new history is a duplicate */
-	if (h_isdup (h)) {
-		h_free (h);
-		return 0;
-	}
-
 	/* compute the marking associated to that history, the size of the
 	 * history and return */
 	h_marking (h);
@@ -351,6 +345,7 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t,
 		int ispre)
 {
 	int i, m, idx;
+	int  bits;
 	struct place *pp;
 	struct ec *rp;
 
@@ -393,36 +388,21 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t,
 	}
 	DPRINT (")\n");
 
-	if (ispre) {
-		for (i = r->co.deg - 1; i >= 0; i--) {
-			rp = (struct ec *) r->co.adj[i];
-			if (! EC_BIT (rp)) continue;
-			rp = EC_PTR (rp);
-			if (rp->c->fp->m != m) continue;
-			idx = rp->c->fp->comb_idx;
-			if (pe.comb.tab[idx].ispre) {
-				if (ec_asymconc_tst (rp, r)) {
-					_pe_comb_ent_add (idx, rp);
-				}
-			} else {
-				if (EC_ISGEN (rp)) {
-					_pe_comb_ent_add (idx, rp);
-				}
+	for (i = r->co.deg - 1; i >= 0; i--) {
+		rp = (struct ec *) r->co.adj[i];
+		bits = EC_BITS (rp);
+		rp = EC_PTR (rp);
+		if (rp->c->fp->m != m) continue;
+		if (ispre && ! EC_BIT0 (bits)) continue;
+
+		idx = rp->c->fp->comb_idx;
+		if (pe.comb.tab[idx].ispre) {
+			if (EC_BIT1 (bits)) {
+				_pe_comb_ent_add (idx, rp);
 			}
-		}
-	} else {
-		for (i = r->co.deg - 1; i >= 0; i--) {
-			rp = EC_PTR (r->co.adj[i]);
-			if (rp->c->fp->m != m) continue;
-			idx = rp->c->fp->comb_idx;
-			if (pe.comb.tab[idx].ispre) {
-				if (ec_asymconc_tst (rp, r)) {
-					_pe_comb_ent_add (idx, rp);
-				}
-			} else {
-				if (EC_ISGEN (rp)) {
-					_pe_comb_ent_add (idx, rp);
-				}
+		} else {
+			if (EC_ISGEN (rp)) {
+				_pe_comb_ent_add (idx, rp);
 			}
 		}
 	}
@@ -441,13 +421,7 @@ static int _pe_comb_test (int i, int j)
 	rp = pe.comb.tab[j].tab[pe.comb.tab[j].i];
 	rpispre = pe.comb.tab[j].ispre;
 
-	if (rpispre) {
-		if (! ec_asymconc_tst (rp, r)) return 0;
-		if (rispre && ! u.net.isplain) return ec_asymconc_tst (r, rp);
-		return 1;
-	} else {
-		return rispre ? ec_asymconc_tst (r, rp) : ec_conc_tst (r, rp);
-	}
+	return ec_conc_tst (r, EC_BITSET (rp, 2 * rpispre + rispre));
 }
 
 static void _pe_comb_explore (void)
@@ -567,7 +541,6 @@ static void __pe_debug (struct ec *r) {
 
 	int i;
 	struct ec *rp;
-	char * str;
 
 	db_r2 ("+ Condition ", r, " type ");
 	DPRINT ("%s co \n", EC_ISCOMP (r) ? "C" :
@@ -575,8 +548,7 @@ static void __pe_debug (struct ec *r) {
 	
 	for (i = r->co.deg - 1; i >= 0; i--) {
 		rp = (struct ec *) r->co.adj[i];
-		str = ec_asymconc_tst (EC_PTR (rp), r) ? "*\n" : "\n";
-		db_r2 ("   ", rp, str);
+		db_r2 ("   ", r->co.adj[i], 0);
 	}
 }
 #else

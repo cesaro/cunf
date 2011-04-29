@@ -14,8 +14,9 @@
 # this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # traditional variables
-CFLAGS:=-Wall -Wextra -O3
-#CFLAGS:=-Wall -Wextra -pg
+#CFLAGS:=-Wall -Wextra -O3
+#CFLAGS:=-Wall -Wextra -O3 -pg
+CFLAGS:=-Wall -Wextra -pg
 #CFLAGS:=-Wall -Wextra
 #CFLAGS:=-Wall -Wextra -g
 CPPFLAGS:=-I include/
