@@ -130,7 +130,7 @@ int ec_included (struct ec *r, register struct ec *rp)
 	return 0;
 }
 
-static int _ec_conc_compound_00 (struct ec *r, struct ec *rp)
+int __attribute__ ((noinline)) _ec_conc_compound_00 (struct ec *r, struct ec *rp)
 {
 	static struct ec *lastr = 0;
 	struct event *e;
@@ -170,10 +170,12 @@ static int _ec_conc_compound_00 (struct ec *r, struct ec *rp)
 	return 1;
 }
 
-static void _ec_conc_compound (struct ec *r)
+void _ec_conc_compound (struct ec *r)
 {
 	struct ec *rp;
-	int x, i, m, bit0, bit1;
+	int x, i, bit0, bit1;
+	static int m = 0;
+	static struct ec *lastr1 = 0;
 
 	/* r is r1 \cup r2
 	 * r || r' iff r1 || r' and r2 || r'
@@ -187,19 +189,31 @@ static void _ec_conc_compound (struct ec *r)
 	ASSERT (r->r1->co.deg >= 1);
 	ASSERT (r->r2->co.deg >= 1);
 
-	/* generate four marks */
-	m = ++u.mark;
-	u.mark += 3;
-	ASSERT (m > 0);
+	/* optmz: if the last call was for an enriched condition derived from
+	 * the same reading condition r->r1, the array r->r1->co is already marked :)
+	 */
+	if (lastr1 == r->r1) {
+		lastr1 = r->r1;
+
+		/* generate four marks */
+		m = ++u.mark;
+		u.mark += 3;
+		ASSERT (m > 0);
+
+		/* mark with m, m+1, m+2 or m+3 in co(r1) depending on EC_BITS (rp) */
+		for (i = r->r1->co.deg - 1; i >= 0; i--) {
+			rp = (struct ec *) r->r1->co.adj[i];
+			ASSERT (EC_BITS (rp) <= 3);
+
+			/* optmz: we can skip including in the conc. relation those
+			 * reading or compound ecs. derived from the same condition
+			 * r->c (since they will never be used to compute pe or extend
+			 * the concurrency relation) */
+			if (rp->c != r->c || EC_ISGEN (rp)) EC_PTR (rp)->m = m + EC_BITS (rp);
+		}
+	}
 
 	al_add (&r->co, EC_BITSET (r, 3));
-
-	/* mark with m, m+1, m+2 or m+3 in co(r1) depending on EC_BITS (rp) */
-	for (i = r->r1->co.deg - 1; i >= 0; i--) {
-		rp = (struct ec *) r->r1->co.adj[i];
-		EC_PTR (rp)->m = m + EC_BITS (rp);
-		ASSERT (EC_BITS (rp) <= 3);
-	}
 
 	/* enumerate co(r2) and set up the asymmetric concurrency
 	 * appropriately */
@@ -218,12 +232,12 @@ static void _ec_conc_compound (struct ec *r)
 	}
 }
 
-static void _ec_conc_siblings (struct ec *r)
+void __attribute__ ((noinline)) _ec_conc_siblings (struct ec *r)
 {
 	struct ec *rp;
 	struct event *e;
 	struct cond *c;
-	struct ls *n;
+	//struct ls *n;
 	int i;
 
 	/* set r || rp, and r // rp, and rp // r for all rp sharing the same
@@ -235,29 +249,37 @@ static void _ec_conc_siblings (struct ec *r)
 	for (i = e->post.deg - 1; i >= 0; i--) {
 		c = e->post.adj[i];
 		if (c == r->c) continue;
-		for (n = c->ecl.next; n; n = n->next) {
-			rp = ls_i (struct ec, n, nod);
-			if (rp->h == r->h) {
-				al_add (&r->co, EC_BITSET (rp, 3));
-				al_add (&rp->co, EC_BITSET (r, 3));
+		if (c->ecl.next == 0) continue;
+		rp = ls_i (struct ec, c->ecl.next, nod);
+		if (rp->h == r->h) {
+			al_add (&r->co, EC_BITSET (rp, 3));
+			al_add (&rp->co, EC_BITSET (r, 3));
+		} /* else {
+			for (n = c->ecl.next; n; n = n->next) {
+				rp = ls_i (struct ec, n, nod);
+				ASSERT (rp->h != r->h);
 			}
-		}
+		} */
 	}
 
 	for (i = e->cont.deg - 1; i >= 0; i--) {
 		c = e->cont.adj[i];
 		if (c == r->c) continue;
-		for (n = c->ecl.next; n; n = n->next) {
-			rp = ls_i (struct ec, n, nod);
-			if (rp->h == r->h) {
-				al_add (&r->co, EC_BITSET (rp, 3));
-				al_add (&rp->co, EC_BITSET (r, 3));
+		if (c->ecl.next == 0) continue;
+		rp = ls_i (struct ec, c->ecl.next, nod);
+		if (rp->h == r->h) {
+			al_add (&r->co, EC_BITSET (rp, 3));
+			al_add (&rp->co, EC_BITSET (r, 3));
+		} /* else {
+			for (n = c->ecl.next; n; n = n->next) {
+				rp = ls_i (struct ec, n, nod);
+				ASSERT (rp->h != r->h);
 			}
-		}
+		} */
 	}
 }
 
-static void _ec_conc_intersec_mrk (struct ec *ri, register int m, int *nr)
+void _ec_conc_intersec_mrk (struct ec *ri, register int m, int *nr)
 {
 	register int j;
 	register int k;
@@ -276,15 +298,42 @@ static void _ec_conc_intersec_mrk (struct ec *ri, register int m, int *nr)
 	*nr -= k;
 }
 
-static int _ec_conc_intersec_mrk_r1 (struct ec *r1, register int m)
+void _ec_conc_intersec_sort (struct ec *r)
+{
+	int i, j;
+	struct ec *e;
+
+#define A(i) r->h->ecl.adj[(i)]
+#define K(e) (((struct ec *) (e))->co.deg)
+
+	for (i = 1; i < r->h->ecl.deg; i++) {
+		e = A (i);
+		for (j = i - 1; j >= 0; j--) {
+			if (K (A (j)) >= K (e)) break;
+			A (j + 1) = A (j);
+		}
+		A (j + 1) = e;
+	}
+
+	//PRINT ("c%d h%d: x%dx %d", r->c->id, r->h->id, r->h->ecl.deg, K (A (0)));
+	for (i = 1; i < r->h->ecl.deg; i++) {
+		ASSERT (K (A (i - 1)) >= K (A (i)));
+		//PRINT (" %d", K (A (i)));
+	}
+	//PRINT ("\n");
+#undef K
+#undef A
+}
+
+int _ec_conc_intersec_mrk_fst (struct ec *r, register int m)
 {
 	register int j;
 
-	for (j = r1->co.deg - 1; j >= 0; j--) EC_PTR (r1->co.adj[j])->m = m;
-	return r1->co.deg;
+	for (j = r->co.deg - 1; j >= 0; j--) EC_PTR (r->co.adj[j])->m = m;
+	return r->co.deg;
 }
 
-static int _ec_conc_intersec (struct ec *r, int *nr)
+int __attribute__ ((noinline)) _ec_conc_intersec (struct ec *r, int *nr)
 {
 	int i, m;
 	struct ec *ri;
@@ -295,13 +344,17 @@ static int _ec_conc_intersec (struct ec *r, int *nr)
 		return 0;
 	}
 
-	/* mark r_1 */
+	/* sort conditions r_0 .. r_{n-1} by decreasing size of co(r_i) */
+	_ec_conc_intersec_sort (r);
+
+	/* mark r_{n-1} */
 	m = ++u.mark;
 	ASSERT (m > 0);
-	*nr = _ec_conc_intersec_mrk_r1 ((struct ec *) r->h->ecl.adj[1], m);
+	i = r->h->ecl.deg - 1;
+	*nr = _ec_conc_intersec_mrk_fst ((struct ec *) r->h->ecl.adj[i], m);
 
-	/* intersection for conditions r_2 to r_{n-1} */
-	for (i = r->h->ecl.deg - 1; i >= 2; i--) {
+	/* intersection for conditions r_{n-2} to r_1 */
+	for (i--; i >= 1; i--) {
 		ri = (struct ec *) r->h->ecl.adj[i];
 		m = ++u.mark;
 		ASSERT (m > 0);
@@ -310,7 +363,7 @@ static int _ec_conc_intersec (struct ec *r, int *nr)
 	return m;
 }
 
-static void _ec_conc_bgr (struct ec *r, int mblack, int mgreen, int mred)
+void __attribute__ ((noinline)) _ec_conc_bgr (struct ec *r, int mblack, int mgreen, int mred)
 {
 	struct event *e;
 	struct cond *c;
@@ -350,8 +403,95 @@ static void _ec_conc_bgr (struct ec *r, int mblack, int mgreen, int mred)
 	}
 }
 
-static void _ec_conc_add (struct ec *r, struct ec *rp, int mblack, int mgreen,
-		int mred)
+void __attribute__ ((noinline)) _ec_conc_add (struct ec *r, struct ec *rp,
+		int mblack, int mgreen, int mred)
+{
+	struct event * e;
+	struct cond *c;
+	struct al *rd;
+	int i, j, x, bit0, bit1;
+
+	if (rp->c->m == mblack) return;
+
+	rd = EC_ISCOMP (rp) ? &rp->rd : &rp->h->rd;
+	if (rp->c->m == mred) {
+		bit0 = 1;
+		x = 0;
+		if (r->c->cont.deg == 0) {
+			for (i = rd->deg - 1; i >= 0; i--) {
+				e = (struct event *) rd->adj[i];
+				if (e->m == mgreen) return;
+				if (e->m == mred) {
+					for (j = e->cont.deg - 1; j >= 0; j--) {
+						c = (struct cond *) e->cont.adj[j];
+						if (c == rp->c) { x++; break; }
+					}
+				}
+			}
+		} else {
+			for (i = rd->deg - 1; i >= 0 && bit0; i--) {
+				e = (struct event *) rd->adj[i];
+				if (e->m == mgreen) return;
+				if (e->m == mred) {
+					for (j = e->cont.deg - 1; j >= 0; j--) {
+						c = (struct cond *) e->cont.adj[j];
+						if (c == rp->c) { x++; break; }
+					}
+				} else {
+					for (j = e->cont.deg - 1; j >= 0; j--) {
+						c = (struct cond *) e->cont.adj[j];
+						if (c == r->c) { bit0 = 0; break; }
+					}
+				}
+			}
+			for (; i >= 0; i--) {
+				e = (struct event *) rd->adj[i];
+				if (e->m == mgreen) return;
+				if (e->m == mred) {
+					for (j = e->cont.deg - 1; j >= 0; j--) {
+						c = (struct cond *) e->cont.adj[j];
+						if (c == rp->c) { x++; break; }
+					}
+				}
+			}
+		}
+		bit1 = rp->c->cnt == x;
+	} else {
+		bit1 = 1;
+		bit0 = 1;
+		if (r->c->cont.deg == 0) {
+			for (i = rd->deg - 1; i >= 0; i--) {
+				e = (struct event *) rd->adj[i];
+				if (e->m == mgreen) return;
+			}
+		} else {
+			for (i = rd->deg - 1; i >= 0 && bit0; i--) {
+				e = (struct event *) rd->adj[i];
+				if (e->m == mgreen) return;
+				if (e->m == mred) continue;
+				for (j = e->cont.deg - 1; j >= 0; j--) {
+					c = (struct cond *) e->cont.adj[j];
+					if (c == r->c) { bit0 = 0; break; }
+				}
+			}
+			for (; i >= 0; i--) {
+				e = (struct event *) rd->adj[i];
+				if (e->m == mgreen) return;
+			}
+		}
+	}
+
+	al_add (&r->co, EC_BITSET (rp, 2 * bit1 + bit0));
+	al_add (&rp->co, EC_BITSET (r, 2 * bit0 + bit1));
+}
+
+#if 0
+/* this is the original version.  Important: this function must not be inlined,
+ * since _ec_conc_last must use all available registers to be fast (it is
+ * usually the bottleneck.  The version above is an optimized one for several
+ * conditions known a priori */
+static void _ec_conc_add (struct ec *r, struct ec *rp,
+		int mblack, int mgreen, int mred)
 {
 	struct event * e;
 	struct cond *c;
@@ -370,7 +510,7 @@ static void _ec_conc_add (struct ec *r, struct ec *rp, int mblack, int mgreen,
 			for (j = e->cont.deg - 1; j >= 0; j--) {
 				c = (struct cond *) e->cont.adj[j];
 				if (c == rp->c) {
-					x += 1;
+					x++;
 					break;
 				}
 			}
@@ -389,16 +529,37 @@ static void _ec_conc_add (struct ec *r, struct ec *rp, int mblack, int mgreen,
 	al_add (&r->co, EC_BITSET (rp, 2 * bit1 + bit0));
 	al_add (&rp->co, EC_BITSET (r, 2 * bit0 + bit1));
 }
+#endif
+
+void __attribute__ ((noinline)) _ec_conc_last (struct ec *r, register int m, register int nr,
+		int mblack, int mgreen, int mred)
+{
+	register struct ec * r0;
+	register struct ec * rp;
+	register int i;
+
+	r0 = (struct ec *) r->h->ecl.adj[0];
+	ASSERT (r0);
+
+	if (m) {
+		for (i = r0->co.deg - 1; i >= 0 && nr; i--) {
+			rp = EC_PTR (r0->co.adj[i]);
+			if (rp->m == m) {
+				_ec_conc_add (r, rp, mblack, mgreen, mred);
+				nr--;
+			}
+		}
+	} else {
+		for (i = r0->co.deg - 1; i >= 0; i--) {
+			_ec_conc_add (r, EC_PTR (r0->co.adj[i]), mblack,
+					mgreen, mred);
+		}
+	}
+}
 
 void ec_conc (struct ec *r)
 {
-	int  mblack, mgreen, mred;
-
-	int nr;
-	register int i;
-	register int m;
-	register struct ec *r0;
-	register struct ec *rp;
+	int m, nr, mblack, mgreen, mred;
 
 	/* 0. we process here only generating or reading ecs. */
 	ASSERT (EC_PTR (r) == r);
@@ -431,22 +592,7 @@ void ec_conc (struct ec *r)
 	/* 6. consider conditions in co(r_0) that has been marked in
 	 * _ec_conc_intersec, or all conditions if m = 0, and include them in
 	 * co(r) and co(rp)  */
-	r0 = (struct ec *) r->h->ecl.adj[0];
-	ASSERT (r0);
-	if (m) {
-		for (i = r0->co.deg - 1; i >= 0 && nr; i--) {
-			rp = EC_PTR (r0->co.adj[i]);
-			if (rp->m == m) {
-				_ec_conc_add (r, rp, mblack, mgreen, mred);
-				nr--;
-			}
-		}
-	} else {
-		for (i = r0->co.deg - 1; i >= 0; i--) {
-			_ec_conc_add (r, EC_PTR (r0->co.adj[i]), mblack,
-					mgreen, mred);
-		}
-	}
+	_ec_conc_last (r, m, nr, mblack, mgreen, mred);
 }
 
 int ec_conc_tst (register struct ec *r, register struct ec *rp)

@@ -25,7 +25,7 @@
 #include "ec.h"
 #include "h.h"
 
-#define PRINT(args...) fprintf (stderr, ##args)
+#define PRINT(args...) fprintf (stdout, ##args)
 /* #define PRINT printf */
 
 #ifdef CONFIG_DEBUG

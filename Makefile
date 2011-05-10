@@ -37,25 +37,6 @@ e : $(TARGETS)
 prof : $(TARGETS)
 	rm gmon.out.*
 	src/main /tmp/ele4.ll_net
-	mv gmon.out gmon.out.1
-	src/main /tmp/ele4.ll_net
-	mv gmon.out gmon.out.2
-	src/main /tmp/ele4.ll_net
-	mv gmon.out gmon.out.3
-	src/main /tmp/ele4.ll_net
-	mv gmon.out gmon.out.4
-	src/main /tmp/ele4.ll_net
-	mv gmon.out gmon.out.5
-	src/main /tmp/ele4.ll_net
-	mv gmon.out gmon.out.6
-	src/main /tmp/ele4.ll_net
-	mv gmon.out gmon.out.7
-	src/main /tmp/ele4.ll_net
-	mv gmon.out gmon.out.8
-	src/main /tmp/ele4.ll_net
-	mv gmon.out gmon.out.9
-	src/main /tmp/ele4.ll_net
-	mv gmon.out gmon.out.10
 
 g : $(TARGETS)
 	gdb ./src/main
