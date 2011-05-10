@@ -217,6 +217,7 @@ static void _db_r (int spc, struct ec *r) {
 
 	int i;
 
+	ASSERT (EC_PTR (r) == r);
 	ASSERT (r);
 	ASSERT (r->c);
 	ASSERT (r->c->fp);
@@ -252,12 +253,17 @@ void db_r (struct ec *r) {
 
 void db_r2 (const char *str1, struct ec *r, const char *str2) {
 	struct ec *rp;
+	int bit0, bit1;
 
+	bit0 = EC_BIT0 (r);
+	bit1 = EC_BIT1 (r);
+	r = EC_PTR (r);
 	ASSERT (r);
 	ASSERT (r->c);
 	ASSERT (r->c->fp);
 
-	PRINT ("%s{c%d:%s, ", str1 ? str1 : "", r->c->id, r->c->fp->name);
+	PRINT ("%s%s{c%d:%s, ", str1 ? str1 : "", bit0 ? "*" : "", r->c->id,
+			r->c->fp->name);
 
 	for (rp = r; rp->h == 0; rp = rp->r2) {
 		ASSERT (rp->r1);
@@ -268,10 +274,11 @@ void db_r2 (const char *str1, struct ec *r, const char *str2) {
 			rp->r1->h->e->ft->name);
 	}
 	ASSERT (EC_ISREAD (rp) || EC_ISGEN (rp));
-	PRINT (" h%d/e%d:%s}%s",
+	PRINT (" h%d/e%d:%s}%s%s",
 		rp->h->id,
 		rp->h->e->id,
 		rp->h->e->ft->name,
+		bit1 ? "*" : "",
 		str2 ? str2 : "\n");
 }
 

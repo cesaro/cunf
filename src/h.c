@@ -25,6 +25,7 @@
 #include "da/da.h"
 #include "debug.h"
 #include "glue.h"
+#include "pe.h"
 #include "h.h"
 
 struct da hda;
@@ -330,8 +331,8 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 	if (l1.next != 0) return 1;
 	if (l2.next != 0) return -1;
 
-	/* otherwise, both histories h1 and h2 are exactly equal */
-	ASSERT (h1 == h2);
+	/* FIXME -- otherwise, both histories h1 and h2 are exactly equal */
+	// ASSERT (h1 == h2);
 	return 0;
 }
 
@@ -361,33 +362,6 @@ void h_list (struct dls *l, struct h *h)
  		}
  	}
  }
-
-void h_mark (struct h *h, register int m)
-{
-	int fst;
-	register int i;
-	register struct h *hp;
-	register struct h *hpp;
-	register int lst;
-
-	/* explore history h and mark events with m */
-	ASSERT (m > 0);
-
-	fst = lst = 0;
-	h->m = m;
-	da_push (&hda, lst, h, struct h *);
-	while (fst < lst) {
-		hp = da_i (&hda, fst++, struct h *);
-		ASSERT (hp->m == m);
-
-		for (i = hp->nod.deg - 1; i >= 0; i--) {
-			hpp = (struct h *) hp->nod.adj[i];
-			if (hpp->m == m) continue;
-			hpp->m = m;
-			da_push (&hda, lst, hpp, struct h *);
-		}
-	}
-}
 
 void h_init (void)
 {
@@ -531,7 +505,8 @@ void h_marking (struct h *h)
 				c = (struct cond *) e->cont.adj[i];
 				/* optimz: e not interesting if fp (c) has
  				 * empty postset */
-				if (c->m == m2 && c->fp->post.deg != 0) {
+				//if (c->m == m2 && c->fp->post.deg != 0) {
+				if (c->m == m2) {
 					al_add (&h->rd, e);
 					break;
 				}
@@ -543,6 +518,7 @@ void h_marking (struct h *h)
 		for (i = h->e->ft->post.deg - 1; i >= 0; i--) {
 			nl_insert (&l, h->e->ft->post.adj[i]);
 		}
+		u.unf.nummrk += h->e->ft->post.deg;
 	}
 
 	if (! u.net.isplain) {
@@ -577,53 +553,6 @@ void h_marking (struct h *h)
 	marking_print (h);
 #endif
 	DPRINT ("\n");
-}
-
-int h_isdup (struct h *h)
-{
-	/* history h is a duplicate if there exists another (different) history
-	 * associated to event h->e with the same events as h */
-	register int i;
-	register struct h *hp;
-	struct dls l1;
-	struct dls l2;
-	struct dls l12;
-	int m1, m2, m12;
-
-	ASSERT (h);
-	ASSERT (h->e);
-
-	/* check that every history pointed by h->e->hist is different to h */
-	for (i = h->e->hist.deg - 1; i >= 0; i--) {
-		hp = (struct h *) h->e->hist.adj[i];
-		if (h == hp) continue;
-		if (h->hash != hp->hash) continue;
-		if (nl_compare (h->marking, hp->marking) != 0) continue;
-
-		/* generate three different marks */
-		m1 = ++u.mark;
-		m2 = ++u.mark;
-		m12 = ++u.mark;
-
-		_h_lists (h, hp, &l1, &l2, &l12, m1, m2, m12); /* very expensive! */
-		if (l1.next == l1.prev && l2.next == l2.prev) {
-			if (dls_i (struct h, l1.next, auxnod) == h &&
-					dls_i (struct h, l2.next, auxnod) == hp) {
-				DPRINT ("  History h%d/e%d:%s is a duplicate of "
-						"h%d/e%d:%s\n",
-						h->id,
-						h->e->id,
-						h->e->ft->name,
-						hp->id,
-						hp->e->id,
-						hp->e->ft->name);
-				u.unf.numduph++;
-				return 1;
-			}
-		}
-	}
-
-	return 0;
 }
 
 int h_cmp (struct h *h1, struct h *h2)

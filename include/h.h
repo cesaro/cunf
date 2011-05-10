@@ -64,11 +64,8 @@ struct h * h_alloc (struct event * e);
 void h_free (struct h *h);
 
 void h_add (struct h * h, struct h * hp);
-int h_isdup (struct h *h);
 void h_marking (struct h *h);
-
 void h_list (struct dls *l, struct h *h);
-void h_mark (struct h *h, int m);
 int h_cmp (struct h *h1, struct h *h2);
 
 #endif

@@ -61,7 +61,7 @@ void usage (void)
 "              (extension '.ll_net') plus the suffix '.unf.dot'\n"
 "\n"
 "For more information, see http://www.lsv.ens-cachan.fr/Software/cunf/\n"
-"Branch eager r41, compiled %s\n", __DATE__);
+"Branch eager r42, compiled %s\n", __DATE__);
 
 	exit (EXIT_FAILURE);
 }
@@ -252,7 +252,6 @@ void write_dot_fancy (const char * filename)
 	}
 
 	ASSERT (enr == u.unf.numev - 1);
-	ASSERT (hnr == u.unf.numh - u.unf.numduph - 1);
 	P ("\t <br align=\"left\"/>\n");
 	P ("\t%d transitions<br align=\"left\"/>\n"
 			"\t%d places<br align=\"left\"/>\n"
@@ -263,7 +262,7 @@ void write_dot_fancy (const char * filename)
 			u.net.numpl,
 			u.unf.numev - 1,
 			u.unf.numcond,
-			u.unf.numh - u.unf.numduph - 1);
+			u.unf.numh - 1);
 #ifdef CONFIG_MCMILLAN
 	P ("\tUsing McMillan order<br align=\"left\"/>\n");
 #else
@@ -408,18 +407,16 @@ int main (int argc, char **argv)
 		"ctx(e)\t%.2f\n"
 		"pst(e)\t%.2f\n"
 
-		"allhist\t%d\n"
-		"duphist\t%d\n"
 		"cutoffs\t%d\n"
 		"net\t%s\n",
 
 		u.unf.usrtime / 1000.0,
 		u.unf.vmsize / 1024,
 
-		u.unf.numh - u.unf.numduph - 1,
+		u.unf.numh - 1,
 		u.unf.numev - 1,
 		u.unf.numcond,
-		u.unf.numh - u.unf.numduph - 1 - u.unf.numcutoffs,
+		u.unf.numh - 1 - u.unf.numcutoffs,
 
 		u.unf.numgen,
 		u.unf.numread,
@@ -435,8 +432,6 @@ int main (int argc, char **argv)
 		u.unf.numepost / (float) (u.unf.numev - 1),
 
 
-		u.unf.numh - 1,
-		u.unf.numduph,
 		u.unf.numcutoffs,
 		inpath);
 

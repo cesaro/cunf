@@ -15,6 +15,7 @@
 
 # traditional variables
 CFLAGS:=-Wall -Wextra -O3
+#CFLAGS:=-Wall -Wextra -O3 -pg
 #CFLAGS:=-Wall -Wextra -pg
 #CFLAGS:=-Wall -Wextra
 #CFLAGS:=-Wall -Wextra -g
@@ -91,6 +92,7 @@ CPP:=$(CROSS)cpp
 
 %.unf.dot : %.ll_net
 	@echo "UNF $<"
+	@#src/main $< | grep -C 16 allhist
 	@src/main $<
 
 %.time : %.ll_net

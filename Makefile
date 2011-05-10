@@ -15,7 +15,7 @@
 
 include defs.mk
 
-.PHONY: fake all g test times clean distclean
+.PHONY: fake all g test times clean distclean prof
 
 all: $(TARGETS)
 
@@ -30,6 +30,10 @@ fake :
 $(TARGETS) : % : %.o $(OBJS)
 	@echo "LD  $@"
 	@$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $^ $(LDFLAGS) 
+
+prof : $(TARGETS)
+	rm gmon.out.*
+	src/main /tmp/ele4.ll_net
 
 g : $(TARGETS)
 	gdb ./src/main

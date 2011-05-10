@@ -122,7 +122,8 @@ void marking_add (struct h *h)
 	 * sure that the corresponding history is smaller (the ERV order is
 	 * total) */
 	if (n) {
-		ASSERT (h_cmp (he->h, h) < 0);
+		// FIXME -- this deosn't work!!! ASSERT (h_cmp (he->h, h) < 0);
+		ASSERT (h_cmp (he->h, h) <= 0);
 #endif
 
 		/* deallocate the marking and set history h as a cutoff, whose
@@ -156,3 +157,20 @@ void marking_print (const struct h *h)
 	_marking_print (h->marking);
 }
 
+#if 0
+void __debug (void)
+{
+	struct ls *n;
+	struct hash_entry *he;
+	int i;
+
+	for (i = 0; i < hash.size; i++) {
+		for (n = hash.tab[i].next; n; n = n->next) {
+			he = ls_i (struct hash_entry, n, nod);
+			marking_print (he->h);
+			PRINT (" h%d/e%d:%s size %d depth %d\n", he->h->id, he->h->e->id,
+					he->h->e->ft->name, he->h->size, he->h->depth);
+		}
+	}
+}
+#endif

@@ -33,11 +33,20 @@ struct ec {
 	struct h *h;		/* history for a reading / generating ec. */
 	struct ec *r1;		/* pointers to the ec. in case of compound ec */
 	struct ec *r2;
+	struct al rd;		/* context readers (as h->rd) for compound ecs */
 };
 
 struct ec * ec_alloc (struct cond * c, struct h * h);
 struct ec * ec_alloc2 (struct ec *r1, struct ec *r2);
 int ec_included (struct ec *r, struct ec *rp);
+void ec_conc (struct ec *r);
+int ec_conc_tst (struct ec *r, struct ec *rp);
+
+#define EC_PTR(r)	((struct ec *) ((unsigned long) r & ~3))
+#define EC_BITS(r)	(((unsigned long) r) & 3)
+#define EC_BIT0(r)	(((unsigned long) r) & 1)
+#define EC_BIT1(r)	(((unsigned long) r) & 2)
+#define EC_BITSET(r,x)	((struct ec *) (((unsigned long) EC_PTR (r)) + (x)))
 
 #define EC_ISGEN(r)	((r)->h != 0 && (r)->c->pre == (r)->h->e)
 #define EC_ISREAD(r)	((r)->h != 0 && (r)->c->pre != (r)->h->e)
