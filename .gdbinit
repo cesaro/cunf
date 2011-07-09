@@ -3,5 +3,5 @@
 break breakme
 break main
 break unfold
-run test/nets/small/test1.ll_net
+run test/nets/tiny/test1.ll_net
 

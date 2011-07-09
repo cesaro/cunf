@@ -106,6 +106,32 @@ void ls_shift (struct ls * l)
 	_ls_assert (l);
 }
 
+void ls_reverse (struct ls * l)
+{
+	struct ls * prev;
+	struct ls * curr;
+	struct ls * next;
+
+	/* switch the direction of the 'next' pointer in the list */
+	ASSERT (l);
+
+	/* nothing to do if there is only zero or one elements */
+	if (l->next == 0) return;
+
+	/* search for the tail and perform the update */
+	prev = l->next;
+	curr = prev->next;
+	prev->next = 0;
+	while (curr) {
+		next = curr->next;
+		curr->next = prev;
+		prev = curr;
+		curr = next;
+	}
+	l->next = prev;
+	_ls_assert (l);
+}
+
 void ls_push (struct ls * l, struct ls * n)
 {
 	/* same as ls_insert */
