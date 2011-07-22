@@ -401,6 +401,7 @@ int main (int argc, char **argv)
 		"r(h)\t%.2f\n"
 		"s(h)\t%.2f\n"
 		"co(r)\t%.2f\n"
+		"rco(r)\t%.2f\n"
 		"mrk(h)\t%.2f\n"
 
 		"pre(e)\t%.2f\n"
@@ -425,6 +426,8 @@ int main (int argc, char **argv)
 		u.unf.numr / (float) (u.unf.numh - 1),
 		u.unf.nums / (float) (u.unf.numh - 1),
 		u.unf.numco / 
+			(float) (u.unf.numgen + u.unf.numread + u.unf.numcomp),
+		u.unf.numrco / 
 			(float) (u.unf.numgen + u.unf.numread + u.unf.numcomp),
 		u.unf.nummrk / (float) (u.unf.numh - 1),
 		u.unf.numepre / (float) (u.unf.numev - 1),

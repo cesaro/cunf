@@ -537,20 +537,18 @@ struct h * pe_pop (void)
 }
 
 #ifdef CONFIG_DEBUG
-static void __pe_debug (struct ec *r) {
-/* + Condition {c0:P12, h1/e1:T0} type G|R|C co */
-
+static void __pe_debug (struct ec *r)
+{
 	int i;
-	struct ec *rp;
 
 	db_r2 ("+ Condition ", r, " type ");
-	DPRINT ("%s co \n", EC_ISCOMP (r) ? "C" :
+	DPRINT ("%s co: \n", EC_ISCOMP (r) ? "C" :
 			EC_ISREAD (r) ? "R" : "G");
 	
-	for (i = r->co.deg - 1; i >= 0; i--) {
-		rp = (struct ec *) r->co.adj[i];
-		db_r2 ("   ", r->co.adj[i], 0);
-	}
+	for (i = r->co.deg - 1; i >= 0; i--) db_r2 ("   ", r->co.adj[i], 0);
+
+	DPRINT ("  rco:\n");
+	for (i = r->rco.deg - 1; i >= 0; i--) db_r2 ("   ", r->rco.adj[i], 0);
 }
 #else
 #define __pe_debug(r)

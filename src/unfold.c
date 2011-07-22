@@ -90,15 +90,14 @@ static void _unfold_combine (register struct ec *r)
 	ASSERT (r->c);
 	c = r->c;
 
-	/* compute those rp from co(r) which can be combined with r */
+	/* compute those rp from rco(r) which must be combined with r */
 	if (init) {
 		init = 0;
 		da_init (&l, struct ec *);
 	}
 	j = 0;
-	for (i = r->co.deg - 1; i >= 0; i--) {
-		rp = (struct ec *) r->co.adj[i];
-		if (rp->c != c || EC_ISGEN (rp) || r == rp) continue;
+	for (i = r->rco.deg - 1; i >= 0; i--) {
+		rp = (struct ec *) r->rco.adj[i];
 		if (! ec_included (r, rp)) da_push (&l, j, rp, struct ec *);
 	}
 
@@ -108,6 +107,9 @@ static void _unfold_combine (register struct ec *r)
 		ec_conc (rp);
 		pe_update_read (rp);
 	}
+
+	/* !!! */
+	al_term (&r->rco);
 }
 
 static void _unfold_enriched (struct h *h)
@@ -148,7 +150,6 @@ static void _unfold_enriched (struct h *h)
 	for (i = e->cont.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->cont.adj[i];
 		if (c->fp->post.deg == 0) continue;
-
 		r = ec_alloc (c, h);
 		u.unf.numread++;
 		ec_conc (r);

@@ -30,6 +30,7 @@ void ls_insert (struct ls * l, struct ls * n);
 void ls_append (struct ls * l, struct ls * n);
 void ls_remove (struct ls * l, struct ls * p);
 void ls_shift (struct ls * l);
+void ls_reverse (struct ls * l);
 int ls_iter (struct ls * l, int (* callback) (struct ls * n));
 void ls_print (struct ls * l, const char * heading);
 

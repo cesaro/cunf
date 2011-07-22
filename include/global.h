@@ -96,6 +96,7 @@ struct unf {
 	int numr;		/* number of pairs in the R relation */
 	int nums;		/* number of pairs in the S relation */
 	unsigned long long numco; /* number of pairs in the concurrency rel. */
+	unsigned long long numrco; /* number of pairs in r->rco arrays */
 	unsigned long long nummrk; /* number of conditions in the marking lists */
 
 	int numepost;		/* number of conditions event postsets */

@@ -44,6 +44,7 @@ void nc_create_unfolding()
 	u.unf.numr = 0;
 	u.unf.nums = 0;
 	u.unf.numco = 0;
+	u.unf.numrco = 0;
 	u.unf.nummrk = 0;
 
 	u.unf.numepost = 0;

@@ -27,12 +27,14 @@
 struct ec {
 	struct ls nod;		/* node for the list of ec. associated to c */
 	struct cond * c;	/* condition */
-	struct al co;		/* list of ec. concurrent to this ec. */
+	struct al rco;		/* concurrent ecs associated to the same c */
+	struct al co;		/* concurrent ecs associated to other c */
 	int m;			/* general purpose mark */
 
 	struct h *h;		/* history for a reading / generating ec. */
-	struct ec *r1;		/* pointers to the ec. in case of compound ec */
-	struct ec *r2;
+	struct ec *r1;
+	struct ec *r2;		/* if the ec. is compound, pointers to the
+				 * building ecs.; otherwise r1 is the ancestor */
 	struct al rd;		/* context readers (as h->rd) for compound ecs */
 };
 
@@ -48,8 +50,8 @@ int ec_conc_tst (struct ec *r, struct ec *rp);
 #define EC_BIT1(r)	(((unsigned long) r) & 2)
 #define EC_BITSET(r,x)	((struct ec *) (((unsigned long) EC_PTR (r)) + (x)))
 
-#define EC_ISGEN(r)	((r)->h != 0 && (r)->c->pre == (r)->h->e)
-#define EC_ISREAD(r)	((r)->h != 0 && (r)->c->pre != (r)->h->e)
+#define EC_ISGEN(r)	((r)->c->pre == (r)->h->e && (r)->h != 0)
+#define EC_ISREAD(r)	((r)->c->pre != (r)->h->e && (r)->h != 0)
 #define EC_ISCOMP(r)	((r)->h == 0)
 
 /* FIXME -- verify that pre(t) doesn't intersect cont(t) for any t in N */

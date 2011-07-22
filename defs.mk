@@ -92,8 +92,8 @@ CPP:=$(CROSS)cpp
 
 %.unf.dot : %.ll_net
 	@echo "UNF $<"
-	@#src/main $< | grep -C 16 allhist
-	@src/main $<
+	@src/main $< | grep -C 17 cutoffs
+	@#src/main $<
 
 %.time : %.ll_net
 	@tools/time.sh src/main $< 2>&1
