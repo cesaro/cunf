@@ -76,7 +76,7 @@ static void cuf2dot (const char * infile, const char * outfile)
 	fout = fopen (outfile, "w");
 	if (fout == 0) gl_err ("'%s': %s", outfile, strerror (errno));
 
-	/* read first three fields */
+	/* read first four fields */
 	conds = _read_int (infile, fin);
 	events = _read_int (infile, fin);
 	cutoffs = _read_int (infile, fin);
@@ -99,10 +99,9 @@ static void cuf2dot (const char * infile, const char * outfile)
 		P ("\te%-6d [label=\"%s:e%d\"];\n", i, buff, i);
 	}
 
-	/* FIXME eliminar estilos repetidos? */
 	/* read and print conditions and the flow and context relations */
 	P ("\n\t/* conditions, flow and context relations */\n");
-	P ("\tnode\t[style=filled fillcolor=gray90 shape=circle];\n");
+	P ("\tnode\t[shape=circle fillcolor=gray90];\n");
 	for (i = 1; i <= conds; i++) {
 		_read_str (infile, fin, buff, max);
 		e = _read_int (infile, fin);
@@ -119,7 +118,6 @@ static void cuf2dot (const char * infile, const char * outfile)
 			if (! e) break;
 			P ("\tc%-6d -> e%d [arrowhead=none color=red];\n", i, e);
 		}
-		P ("\n");
 	}
 	P ("}\n");
 
