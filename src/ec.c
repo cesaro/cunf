@@ -85,6 +85,7 @@ struct ec * ec_alloc (struct cond * c, struct h * h)
 	 * receives and stores the ancestor; in _pe_comb_new_hist we
 	 * explicity mark the ecs in the context and _unfold_enriched
 	 * iterates through them, calling here */
+	rp = 0;
 	if (c->pre != h->e) {
 		for (i = h->ecl.deg - 1; i >= 0; i--) {
 			rp = (struct ec *) h->ecl.adj[i];

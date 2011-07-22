@@ -90,7 +90,11 @@ CPP:=$(CROSS)cpp
 	@echo "N2D $<"
 	@test/net2dot $< > $@
 
-%.unf.dot : %.ll_net
+%.dot : %.cuf
+	@echo "C2D $<"
+	@test/cuf2dot $<
+
+%.unf.cuf : %.ll_net
 	@echo "UNF $<"
 	@src/main $< | grep -C 17 cutoffs
 	@#src/main $<

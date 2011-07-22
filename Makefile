@@ -51,43 +51,10 @@ clean :
 
 distclean : clean
 	@rm -f $(DEPS)
-	@rm -f test/nets/tiny/*.r
-	@rm -f test/nets/tiny/*.dot
-	@rm -f test/nets/tiny/*.pdf
-	
-	@rm -f test/nets/other/*.r
-	@rm -f test/nets/other/*.dot
-	@rm -f test/nets/other/*.pdf
-	
-	@rm -f test/nets/cont/small/*.r
-	@rm -f test/nets/cont/small/*.dot
-	@rm -f test/nets/cont/small/*.pdf
-	@rm -f test/nets/cont/med/*.r
-	@rm -f test/nets/cont/med/*.dot
-	@rm -f test/nets/cont/med/*.pdf
-	@rm -f test/nets/cont/large/*.r
-	@rm -f test/nets/cont/large/*.dot
-	@rm -f test/nets/cont/large/*.pdf
-	
-	@rm -f test/nets/plain/small/*.r
-	@rm -f test/nets/plain/small/*.dot
-	@rm -f test/nets/plain/small/*.pdf
-	@rm -f test/nets/plain/med/*.r
-	@rm -f test/nets/plain/med/*.dot
-	@rm -f test/nets/plain/med/*.pdf
-	@rm -f test/nets/plain/large/*.r
-	@rm -f test/nets/plain/large/*.dot
-	@rm -f test/nets/plain/large/*.pdf
-	
-	@rm -f test/nets/pr/small/*.r
-	@rm -f test/nets/pr/small/*.dot
-	@rm -f test/nets/pr/small/*.pdf
-	@rm -f test/nets/pr/med/*.r
-	@rm -f test/nets/pr/med/*.dot
-	@rm -f test/nets/pr/med/*.pdf
-	@rm -f test/nets/pr/large/*.r
-	@rm -f test/nets/pr/large/*.dot
-	@rm -f test/nets/pr/large/*.pdf
+	@find test/nets/ -name '*.r' -exec rm '{}' ';'
+	@find test/nets/ -name '*.cuf' -exec rm '{}' ';'
+	@find test/nets/ -name '*.dot' -exec rm '{}' ';'
+	@find test/nets/ -name '*.pdf' -exec rm '{}' ';'
 	@echo Mr. Proper done.
 
 -include $(DEPS)

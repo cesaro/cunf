@@ -16,14 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* test and debug */
-#define CONFIG_DEBUG
+#ifndef _OUTPUT_H_
+#define _OUTPUT_H_
 
-/* unfold order */
-#undef CONFIG_MCMILLAN
-#undef CONFIG_ERV
-#define CONFIG_ERV_MOLE
+void write_dot (const char * filename);
+void write_dot_fancy (const char * filename);
+void write_cuf (const char * filename);
 
-/* see src/nodelist.c */
-#define CONFIG_NODELIST_STEP 1024
+#endif
 
