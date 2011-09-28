@@ -285,7 +285,7 @@ void write_cuf (const char * filename)
 	struct event * e;
 	struct cond * c;
 	struct ls * n;
-	int i, j, ecff;
+	int i, ecff;
 
 	/* open file */
 	f = fopen (filename, "wb");
@@ -295,25 +295,12 @@ void write_cuf (const char * filename)
 	ls_reverse (&u.unf.events);
 	ls_reverse (&u.unf.conds);
 
-	/* re-number the events: first non-cutoffs then "cutoff events" */
-	i = 1;
+	/* count the number of cutoffs */
 	ecff = 0;
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
 		if (e->id == 0) continue;
-		for (j = e->hist.deg - 1; j >= 0; j--) {
-			if (((struct h *) e->hist.adj[j])->corr == 0) break;
-		}
-		if (j >= 0) {
-			e->id = i++;
-		} else {
-			e->id = -1;
-			ecff++;
-		}
-	}
-	for (n = u.unf.events.next; n; n = n->next) {
-		e = ls_i (struct event, n, nod);
-		if (e->id == -1) e->id = i++;
+		if (e->iscutoff) ecff++;
 	}
 	ASSERT (i - 1 == u.unf.numev - 1);
 
@@ -338,19 +325,23 @@ void write_cuf (const char * filename)
 	}
 	_write_int (filename, f, i);
 
-	/* 5. list of events */
+	/* 5. list of events, and re-number: first non-cutoffs, then cutoffs */
+	i = 1;
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
-		if (e->id > 0) _write_str (filename, f, e->ft->name);
-	}
-	for (n = u.unf.events.next; n; n = n->next) {
-		e = ls_i (struct event, n, nod);
-		if (e->id < 0) {
+		if (e->id == 0) continue;
+		if (! e->iscutoff) {
 			_write_str (filename, f, e->ft->name);
-			e->id *= -1;
+			e->id = i++;
 		}
 	}
-
+	for (n = u.unf.events.next; n; n = n->next) {
+		e = ls_i (struct event, n, nod);
+		if (e->iscutoff) {
+			_write_str (filename, f, e->ft->name);
+			e->id = i++;
+		}
+	}
 
 	/* 6. list of conditions, flow and context relation */
 	for (n = u.unf.conds.next; n; n = n->next) {

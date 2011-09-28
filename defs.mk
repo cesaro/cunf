@@ -57,6 +57,20 @@ TIME_NETS+=$(wildcard test/nets/plain/large/*.ll_net)
 TIME_NETS+=$(wildcard test/nets/cont/large/*.ll_net)
 TIME_NETS+=$(wildcard test/nets/pr/large/*.ll_net)
 
+# checking for deadlock
+DEAD_NETS:=$(wildcard test/nets/tiny/dead/*.ll_net)
+DEAD_NETS+=$(wildcard test/nets/plain/small/*.ll_net)
+#DEAD_NETS+=$(wildcard test/nets/cont/small/*.ll_net)
+#DEAD_NETS+=$(wildcard test/nets/pr/small/*.ll_net)
+
+#DEAD_NETS+=$(wildcard test/nets/plain/med/*.ll_net)
+#DEAD_NETS+=$(wildcard test/nets/cont/med/*.ll_net)
+#DEAD_NETS+=$(wildcard test/nets/pr/med/*.ll_net)
+
+#DEAD_NETS+=$(wildcard test/nets/plain/large/*.ll_net)
+#DEAD_NETS+=$(wildcard test/nets/cont/large/*.ll_net)
+#DEAD_NETS+=$(wildcard test/nets/pr/large/*.ll_net)
+
 # define the toolchain
 CROSS:=
 
@@ -73,10 +87,6 @@ CPP:=$(CROSS)cpp
 .c.o:
 	@echo "CC  $<"
 	@$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
-
-%.out : %.cml
-	@echo "CNF $<"
-	@./tools/cml2/cmlcompile.py -o $@ $<
 
 %.pdf : %.dot
 	@echo "DOT $<"
@@ -98,6 +108,28 @@ CPP:=$(CROSS)cpp
 	@echo "UNF $<"
 	@src/main $< | grep -C 17 cutoffs
 	@#src/main $<
+
+%.unf.mci : %.ll_net
+	@echo "MLE $<"
+	@mole $< -m $@
+
+%.dead1 : %.unf.mci
+	@mcsmodels $< | grep 'FALSE\|TRUE' | (read R; /bin/echo -e "$$R\t$@")
+
+%.mcs : %.mci
+	@mcsmodels $<
+
+%.dead2 : %.unf.cnf
+	@minisat $< | grep SATISFIABLE | (read R; /bin/echo -e "$$R\t$@")
+
+%.sat : %.cnf
+	minisat $<; true
+
+%.cnf : %.bc
+	time bc2cnf < $< > $@
+
+%.bc : %.cuf
+	time tools/unf2bc < $< > $@
 
 %.time : %.ll_net
 	@tools/time.sh src/main $< 2>&1

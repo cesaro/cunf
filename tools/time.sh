@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Copyright (C) 2010, 2011  Cesar Rodriguez <cesar.rodriguez@lsv.ens-cachan.fr>
 #
@@ -19,7 +19,8 @@ if [ "$#" -lt "1" ]; then
 	exit 1
 fi
 
-function output2table {
+function output2table
+{
 	REPLY=x
 	while true; do
 		read

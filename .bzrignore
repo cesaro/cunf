@@ -2,4 +2,7 @@
 *.mci
 *.pdf
 *.dot
+*.cuf
+*.bc
+*.cnf
 *.r

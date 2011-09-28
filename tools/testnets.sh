@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 function list 
 {
@@ -8,7 +8,8 @@ function list
 	find test/nets/pr/small/*.ll_net
 }
 
-function filterout {
+function filterout
+{
 	sed 's/.xml$/.ll_net/' | \
 	grep -v byzagr4 | \
 	grep -v rrr | \

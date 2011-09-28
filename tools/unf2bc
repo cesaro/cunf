@@ -1,0 +1,441 @@
+#!/usr/bin/env python
+
+import sys
+import math
+import networkx
+#import cProfile
+#import psyco
+
+class Event (object) :
+    def __init__ (self, nr, l="", pre=[], post=[], cont=[], iscutoff=False) :
+        self.nr = nr
+        self.label = l
+        self.pre = pre
+        self.post = post
+        self.cont = cont
+        self.iscutoff = iscutoff
+        self.mark = 0
+
+        for c in pre : c.post.append (self)
+        for c in post : c.pre = self
+        for c in cont : c.cont.append (self)
+
+    def __repr__ (self) :
+        return 'e%d' % self.nr
+
+    def __str__ (self) :
+        if (self.iscutoff) : s = '*'
+        else : s = ''
+        return "%se%d:%s Pre %s;  Cont %s;  Post %s" \
+                % (s, self.nr, self.label, self.pre, self.cont, self.post)
+
+class Condition (object) :
+    def __init__ (self, nr, l="", pre=None, post=[], cont=[]) :
+        self.nr = nr
+        self.label = l
+        self.pre = pre
+        self.post = post
+        self.cont = cont
+
+        if (pre) : pre.post.append (self)
+        for e in post : e.pre.append (self)
+        for e in cont : e.cont.append (self)
+
+    def __repr__ (self) :
+        return 'c%d' % self.nr
+
+    def __str__ (self) :
+        return 'c%d:%s Pre %s;  Cont %s;  Post %s' \
+                % (self.nr, self.label, repr (self.pre), self.cont, self.post)
+
+class Unfolding (object) :
+
+    def __init__ (self) :
+        self.conds = [None]
+        self.events = [None]
+        self.m0 = []
+
+    def __is_event_id (self, i) :
+        return 0 <= i < len (self.events)
+
+    def __is_cond_id (self, i) :
+        return 1 <= i < len (self.conds)
+
+    def __sane_event_id (self, i) :
+        if (self.__is_event_id (i)) : return
+        raise Exception, '%s: invalid event nr' % i
+        
+    def __sane_cond_id (self, i) :
+        if (self.__is_cond_id (i)) : return
+        raise Exception, '%s: invalid condition nr' % i
+
+    def add_cond (self, l, pre=0, post=[], cont=[]) :
+        # validate event identifiers
+        self.__sane_event_id (pre)
+        for i in post : self.__sane_event_id (i)
+        for i in cont : self.__sane_event_id (i)
+
+        # map to object references
+        po = [self.events[i] for i in post]
+        co = [self.events[i] for i in cont]
+
+        # create the new condition and register it
+        c = Condition (len (self.conds), l, self.events[pre], po, co)
+        self.conds.append (c)
+        if (pre == None) : self.m0.append (c)
+        return c
+
+    def add_event (self, l, pre=[], post=[], cont=[], iscutoff=False) :
+        # validate condition identifiers
+        for i in pre : self.__sane_cond_id (i)
+        for i in post : self.__sane_cond_id (i)
+        for i in cont : self.__sane_cond_id (i)
+
+        # map to object references
+        pr = [self.conds[i] for i in pre]
+        po = [self.conds[i] for i in post]
+        co = [self.conds[i] for i in cont]
+
+        # create the new event and register it
+        e = Event (len (self.events), l, pr, po, co, iscutoff)
+        self.events.append (e)
+        return e
+
+    def unf2dot (self, f) :
+        f.write ('digraph {\n')
+        f.write ('\t/* events */\n')
+        f.write ('\tnode\t[shape=box style=filled fillcolor=grey80];\n')
+        for e in self.events :
+            if (e == None) : continue
+            s = '\te%-6d [label="%s:e%d"' % \
+                    (e.nr, e.label, e.nr)
+            if (e.iscutoff) : s += ' shape=Msquare'
+            if (e.mark) : s += ' fillcolor=blue'
+            f.write (s + '];\n')
+
+        f.write ('\n\t/* conditions, flow and context relations */\n')
+        f.write ('\tnode\t[shape=circle fillcolor=gray95];')
+        for c in self.conds :
+            if (c == None) : continue
+            s = '\n\tc%-6d [label="%s:c%d"];' % (c.nr, c.label, c.nr)
+            if (c.pre == None) : s += ' /* initial */\n'
+            else : s += '\n\te%-6d -> c%d;\n' % (c.pre.nr, c.nr)
+
+            for e in c.post :
+                s += '\tc%-6d -> e%d;\n' % (c.nr, e.nr)
+            for e in c.cont :
+                s += '\tc%-6d -> e%d [arrowhead=none color=red];\n' \
+                        % (c.nr, e.nr)
+            f.write (s)
+        f.write ('}\n') 
+
+    def __cuf2unf_readstr (self, f, m) :
+        s = ""
+        for i in xrange (0, m) :
+            t = f.read (1)
+            if (t == '\x00') : return s
+            s += t
+        raise Exception, 'File corruption detected'
+
+    def __cuf2unf_readint (self, f) :
+        s = f.read (4)
+        if (len (s) != 4) : raise Exception, 'File corruption detected'
+        r = (ord (s[0]) << 24) + (ord (s[1]) << 16)
+        r += (ord (s[2]) << 8) + ord (s[3])
+        return r
+
+    def cuf2unf (self, f) :
+        # read first four fields
+        nrc = self.__cuf2unf_readint (f)
+        nre = self.__cuf2unf_readint (f)
+        nrf = self.__cuf2unf_readint (f)
+        m = 1 + self.__cuf2unf_readint (f)
+        #r, nrc, nre, nrf, m
+
+        # read nre event (nrf cutoff event) labels
+        for i in xrange (0, nre - nrf) :
+            self.add_event (self.__cuf2unf_readstr (f, m))
+        for i in xrange (nre - nrf, nre) :
+            l = self.__cuf2unf_readstr (f, m)
+            self.add_event (l, iscutoff=True)
+
+        # read condition labels, flow and context relations
+        for i in xrange (0, nrc) :
+            l = self.__cuf2unf_readstr (f, m)
+            pre = self.__cuf2unf_readint (f)
+            post = []
+            cont = []
+            while True :
+                e = self.__cuf2unf_readint (f)
+                if (not e) : break
+                post.append (e)
+            while True :
+                e = self.__cuf2unf_readint (f)
+                if (not e) : break
+                cont.append (e)
+#            debug (l, pre, post, cont)
+            self.add_cond (l, pre, post, cont)
+
+    def __conflicts_systematic (self, g, f) :
+        # search for all elementary circuits in g and filter out those that
+        # are contained in another one
+        cycles = networkx.algorithms.simple_cycles (g)
+#        for x in cycles: debug ('systematic: cycle', x)
+        debug ('systematic:', len (cycles), 'found; filtering out')
+        tmp = set ()
+        for x in cycles :
+            y = frozenset (x)
+#            debug ('considering', y)
+            takeit = 1
+            rem = set ()
+            for z in tmp :
+#                debug ('comparing to ', z)
+                if y <= z : rem.add (z)
+                if z <= y : takeit = 0; break
+            for z in rem : tmp.remove (z)
+#            if takeit : debug ('taking', y)
+            if takeit : tmp.add (y)
+        cycles = tmp
+        debug ('done,', len (cycles), 'cycles taken')
+#        for x in cycles: debug ('taken', x)
+
+#        # enumeration of symmetric conflicts
+#        for c in self.conds :
+#            if c == None : continue
+#            l = [e for e in c.post if not e.iscutoff]
+#            if len (l) < 2: continue
+#            s = 'y%d := ~ [2, %d] (' % (c.nr, len (l))
+#            s += ', '.join ('e%d' % e.nr for e in l)
+#            s += ');\n'
+#            f.write (s)
+#            y.append (c.nr)
+
+        # enumeration of non-asymmetric conflicts
+        s, j = '', 0
+        for x in cycles :
+            s += 'z%d := ~ AND (' % j
+            s += ', '.join ('e%d' % y for y in x)
+            s += ');\n'
+            j += 1
+        if j :
+            s += 'ASSIGN t'
+            for i in xrange (j) : s += ',z%d' % i
+            s += ';\n'
+        f.write (s)
+
+    def __conflicts_atom (self, g, f) :
+        # search for sccs
+        sccs = networkx.algorithms.strongly_connected_components (g)
+        sccs = [x for x in sccs if len (x) >= 2]
+        debug (len (sccs), 'non-trivial scc(s) of size(s):')
+        debug (', '.join (str(len (x)) for x in sccs) + '.')
+        i = 0
+        for x in sccs : i = self.__conflicts_atom_scc (g.subgraph (x), f, i)
+        if i :
+            s = ''
+            for j in xrange (i) : s += ',z%d' % j
+            f.write ('ASSIGN ' + s[1:] + ';\n\n')
+        debug ('done!')
+        
+    def __conflicts_atom_scc (self, g, f, i) :
+#        debug ('generating paxb...')
+        s = ''
+        for (x, y) in g.edges () :
+            assert (x != y)
+            s += 'z%d:=e%d&e%d=>p%dx%d;\n' % (i, x, y, x, y)
+            i += 1
+        f.write (s)
+
+#        debug ('generating paxb => ~pbxa...')
+        s = ''
+        for x in g.nodes () :
+            for y in g.nodes () :
+                if x == y : continue
+                s += 'z%d:=p%dx%d=>~p%dx%d;\n' % (i, x, y, y, x)
+                i += 1
+        f.write (s)
+
+#        debug ('generating transitivity...')
+        s = ''
+        for x in g.nodes () :
+            for y in g.nodes () :
+                if x == y : continue
+                for z in g[y] :
+                    if x == z or z == y or z in g[x] : continue
+                    s += 'z%d:=p%dx%d&p%dx%d=>p%dx%d;\n' % (i, x, y, y,
+                            z, x, z);
+                    i += 1
+        f.write (s)
+
+#        debug ('done!')
+        return i
+
+    def __conflicts_binary (self, g, f) :
+        z = 0
+        k = int (math.ceil (math.log (len (g.nodes ()), 2)))
+        for (x, y) in g.edges () :
+            f.write ('z%d := e%d & e%d => ord%dx%d;\n' % (z, x, y, x, y))
+            z += 1
+            i = k - 1
+            s = 'ord%dx%d := ' % (x, y)
+            while i > 0 :
+                s += '(e%d%d & ~e%db%d) | ((e%db%d == e%db%d) & (' % (x, i, y,
+                                i, x, i, y, i)
+                i -= 1
+            s += '(e%db0 & ~e%db0)' % (x, y)
+            s += ''.join (')' for a in xrange (k)) + ';\n'
+            f.write (s)
+
+        assert (z)
+        s = 'noconflicts := AND ('
+        s += ', '.join ('z%d' % j for j in xrange (z))
+        s += ');\n'
+        f.write (s)
+
+    def __conflicts_circuit (self, f) :
+        # build the asymmetric conflict relaton, excluding cutoffs
+        g = networkx.DiGraph ()
+        for e in self.events :
+            if e == None or e.iscutoff : continue
+            for c in e.pre :
+                if c.pre : g.add_edge (c.pre.nr, e.nr)
+                for ep in c.post :
+                    if ep != e and not ep.iscutoff :
+                        g.add_edge (ep.nr, e.nr)
+                        g.add_edge (e.nr, ep.nr)
+                for ep in c.cont : g.add_edge (ep.nr, e.nr)
+            for c in e.cont :
+                if c.pre and not c.pre.iscutoff: g.add_edge (c.pre.nr, e.nr)
+#        for (a, b) in g.edges () : debug ('edge', (a, b))
+        debug ('graph:', len (g), 'nodes,', len (g.edges()), 'edges')
+
+        # systematic enumeration of cycles
+#        self.__conflicts_systematic (g, f)
+
+        # atom based encoding
+        self.__conflicts_atom (g, f)
+
+        # partial order on integers
+#        self.__conflicts_binary (g, f)
+
+    def __configuration_circuit (self, f) :
+
+        # a configuration is free of cutoff-free cycles in the asymmetric
+        # conflict
+        debug ('generating conflict-free')
+        self.__conflicts_circuit (f)
+
+        # and causally closed
+        debug ('generating causality')
+        ll, s = [], ''
+        for e in self.events :
+            if e == None or e.iscutoff : continue
+            l = [c.pre for c in e.pre + e.cont if c.pre]
+            if not l : continue
+            s += 'cc%d := e%d => AND (' % (e.nr, e.nr)
+            s += ', '.join ('e%d' % e.nr for e in l)
+            s += ');\n'
+            ll.append (e.nr)
+        if ll :
+            s += 'ASSIGN '
+            s += ', '.join ('cc%d' % x for x in ll)
+            s += ';\n\n'
+        f.write (s)
+        debug ('done!')
+
+    def deadlock_circuit (self, f) :
+        f.write ('BC1.0\n\n')
+
+        # nothing to do if there is zero cutoffs
+        found = 0
+        for e in self.events :
+            if e and e.iscutoff : found = 1; break
+        if not found :
+            f.write ('t := T;\nASSIGN t;\n')
+            return
+
+        # models are configurations
+        self.__configuration_circuit (f)
+
+        # in which all events are disabled (including cutoffs)
+        debug ('generating deadlock')
+        d, s = set (), ''
+        for e in self.events :
+            if e == None : continue
+            s += 'd%d := OR (' % e.nr
+            s += ', '.join ('~c%d' % c.nr for c in e.pre + e.cont)
+            s += ');\n'
+            d |= set (e.pre + e.cont)
+
+        # and conditions are marked if pre and not post
+        for c in d :
+            s += 'c%d := ' % c.nr
+            s += 'e%d' % c.pre.nr if c.pre else 'T'
+            l = [e for e in c.post if not e.iscutoff]
+            if l :
+                s += ' & AND ('
+                s += ', '.join ('~e%d' % e.nr for e in l)
+                s += ')'
+            s += ';\n'
+
+        if len (self.events) >= 2 :
+            s += 'ASSIGN '
+            s += ', '.join ('d%d' % e.nr for e in self.events if e)
+            s += ';\n'
+        debug ('done!')
+        f.write (s)
+
+def test () :
+    u = Unfolding ()
+    e1 = u.add_event ('t1')
+    e2 = u.add_event ('t2', iscutoff=True)
+    assert e1.nr == 1
+    assert e2.nr == 2
+
+    c1 = u.add_cond ('p1', post=[1])
+    c2 = u.add_cond ('p2', post=[1])
+    c3 = u.add_cond ('p3', post=[2], cont=[1])
+    c4 = u.add_cond ('p4', pre=1)
+    c5 = u.add_cond ('p5', pre=1, post=[2])
+
+    assert c1.nr == 1
+    assert c2.nr == 2
+    assert c3.nr == 3
+    assert c4.nr == 4
+    assert c5.nr == 5
+
+    u.unf2dot (sys.stdout)
+    for e in u.events[1:] : debug (e)
+    for c in u.conds[1:] : debug (c)
+
+#   f = open ('/tmp/x.dot', 'w+')
+#   u.unf2dot (f)
+#   f.close ()
+#   print u.events
+#   print u.conds
+
+    for e in u.events[1:] : print e
+    for c in u.conds[1:] : print c
+
+def test1 () :
+    l = [(0, 1), (1, 2), (2, 3), (3, 0), (3, 7), (7, 0), (3, 6), (2, 5),
+        (5, 4), (4, 2), (1, 5)]
+
+    g = networkx.DiGraph (l)
+    networkx.algorithms.simple_cycles (g)
+
+def debug (*msg) :
+    s = ' '.join (str(x) for x in msg)
+    sys.stderr.write ('unf2bc: ' + s + '\n')
+
+def main () :
+    u = Unfolding ()
+    u.cuf2unf (sys.stdin)
+    u.deadlock_circuit (sys.stdout)
+
+if __name__ == '__main__' :
+#cProfile.run ('main ()')
+    main ()
+
+# vi:ts=4:sw=4:et:
+

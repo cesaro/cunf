@@ -25,6 +25,7 @@ fake :
 	@echo $(MSRCS)
 	@echo $(TEST_NETS)
 	@echo $(TIME_NETS)
+	@echo $(DEAD_NETS)
 	@echo $(DEPS)
 
 $(TARGETS) : % : %.o $(OBJS)
@@ -44,6 +45,8 @@ test : $(TEST_R) $(TEST_UNF_R)
 	@for n in $(TEST_NETS:%.ll_net=%); do diff -Na $$n.r $$n.unf.r >> t.diff; done; true;
 
 times : $(TIME_NETS:%.ll_net=%.time)
+dead1 : $(DEAD_NETS:%.ll_net=%.dead1)
+dead2 : $(DEAD_NETS:%.ll_net=%.dead2)
 
 clean :
 	@rm -f $(TARGETS) $(MOBJS) $(OBJS)
