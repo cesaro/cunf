@@ -47,6 +47,10 @@ test : $(TEST_R) $(TEST_UNF_R)
 times : $(TIME_NETS:%.ll_net=%.time)
 dead1 : $(DEAD_NETS:%.ll_net=%.dead1)
 dead2 : $(DEAD_NETS:%.ll_net=%.dead2)
+dead3 : $(DEAD_NETS:%.ll_net=%.dead3)
+
+time1 : $(DEAD_NETS:%.ll_net=%.time1)
+time2 : $(DEAD_NETS:%.ll_net=%.time2)
 
 clean :
 	@rm -f $(TARGETS) $(MOBJS) $(OBJS)
@@ -54,10 +58,14 @@ clean :
 
 distclean : clean
 	@rm -f $(DEPS)
+	@find test/nets/ -name '*.cnf' -exec rm '{}' ';'
+	@find test/nets/ -name '*.mci' -exec rm '{}' ';'
+	@find test/nets/ -name '*.bc' -exec rm '{}' ';'
 	@find test/nets/ -name '*.r' -exec rm '{}' ';'
 	@find test/nets/ -name '*.cuf' -exec rm '{}' ';'
 	@find test/nets/ -name '*.dot' -exec rm '{}' ';'
 	@find test/nets/ -name '*.pdf' -exec rm '{}' ';'
+	@#rm -f test/nets/{plain,cont,pr}/{small,med,large,huge}/*.{cnf,mci,bc,r,cuf,dot,pdf}
 	@echo Mr. Proper done.
 
 -include $(DEPS)

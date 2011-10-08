@@ -106,7 +106,8 @@ CPP:=$(CROSS)cpp
 
 %.unf.cuf : %.ll_net
 	@echo "UNF $<"
-	@src/main $< | grep -C 17 cutoffs
+	@#src/main $< | grep -C 17 cutoffs
+	@src/main $<
 	@#src/main $<
 
 %.unf.mci : %.ll_net
@@ -114,22 +115,38 @@ CPP:=$(CROSS)cpp
 	@mole $< -m $@
 
 %.dead1 : %.unf.mci
-	@mcsmodels $< | grep 'FALSE\|TRUE' | (read R; /bin/echo -e "$$R\t$@")
+	@mcsmodels $< | grep 'FALSE\|TRUE' | \
+		sed 's/FALSE/DEAD/; s/TRUE/LIVE/' | \
+		(read R; /bin/echo -e "$$R\t$@")
 
 %.mcs : %.mci
 	@mcsmodels $<
 
-%.dead2 : %.unf.cnf
-	@minisat $< | grep SATISFIABLE | (read R; /bin/echo -e "$$R\t$@")
+%.time1 : %.unf.mci
+	@tools/time.sh tools/time-mcsmodels.pl $<
 
-%.sat : %.cnf
-	minisat $<; true
+#%.dead2 : %.unf.cnf
+#	@minisat $< | grep SATISFIABLE | (read R; /bin/echo -e "$$R\t$@")
+
+%.dead2 : %.unf.cuf
+	@tools/cnmc.py dl $< | grep 'DEAD\|LIVE' | (read R; /bin/echo -e "$$R\t$@")
+
+%.dead3 : %.ll_net
+	@check pep:clp-dl $< | grep 'YES\|NO' | \
+		sed 's/Result: YES./LIVE/; s/Result: NO./DEAD/' | \
+		(read R; /bin/echo -e "$$R\t$@")
+
+%.time2 : %.unf.cnf
+	@tools/time.sh tools/time-minisat.pl $<
+
+%.cnmc : %.cuf
+	tools/cnmc.py dl $<
 
 %.cnf : %.bc
-	time bc2cnf < $< > $@
+	bc2cnf -all < $< > $@
 
 %.bc : %.cuf
-	time tools/unf2bc < $< > $@
+	tools/cnmc.py dl print $< 2> $@
 
 %.time : %.ll_net
 	@tools/time.sh src/main $< 2>&1

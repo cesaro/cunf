@@ -176,41 +176,34 @@ class Unfolding (object) :
 #            debug (l, pre, post, cont)
             self.add_cond (l, pre, post, cont)
 
-    def __conflicts_systematic (self, g, f) :
+    def __conflicts_systematic (self, f) :
+        # generate asymmetric conflict graph (with sym. conflicts)
+        g = self.__conflicts_asym_graph (True)
+
         # search for all elementary circuits in g and filter out those that
         # are contained in another one
         cycles = networkx.algorithms.simple_cycles (g)
-#        for x in cycles: debug ('systematic: cycle', x)
+#        for x in cycles: debug ('cycle', x)
         debug ('systematic:', len (cycles), 'found; filtering out')
-        tmp = set ()
+        tmp, rem = set (), set ()
         for x in cycles :
+            assert (x)
             y = frozenset (x)
-#            debug ('considering', y)
-            takeit = 1
-            rem = set ()
+            rem.clear ()
             for z in tmp :
-#                debug ('comparing to ', z)
-                if y <= z : rem.add (z)
-                if z <= y : takeit = 0; break
+                if z <= y :
+#                    debug ('discarding', z)
+                    y = None;
+                    break
+                if z > y : rem.add (z)
             for z in rem : tmp.remove (z)
-#            if takeit : debug ('taking', y)
-            if takeit : tmp.add (y)
+#            for z in rem : debug ('removing', z)
+            if y : tmp.add (y)
+#            if y : debug ('taking', y)
         cycles = tmp
         debug ('done,', len (cycles), 'cycles taken')
-#        for x in cycles: debug ('taken', x)
 
-#        # enumeration of symmetric conflicts
-#        for c in self.conds :
-#            if c == None : continue
-#            l = [e for e in c.post if not e.iscutoff]
-#            if len (l) < 2: continue
-#            s = 'y%d := ~ [2, %d] (' % (c.nr, len (l))
-#            s += ', '.join ('e%d' % e.nr for e in l)
-#            s += ');\n'
-#            f.write (s)
-#            y.append (c.nr)
-
-        # enumeration of non-asymmetric conflicts
+        # enumeration of asymmetric cycles
         s, j = '', 0
         for x in cycles :
             s += 'z%d := ~ AND (' % j
@@ -223,14 +216,45 @@ class Unfolding (object) :
             s += ';\n'
         f.write (s)
 
-    def __conflicts_atom (self, g, f) :
+    def __conflicts_atom (self, f) :
+        # encode symmetric conflicts
+        debug ('atom encoding, encoding symmetric conflicts')
+        i, s, l, tmp = 0, '', [], set ()
+        for c in self.conds :
+            if c == None : continue
+            a = frozenset ([e for e in c.post if not e.iscutoff])
+            if len (a) < 2 : continue
+            tmp.clear ()
+            for b in l :
+                if a <= b : debug ('discarding', a); a = None; break
+                if b < a : tmp.add (b)
+            for b in tmp : l.remove (b)
+            for b in tmp : debug ('removing', b)
+            if a : l.append (a)
+            if a : debug ('taking', a)
+        for a in l :
+            s += 'y%d := [0, 1] (' % i
+            s += ', '.join ('e%d' % e.nr for e in a) + ');\n'
+            i += 1
+        if i :
+            f.write (s + 'ASSIGN ')
+            s = ''
+            for a in xrange (i) : s += ', y%d' % a
+            s = s[2:] + ';\n\n'
+        f.write (s)
+
+        # generate asymmetric conflict graph (without sym. conflicts)
+        g = self.__conflicts_asym_graph (False)
+
         # search for sccs
         sccs = networkx.algorithms.strongly_connected_components (g)
         sccs = [x for x in sccs if len (x) >= 2]
         debug (len (sccs), 'non-trivial scc(s) of size(s):')
         debug (', '.join (str(len (x)) for x in sccs) + '.')
         i = 0
-        for x in sccs : i = self.__conflicts_atom_scc (g.subgraph (x), f, i)
+        for x in sccs :
+            debug (x)
+            i = self.__conflicts_atom_scc (g.subgraph (x), f, i)
         if i :
             s = ''
             for j in xrange (i) : s += ',z%d' % j
@@ -238,7 +262,7 @@ class Unfolding (object) :
         debug ('done!')
         
     def __conflicts_atom_scc (self, g, f, i) :
-#        debug ('generating paxb...')
+#        debug ('generating unit path...')
         s = ''
         for (x, y) in g.edges () :
             assert (x != y)
@@ -246,7 +270,7 @@ class Unfolding (object) :
             i += 1
         f.write (s)
 
-#        debug ('generating paxb => ~pbxa...')
+#        debug ('generating asymmetry...')
         s = ''
         for x in g.nodes () :
             for y in g.nodes () :
@@ -292,45 +316,46 @@ class Unfolding (object) :
         s += ');\n'
         f.write (s)
 
-    def __conflicts_circuit (self, f) :
+
+    def __conflicts_asym_graph (self, sym=True) :
         # build the asymmetric conflict relaton, excluding cutoffs
         g = networkx.DiGraph ()
         for e in self.events :
             if e == None or e.iscutoff : continue
             for c in e.pre :
                 if c.pre : g.add_edge (c.pre.nr, e.nr)
-                for ep in c.post :
-                    if ep != e and not ep.iscutoff :
-                        g.add_edge (ep.nr, e.nr)
-                        g.add_edge (e.nr, ep.nr)
                 for ep in c.cont : g.add_edge (ep.nr, e.nr)
+                if sym :
+                    for ep in c.post :
+                        if ep != e and not ep.iscutoff :
+                            g.add_edge (ep.nr, e.nr)
+                            g.add_edge (e.nr, ep.nr)
             for c in e.cont :
                 if c.pre and not c.pre.iscutoff: g.add_edge (c.pre.nr, e.nr)
+
+        s = 'with' if sym else 'without'
+        debug ('graph:', len (g), 'nodes,', len (g.edges()), 'edges,', s, 'sym. confl.')
 #        for (a, b) in g.edges () : debug ('edge', (a, b))
-        debug ('graph:', len (g), 'nodes,', len (g.edges()), 'edges')
-
-        # systematic enumeration of cycles
-#        self.__conflicts_systematic (g, f)
-
-        # atom based encoding
-        self.__conflicts_atom (g, f)
-
-        # partial order on integers
-#        self.__conflicts_binary (g, f)
+#        h = open ('/tmp/x.dot', 'w+')
+#        todot (g, h)
+#        h.close ()
+        return g
 
     def __configuration_circuit (self, f) :
 
         # a configuration is free of cutoff-free cycles in the asymmetric
         # conflict
         debug ('generating conflict-free')
-        self.__conflicts_circuit (f)
+#        self.__conflicts_systematic (f)
+        self.__conflicts_atom (f)
+#        self.__conflicts_binary (f)
 
         # and causally closed
         debug ('generating causality')
         ll, s = [], ''
         for e in self.events :
             if e == None or e.iscutoff : continue
-            l = [c.pre for c in e.pre + e.cont if c.pre]
+            l = set ([c.pre for c in e.pre + e.cont if c.pre])
             if not l : continue
             s += 'cc%d := e%d => AND (' % (e.nr, e.nr)
             s += ', '.join ('e%d' % e.nr for e in l)
@@ -359,16 +384,33 @@ class Unfolding (object) :
 
         # in which all events are disabled (including cutoffs)
         debug ('generating deadlock')
-        d, s = set (), ''
+        i, l, s, tmp = 0, [], '', set ()
         for e in self.events :
             if e == None : continue
-            s += 'd%d := OR (' % e.nr
-            s += ', '.join ('~c%d' % c.nr for c in e.pre + e.cont)
-            s += ');\n'
-            d |= set (e.pre + e.cont)
+            a = frozenset (e.pre + e.cont)
+            assert (a)
+            tmp.clear ()
+            for b in l :
+                if a >= b : debug ('discarding', a); a = None; break
+                if b < a : tmp.add (b)
+            for b in tmp : l.remove (b)
+            for b in tmp : debug ('removing', b)
+            if a : l.append (a)
+            if a : debug ('taking', a)
+        tmp.clear ()
+        for a in l :
+            s += 'd%d := OR (' % i
+            s += ', '.join ('~c%d' % c.nr for c in a) + ');\n'
+            tmp |= a
+            i += 1
+        if i :
+            f.write (s + 'ASSIGN ')
+            s = ''
+            for a in xrange (i) : s += ', d%d' % a
+            s = s[2:] + ';\n\n'
 
         # and conditions are marked if pre and not post
-        for c in d :
+        for c in tmp :
             s += 'c%d := ' % c.nr
             s += 'e%d' % c.pre.nr if c.pre else 'T'
             l = [e for e in c.post if not e.iscutoff]
@@ -377,13 +419,8 @@ class Unfolding (object) :
                 s += ', '.join ('~e%d' % e.nr for e in l)
                 s += ')'
             s += ';\n'
-
-        if len (self.events) >= 2 :
-            s += 'ASSIGN '
-            s += ', '.join ('d%d' % e.nr for e in self.events if e)
-            s += ';\n'
-        debug ('done!')
         f.write (s)
+        debug ('done!')
 
 def test () :
     u = Unfolding ()
@@ -423,6 +460,11 @@ def test1 () :
 
     g = networkx.DiGraph (l)
     networkx.algorithms.simple_cycles (g)
+
+def todot (g, f) :
+    f.write ('digraph {\n')
+    for (a, b) in g.edges () : f.write (repr (a) + ' -> ' + repr (b) + '\n')
+    f.write ('}\n')
 
 def debug (*msg) :
     s = ' '.join (str(x) for x in msg)
