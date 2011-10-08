@@ -39,18 +39,21 @@ prof : $(TARGETS)
 g : $(TARGETS)
 	gdb ./src/main
 
-test : $(TEST_R) $(TEST_UNF_R)
+test tests : $(TEST_NETS:%.ll_net=%.r) $(TEST_NETS:%.ll_net=%.unf.r)
 	@echo " DIF ..."
 	@echo > t.diff
 	@for n in $(TEST_NETS:%.ll_net=%); do diff -Na $$n.r $$n.unf.r >> t.diff; done; true;
 
 times : $(TIME_NETS:%.ll_net=%.time)
-dead1 : $(DEAD_NETS:%.ll_net=%.dead1)
-dead2 : $(DEAD_NETS:%.ll_net=%.dead2)
-dead3 : $(DEAD_NETS:%.ll_net=%.dead3)
+cuf : $(ALL_NETS:%.ll_net=%.unf.cuf)
+mci : $(MCI_NETS:%.ll_net=%.unf.mci)
+dl-smod : $(DEAD_NETS:%.ll_net=%.dl-smod)
+dl-clp : $(DEAD_NETS:%.ll_net=%.dl-clp)
+dl-cnmc : $(DEAD_NETS:%.ll_net=%.dl-cnmc)
 
-time1 : $(DEAD_NETS:%.ll_net=%.time1)
-time2 : $(DEAD_NETS:%.ll_net=%.time2)
+dl-time-smod : $(DEAD_NETS:%.ll_net=%.dl-time-smod)
+dl-time-cnmc : $(DEAD_NETS:%.ll_net=%.dl-time-cnmc)
+dl-time-clp : $(DEAD_NETS:%.ll_net=%.dl-time-clp)
 
 clean :
 	@rm -f $(TARGETS) $(MOBJS) $(OBJS)

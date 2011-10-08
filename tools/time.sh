@@ -36,7 +36,7 @@ function output2table
 	done
 }
 
-{ $@ 2>&1; echo "xj1234	$?"; } | output2table
+{ sh -c "$*" 2>&1; echo "xj1234	$?"; } | output2table
 
 exit 0
 

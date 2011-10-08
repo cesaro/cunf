@@ -38,38 +38,12 @@ TARGETS:=$(patsubst %.o,%,$(MOBJS))
 # dependency files
 DEPS:=$(patsubst %.o,%.d,$(OBJS) $(MOBJS))
 
-# testing
-TEST_NETS:=$(shell tools/testnets.sh)
-TEST_R:=$(patsubst %.ll_net,%.r,$(TEST_NETS))
-TEST_UNF_R:=$(patsubst %.ll_net,%.unf.r,$(TEST_NETS))
-
-# measuring times
-#TIME_NETS:=$(patsubst %.xml,%.ll_net,$(wildcard test/nets/param/*.xml))
-TIME_NETS+=$(wildcard test/nets/plain/small/*.ll_net)
-TIME_NETS+=$(wildcard test/nets/cont/small/*.ll_net)
-TIME_NETS+=$(wildcard test/nets/pr/small/*.ll_net)
-
-TIME_NETS+=$(wildcard test/nets/plain/med/*.ll_net)
-TIME_NETS+=$(wildcard test/nets/cont/med/*.ll_net)
-TIME_NETS+=$(wildcard test/nets/pr/med/*.ll_net)
-
-TIME_NETS+=$(wildcard test/nets/plain/large/*.ll_net)
-TIME_NETS+=$(wildcard test/nets/cont/large/*.ll_net)
-TIME_NETS+=$(wildcard test/nets/pr/large/*.ll_net)
-
-# checking for deadlock
-DEAD_NETS:=$(wildcard test/nets/tiny/dead/*.ll_net)
-DEAD_NETS+=$(wildcard test/nets/plain/small/*.ll_net)
-#DEAD_NETS+=$(wildcard test/nets/cont/small/*.ll_net)
-#DEAD_NETS+=$(wildcard test/nets/pr/small/*.ll_net)
-
-#DEAD_NETS+=$(wildcard test/nets/plain/med/*.ll_net)
-#DEAD_NETS+=$(wildcard test/nets/cont/med/*.ll_net)
-#DEAD_NETS+=$(wildcard test/nets/pr/med/*.ll_net)
-
-#DEAD_NETS+=$(wildcard test/nets/plain/large/*.ll_net)
-#DEAD_NETS+=$(wildcard test/nets/cont/large/*.ll_net)
-#DEAD_NETS+=$(wildcard test/nets/pr/large/*.ll_net)
+# list of nets for several tasks
+TEST_NETS:=$(shell tools/nets.sh test)
+TIME_NETS:=$(shell tools/nets.sh time)
+ALL_NETS:=$(shell tools/nets.sh no-huge)
+MCI_NETS:=$(shell tools/nets.sh mci)
+DEAD_NETS:=$(MCI_NETS)
 
 # define the toolchain
 CROSS:=
@@ -107,40 +81,36 @@ CPP:=$(CROSS)cpp
 %.unf.cuf : %.ll_net
 	@echo "UNF $<"
 	@#src/main $< | grep -C 17 cutoffs
-	@src/main $<
 	@#src/main $<
+	@src/main $< > /dev/null
 
 %.unf.mci : %.ll_net
 	@echo "MLE $<"
 	@mole $< -m $@
 
-%.dead1 : %.unf.mci
+%.dl-smod : %.unf.mci
 	@mcsmodels $< | grep 'FALSE\|TRUE' | \
 		sed 's/FALSE/DEAD/; s/TRUE/LIVE/' | \
 		(read R; /bin/echo -e "$$R\t$@")
 
-%.mcs : %.mci
-	@mcsmodels $<
+%.dl-cnmc : %.unf.cuf
+	@tools/cnmc.py dl $< | grep 'DEAD\|LIVE' | \
+		sed 's/result.//' | \
+		(read R; /bin/echo -e "$$R\t$@")
 
-%.time1 : %.unf.mci
-	@tools/time.sh tools/time-mcsmodels.pl $<
-
-#%.dead2 : %.unf.cnf
-#	@minisat $< | grep SATISFIABLE | (read R; /bin/echo -e "$$R\t$@")
-
-%.dead2 : %.unf.cuf
-	@tools/cnmc.py dl $< | grep 'DEAD\|LIVE' | (read R; /bin/echo -e "$$R\t$@")
-
-%.dead3 : %.ll_net
+%.dl-clp : %.ll_net
 	@check pep:clp-dl $< | grep 'YES\|NO' | \
 		sed 's/Result: YES./LIVE/; s/Result: NO./DEAD/' | \
 		(read R; /bin/echo -e "$$R\t$@")
 
-%.time2 : %.unf.cnf
-	@tools/time.sh tools/time-minisat.pl $<
+%.dl-time-smod : %.unf.mci
+	@tools/time.sh tools/time-mcsmodels.pl $<
 
-%.cnmc : %.cuf
-	tools/cnmc.py dl $<
+%.dl-time-cnmc : %.unf.cuf
+	@tools/time.sh tools/cnmc.py dl $<
+
+%.dl-time-clp : %.ll_net
+	@tools/time.sh 'check pep:clp-dl $< | (grep "Time needed"; /bin/echo -e "net\t$<") | sed "s/Time.*: /time\t/; s/ seconds//; s/000$$//"'
 
 %.cnf : %.bc
 	bc2cnf -all < $< > $@
