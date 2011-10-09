@@ -41,7 +41,6 @@ def parse () :
     cmd = {'dl' : 'dl', 'deadlock' : 'dl'}
     options = {'dl' : ['print', 'assert', 'verbose', 'conflicts', 'symmetric', 'disabled']}
     args = dict ()
-    db (sys.argv)
 
     # at least two arguments, the command and the input file
     if len (sys.argv) < 3 : usage ()
@@ -58,37 +57,26 @@ def parse () :
             usage ("'%s' is not an option for command '%s'" % (k, args['cmd']))
         if sep == '' : v = True
         args[k] = v
-    db (args)
+#    db (args)
     return args
 
 def output (k, v, fmt='%s') :
     print ('%s\t' + fmt) % (k, v)
 
 def start () :
-    t = time.clock ()
-    tt = time.time ()
-
     args = parse ()
     mc = cnmc.Cnmc (args)
 
     if args['cmd'] == 'dl' :
         mc.deadlock ()
 
-    t1 = time.clock ()
-    tt1 = time.time ()
-
     l = list (mc.result)
     l.sort ()
     for k in l : output (k, mc.result[k])
-    output ('total-t', t1 - t, '%.2f')
-    output ('clock-t', tt1 - tt, '%.2f')
-
+    output ('input', args['path'])
     return 0
 
 def main () :
-    sys.exit (start ())
-    return
-
     try :
         sys.exit (start ())
     except Exception, e :

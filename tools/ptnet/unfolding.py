@@ -286,7 +286,7 @@ class Unfolding (object) :
         if symm : opt += 'with symm. confl. '
         if s != None : opt += 'restricted to %d events ' % len (s)
         if cutoffs : opt += 'with cutoffs!'
-        db ('nodes', len (g), 'edges', len (g.edges()), opt)
+#        db ('nodes', len (g), 'edges', len (g.edges()), opt)
 
         return g
 

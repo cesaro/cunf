@@ -1,4 +1,5 @@
 
+import os
 import sys
 import time
 import math
@@ -48,23 +49,18 @@ class Cnmc (object) :
             raise Exception, "'%s': %s" % (opt['path'], e)
 
         t1 = time.clock ()
-        self.result['rd-t'] = t1 - t
+        self.result['read'] = t1 - t
 
     def deadlock (self) :
-        self.result = {}
-
-        t = time.clock ()
         s = self.__dl_bc ()
-        t1 = time.clock ()
-        self.result['u2bc-t'] = t1 - t
+        self.result['gen'] = time.clock ()
 
         if self.opt['print'] :
             sys.stderr.write (s)
             return
 
         m = self.__bczchaff (s)
-        t2 = time.clock ()
-        self.result['sol-t'] = t2 - t1
+        self.result['solve'] = os.times () [2]
 
         if not m :
             self.result['result'] = 'LIVE'
@@ -83,7 +79,6 @@ class Cnmc (object) :
                 self.__dl_bc_assert (conf)
 
     def __bczchaff (self, s) :
-        db ('calling the solver')
         args = ['bczchaff']
         try :
             p = subprocess.Popen (args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -92,7 +87,6 @@ class Cnmc (object) :
             print e
             print 'Probably command `bczchaff\' was not found in the PATH.'
             sys.exit (1)
-        db ('done!')
     
         p.stdin.write (s)
         p.stdin.close ()
@@ -131,11 +125,11 @@ class Cnmc (object) :
             out = self.__dl_bc_disabled_all ()
         elif self.opt['disabled'] == 'sub' :
             out = self.__dl_bc_disabled_filter_sub ()
-        self.result['dis-t'] = time.clock () - t
+        self.result['dis'] = time.clock () - t
         return out
 
     def __dl_bc_disabled_all (self) :
-        db ('encoding deadlock: all events')
+#        db ('deadlock: all')
 
         out, s, i, t = '', '', 0, set ()
         for e in self.u.events[1:] :
@@ -151,7 +145,7 @@ class Cnmc (object) :
         return out
 
     def __dl_bc_disabled_filter_sub (self) :
-        db ('encoding deadlock: subset filtering')
+#        db ('deadlock: subset')
 
         out, i, l, s, tmp = '', 0, [], '', set ()
         for e in self.u.events[1:] :
@@ -200,7 +194,7 @@ class Cnmc (object) :
     def __dl_bc_config (self) :
         '''Builds a boolean circuit whose models are configurations'''
 
-        db ('generating -%s- encoding for conflicts' % self.opt['conflicts'])
+#        db ('conflicts:', self.opt['conflicts'])
         if self.opt['conflicts'] == 'trans' :
             out = self.__dl_bc_trans ()
         elif self.opt['conflicts'] == 'binary' :
@@ -211,7 +205,6 @@ class Cnmc (object) :
             raise Exception, "'%s': unknown conflict encoding" % self.opt['conflicts']
 
         # and causally closed
-        db ('generating causality')
         l = []
         for e in self.u.events[1:] :
             if e.iscutoff : continue
@@ -225,7 +218,6 @@ class Cnmc (object) :
             out += 'ASSIGN '
             out += ','.join ('cc%d' % x for x in l)
             out += ';\n\n'
-        db ('done!')
         return out
 
     def __dl_bc_cycle (self) :
@@ -273,7 +265,7 @@ class Cnmc (object) :
         return out
 
     def __dl_bc_symm_all (self) :
-        db ('encoding symmetric conflicts: all sets')
+#        db ('symmetric conflicts: all')
         i, out = 0, ''
         for c in self.u.conds[1:] :
             l = [e for e in c.post if not e.iscutoff]
@@ -288,7 +280,7 @@ class Cnmc (object) :
         return out
 
     def __dl_bc_symm_filter_sub (self) :
-        db ('encoding symmetric conflicts: subset filtering')
+#        db ('symmetric conflicts: subset')
         i, out, l, tmp, count, avg = 0, '', [], set (), 0, 0
         for c in self.u.conds[1:] :
             a = frozenset (e for e in c.post if not e.iscutoff)
@@ -335,20 +327,20 @@ class Cnmc (object) :
         # search for sccs
         sccs = networkx.algorithms.strongly_connected_components (g)
         sccs = [x for x in sccs if len (x) >= 2]
-        db (len (sccs), 'non-trivial scc(s) of size(s):')
-        db (', '.join (str(len (x)) for x in sccs) + '.')
+#        db (len (sccs), 'non-trivial scc(s) of size(s):')
+#        db (', '.join (str(len (x)) for x in sccs) + '.')
         i = 0
         for x in sccs :
-            db ('scc', x)
+#            db ('scc', x)
             (i, out2) = self.__dl_bc_trans_scc (g.subgraph (x), i)
             out += out2
         if i :
             s = ''
             for j in xrange (i) : s += ',z%d' % j
             out += 'ASSIGN ' + s[1:] + ';\n\n'
-        db ('done!')
-        self.result['sym-t'] = t1 - t
-        self.result['asym-t'] = time.clock () - t1
+#        db ('done!')
+        self.result['sym'] = t1 - t
+        self.result['asym'] = time.clock () - t1
         return out
         
     def __dl_bc_trans_scc (self, g, i) :
