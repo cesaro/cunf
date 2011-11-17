@@ -43,15 +43,16 @@ import sys
 import time
 import signal
 import select
+import tempfile
 import subprocess
 import email.utils
 
-def runit (args, timeout=-1) :
+def runit (args, timeout=-1, sh=False) :
 #    db (args, timeout)
     try :
         p = subprocess.Popen (args, bufsize=8192, stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                preexec_fn=os.setsid)
+                preexec_fn=os.setsid, shell=sh)
     except Exception :
         return ('noexec', '')
     
@@ -371,11 +372,44 @@ class Dlcnmc :
     FIELDS = [ 'test', 'stat', 'gen', 'solve', 'result', 'sym', 'asym', 'dis']
 
     @staticmethod
+    def __run_cnf (args) :
+        f = '/tmp/trt.%d.tmp' % os.getpid ()
+        cmd = 'tools/cnmc.py dl cnf print ' + args['cuf'] + ' 2> ' + f
+        (c, s) = runit (cmd, args['timeout'], sh=True)
+        cmd = ['time', 'minisat', f]
+        (c1, s1) = runit (cmd, args['timeout'])
+        os.remove (f)
+
+        res = Trt.init_res (Dlcnmc)
+        res['test'] = Trt.subs_ext (args['cuf'], '.unf.cuf', Dlcnmc.EXT)
+        res['stat'] = '%s/%s' % (c, c1)
+        res['stdout'] = s + s1
+        res['time'] = 'na'
+        if c != 0 : return res
+        if c1 != 10 and c1 != 20 : return res
+
+        for l in s.splitlines () :
+            (k, sep, v) = l.partition ('\t')
+            if k in Dlcnmc.FIELDS : res[k] = v
+        
+        for l in s1.splitlines () :
+            if l == 'UNSATISFIABLE' :
+                res['result'] = 'LIVE'
+            elif l == 'SATISFIABLE' :
+                res['result'] = 'DEAD'
+            elif 'user' in l and 'system' in l and 'elapsed' in l :
+                (u, sep, rest) = l.partition ('user')
+                res['solve'] = u
+
+        return res
+
+    @staticmethod
     def run (args) :
         if 'cuf' not in args : usage ("Parameter 'cuf' mandatory")
-#        cmd = ['tools/cnmc.py', 'dl', 'conflicts=trans', 'symmetric=sub']
-        cmd = ['tools/cnmc.py', 'dl', 'conflicts=trans']
-        cmd.append (args['cuf'])
+        if 'cnf' in args : return Dlcnmc.__run_cnf (args)
+
+#        cmd = ['tools/cnmc.py', 'dl', 'conflicts=trans', 'symmetric=sub', args['cuf']]
+        cmd = ['tools/cnmc.py', 'dl', 'conflicts=trans', args['cuf']]
 
         t = os.times () [2]
         (c, s) = runit (cmd, args['timeout'])

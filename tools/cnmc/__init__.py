@@ -36,7 +36,7 @@ def usage (msg=None) :
     if msg :
         print msg + '\n'
     print __doc__
-    sys.exit (0)
+    sys.exit (1)
 
 def parse () :
     cmd = {'dl' : 'dl', 'deadlock' : 'dl'}
@@ -78,7 +78,6 @@ def start () :
     return 0
 
 def main () :
-    sys.exit (start ())
     try :
         sys.exit (start ())
     except Exception, e :

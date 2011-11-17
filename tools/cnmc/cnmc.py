@@ -57,14 +57,11 @@ class Cnmc (object) :
         self.result['read'] = t1 - t
 
     def deadlock (self) :
-        raise Exception, "2011/11/17 Both BC and CNF encodings don't work for contextual nets";
         if self.opt['cnf'] :
             s = self.__dl_cnf ()
         else :
             s = self.__dl_bc ()
         self.result['gen'] = time.clock ()
-
-        self.__dl_cnf_debugmodel ()
 
         if self.opt['print'] or self.opt['cnf']:
             sys.stderr.write (s)
@@ -190,10 +187,10 @@ class Cnmc (object) :
         # search for sccs
         sccs = networkx.algorithms.strongly_connected_components (g)
         sccs = [x for x in sccs if len (x) >= 2]
-        db (len (sccs), 'non-trivial scc(s) of size(s)', [len (x) for x in sccs])
+#        db (len (sccs), 'non-trivial scc(s) of size(s)', [len (x) for x in sccs])
         i = 0
         for x in sccs :
-            print 'scc', x
+#            db ('scc', x)
             self.__dl_cnf_trans_scc (g.subgraph (x))
 
     def __dl_cnf_symm_all (self) :
@@ -236,14 +233,17 @@ class Cnmc (object) :
         for c in self.u.conds[1:] :
             cls.clear ()
             if len (c.post) + len (c.cont) == 0 : continue;
-            cls.add (self.__dl_cnf_prop (c))
+            cls.add (self.__dl_cnf_prop (c.label))
             if c.pre : cls.add (- self.__dl_cnf_prop (c.pre))
             for e in c.post :
                 if not e.iscutoff : cls.add (self.__dl_cnf_prop (e))
             self.cnf_clauses.add (frozenset (cls))
 
+        trans = set ()
         for e in self.u.events[1:] :
-            cls = frozenset (- self.__dl_cnf_prop (c) for c in e.pre | e.cont)
+            if e.label in trans : continue
+            trans.add (e.label)
+            cls = frozenset (- self.__dl_cnf_prop (c.label) for c in e.pre | e.cont)
             self.cnf_clauses.add (cls)
 
     def __dl_cnf_prop (self, x) :
@@ -465,6 +465,7 @@ class Cnmc (object) :
         i = 0
         for x in sccs :
 #            db ('scc', x)
+            raise Exception, "2011/11/17 The BC encoding doesn't work for contextual nets";
             (i, out2) = self.__dl_bc_trans_scc (g.subgraph (x), i)
             out += out2
         if i :
