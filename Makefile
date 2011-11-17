@@ -44,16 +44,37 @@ test tests : $(TEST_NETS:%.ll_net=%.r) $(TEST_NETS:%.ll_net=%.unf.r)
 	@echo > t.diff
 	@for n in $(TEST_NETS:%.ll_net=%); do diff -Na $$n.r $$n.unf.r >> t.diff; done; true;
 
-times : $(TIME_NETS:%.ll_net=%.time)
-cuf : $(ALL_NETS:%.ll_net=%.unf.cuf)
-mci : $(MCI_NETS:%.ll_net=%.unf.mci)
-dl-smod : $(DEAD_NETS:%.ll_net=%.dl-smod)
-dl-clp : $(DEAD_NETS:%.ll_net=%.dl-clp)
-dl-cnmc : $(DEAD_NETS:%.ll_net=%.dl-cnmc)
+cunf.tr : $(ALL_NETS:%.ll_net=%.unf.cuf.tr)
+	@rm -f $@
+	@cat $(ALL_NETS:%.ll_net=%.unf.cuf.tr) > $@
 
-dl-time-smod : $(DEAD_NETS:%.ll_net=%.dl-time-smod)
-dl-time-cnmc : $(DEAD_NETS:%.ll_net=%.dl-time-cnmc)
-dl-time-clp : $(DEAD_NETS:%.ll_net=%.dl-time-clp)
+mole.tr : $(MCI_NETS:%.ll_net=%.unf.mci.tr)
+	@rm -f $@
+	@cat $(MCI_NETS:%.ll_net=%.unf.mci.tr) > $@
+
+dl.smod.tr : $(DEAD_NETS:%.ll_net=%.dl.smod.tr)
+	@rm -f $@
+	@cat $(DEAD_NETS:%.ll_net=%.dl.smod.tr) > $@
+
+dl.clp.tr : $(DEAD_NETS:%.ll_net=%.dl.clp.tr)
+	@rm -f $@
+	@cat $(DEAD_NETS:%.ll_net=%.dl.clp.tr) > $@
+
+dl.cnmc.tr : $(DEAD_NETS:%.ll_net=%.dl.cnmc.tr)
+	@rm -f $@
+	@cat $(DEAD_NETS:%.ll_net=%.dl.cnmc.tr) > $@
+
+dl.lola.tr : $(DEAD_NETS:%.ll_net=%.dl.lola.tr)
+	@rm -f $@
+	@cat $(DEAD_NETS:%.ll_net=%.dl.lola.tr) > $@
+
+dl.smv.tr : $(DEAD_NETS:%.ll_net=%.dl.smv.tr)
+	@rm -f $@
+	@cat $(DEAD_NETS:%.ll_net=%.dl.smv.tr) > $@
+
+dl.mcm.tr : $(DEAD_NETS:%.ll_net=%.dl.mcm.tr)
+	@rm -f $@
+	@cat $(DEAD_NETS:%.ll_net=%.dl.mcm.tr) > $@
 
 clean :
 	@rm -f $(TARGETS) $(MOBJS) $(OBJS)
@@ -68,6 +89,7 @@ distclean : clean
 	@find test/nets/ -name '*.cuf' -exec rm '{}' ';'
 	@find test/nets/ -name '*.dot' -exec rm '{}' ';'
 	@find test/nets/ -name '*.pdf' -exec rm '{}' ';'
+	@find test/nets/ -name '*.tr' -exec rm '{}' ';'
 	@#rm -f test/nets/{plain,cont,pr}/{small,med,large,huge}/*.{cnf,mci,bc,r,cuf,dot,pdf}
 	@echo Mr. Proper done.
 

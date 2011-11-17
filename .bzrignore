@@ -1,8 +1,9 @@
-*.d
 *.mci
 *.pdf
 *.dot
 *.cuf
-*.bc
 *.cnf
+*.bc
+*.tr
 *.r
+*.d

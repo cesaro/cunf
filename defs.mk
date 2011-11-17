@@ -80,46 +80,41 @@ CPP:=$(CROSS)cpp
 
 %.unf.cuf : %.ll_net
 	@echo "UNF $<"
-	@#src/main $< | grep -C 17 cutoffs
-	@#src/main $<
-	@src/main $< > /dev/null
+	@src/main $<
+
+%.unf.cuf.tr : %.ll_net
+	tools/trt.py timeout=1800 t=cunf net=$< > $@
 
 %.unf.mci : %.ll_net
 	@echo "MLE $<"
 	@mole $< -m $@
 
-%.dl-smod : %.unf.mci
-	@mcsmodels $< | grep 'FALSE\|TRUE' | \
-		sed 's/FALSE/DEAD/; s/TRUE/LIVE/' | \
-		(read R; /bin/echo -e "$$R\t$@")
+%.unf.mci.tr : %.ll_net
+	tools/trt.py timeout=1200 t=mole net=$< > $@
 
-%.dl-cnmc : %.unf.cuf
-	@tools/cnmc.py dl $< | grep 'DEAD\|LIVE' | \
-		sed 's/result.//' | \
-		(read R; /bin/echo -e "$$R\t$@")
+%.dl.smod.tr : %.unf.mci.tr
+	tools/trt.py timeout=1200 t=dl.smod mci=$(<:%.tr=%) > $@
 
-%.dl-clp : %.ll_net
-	@check pep:clp-dl $< | grep 'YES\|NO' | \
-		sed 's/Result: YES./LIVE/; s/Result: NO./DEAD/' | \
-		(read R; /bin/echo -e "$$R\t$@")
+%.dl.cnmc.tr : %.unf.cuf.tr
+	tools/trt.py timeout=600 t=dl.cnmc cuf=$(<:%.tr=%) > $@
 
-%.dl-time-smod : %.unf.mci
-	@tools/time.sh tools/time-mcsmodels.pl $<
+%.dl.clp.tr : %.unf.mci.tr
+	tools/trt.py timeout=600 t=dl.clp mci=$(<:%.tr=%) > $@
 
-%.dl-time-cnmc : %.unf.cuf
-	@tools/time.sh tools/cnmc.py dl $<
+%.dl.lola.tr : %.ll_net
+	tools/trt.py timeout=600 t=dl.lola net=$< > $@
 
-%.dl-time-clp : %.ll_net
-	@tools/time.sh 'check pep:clp-dl $< | (grep "Time needed"; /bin/echo -e "net\t$<") | sed "s/Time.*: /time\t/; s/ seconds//; s/000$$//"'
+%.dl.smv.tr : %.ll_net
+	tools/trt.py timeout=120 t=dl.smv net=$< > $@
+
+%.dl.mcm.tr : %.unf.mci.tr
+	tools/trt.py timeout=600 t=dl.mcm mci=$(<:%.tr=%) > $@
 
 %.cnf : %.bc
 	bc2cnf -all < $< > $@
 
 %.bc : %.cuf
 	tools/cnmc.py dl print $< 2> $@
-
-%.time : %.ll_net
-	@tools/time.sh src/main $< 2>&1
 
 %.info : %.ll_net
 	@test/info $< | tools/distrib.py
