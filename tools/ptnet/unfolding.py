@@ -204,8 +204,7 @@ class Unfolding (object) :
 
     def enabled2 (self, m) :
         s = set ()
-        for e in self.events :
-            if not e : continue
+        for e in self.events[1:] :
             if self.enables (m, e) : s.add (e)
         return s
 
@@ -218,7 +217,7 @@ class Unfolding (object) :
                 raise Exception, 'Cannot fire, event not enabled'
             m -= set (e.pre)
             m |= set (e.post)
-#        db ('reached', list (m))
+#        db ('reached', list (m), 'enables', self.enabled (m))
         return m
 
     def run_of (self, conf) :
@@ -282,14 +281,12 @@ class Unfolding (object) :
                     g.add_edge (c.pre, e)
 
         if s != None : g = g.subgraph (s)
-        opt = ''
-        if symm : opt += 'with symm. confl. '
-        if s != None : opt += 'restricted to %d events ' % len (s)
-        if cutoffs : opt += 'with cutoffs!'
+#        opt = ''
+#        if symm : opt += 'with symm. confl. '
+#        if s != None : opt += 'restricted to %d events ' % len (s)
+#        if cutoffs : opt += 'with cutoffs!'
 #        db ('nodes', len (g), 'edges', len (g.edges()), opt)
 
         return g
-
-
 
 # vi:ts=4:sw=4:et:

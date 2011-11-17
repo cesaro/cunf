@@ -3,6 +3,7 @@
 Where CMD is one of 
     deadlock|dl     Check for deadlocks in the model
 and OPTIONS is
+    (dl)  cnf       Generates a CNF formula instead of the boolean circuit
     (dl)  print     Print the circuit instead of invoking the sat solver on
                     it
     (dl)  assert    Verify that the deadlock is really a deadlock
@@ -39,7 +40,7 @@ def usage (msg=None) :
 
 def parse () :
     cmd = {'dl' : 'dl', 'deadlock' : 'dl'}
-    options = {'dl' : ['print', 'assert', 'verbose', 'conflicts', 'symmetric', 'disabled']}
+    options = {'dl' : ['cnf', 'print', 'assert', 'verbose', 'conflicts', 'symmetric', 'disabled']}
     args = dict ()
 
     # at least two arguments, the command and the input file
@@ -77,9 +78,11 @@ def start () :
     return 0
 
 def main () :
+    sys.exit (start ())
     try :
         sys.exit (start ())
     except Exception, e :
         print 'cnmc:', e
+    sys.exit (1)
 
 # vi:ts=4:sw=4:et:

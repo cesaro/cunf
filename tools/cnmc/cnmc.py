@@ -20,6 +20,7 @@ class Cnmc (object) :
         self.opt['verbose'] = 'verbose' in opt
 
         # deadlock options
+        self.opt['cnf'] = 'cnf' in opt
         self.opt['print'] = 'print' in opt
         self.opt['assert'] = 'assert' in opt
         if not 'conflicts' in opt : opt['conflicts'] = 'trans'
@@ -33,6 +34,10 @@ class Cnmc (object) :
         self.result = {}
         self.n = None
         self.u = ptnet.unfolding.Unfolding (self.opt['assert'])
+
+        self.cnf_prop_nr = 0
+        self.cnf_prop_tab = {}
+        self.cnf_clauses = set ()
 
         # load the model
         t = time.clock ()
@@ -52,10 +57,16 @@ class Cnmc (object) :
         self.result['read'] = t1 - t
 
     def deadlock (self) :
-        s = self.__dl_bc ()
+        raise Exception, "2011/11/17 Both BC and CNF encodings don't work for contextual nets";
+        if self.opt['cnf'] :
+            s = self.__dl_cnf ()
+        else :
+            s = self.__dl_bc ()
         self.result['gen'] = time.clock ()
 
-        if self.opt['print'] :
+        self.__dl_cnf_debugmodel ()
+
+        if self.opt['print'] or self.opt['cnf']:
             sys.stderr.write (s)
             return
 
@@ -72,11 +83,31 @@ class Cnmc (object) :
 
         self.result['result'] = 'DEAD'
         if self.opt['assert'] or self.opt['verbose'] :
-            conf = self.__dl_model2config (m)
+            conf = self.__dl_bc_model2config (m)
             if self.opt['verbose'] :
                 self.result['config'] = ' '.join (repr (e) for e in conf)
             if self.opt['assert'] :
                 self.__dl_bc_assert (conf)
+
+    def __dl_cnf_debugmodel (self) :
+        f = open ('/tmp/m')
+        t = f.read ()
+        f.close ()
+        m = []
+        var2obj = {}
+        for k in self.cnf_prop_tab :
+            if self.cnf_prop_tab[k] in var2obj : raise Exception, 'Here!'
+            var2obj[self.cnf_prop_tab[k]] = k
+        for v in t.split () :
+            n = int (v)
+            if n == 0 : break
+            if n < 0 : continue
+            obj = var2obj[n]
+            if type (obj) == type (self.u.events[1]) :
+                print 'appending', obj
+                m.append (obj)
+            assert (len (m) == 0 or not m[-1].iscutoff)
+        self.__dl_bc_assert (set (m))
 
     def __bczchaff (self, s) :
         args = ['bczchaff']
@@ -118,6 +149,108 @@ class Cnmc (object) :
         # in which all events are disabled (including cutoffs)
         out += self.__dl_bc_dead ()
         return out
+
+    def __dl_cnf (self) :
+        self.cnf_prop_nr = 0
+        self.cnf_prop_tab = {}
+        self.cnf_clauses = set ()
+
+        # nothing to do if there is zero cutoffs
+        if self.u.nr_cutoffs == 0 :
+            return 'c zero cutoffs!\np cnf 1 1\n1 0\n'
+
+        # models are configurations in which all events are disabled
+        self.__dl_cnf_config ()
+        self.__dl_cnf_dead ()
+
+        out = 'p cnf %d %d\n' % (self.cnf_prop_nr, len (self.cnf_clauses))
+        for cls in self.cnf_clauses :
+            out += ' '.join (str (x) for x in cls) + ' 0\n'
+#        for x in self.cnf_prop_tab : print '!', self.cnf_prop_tab[x], repr (x)
+        return out
+
+    def __dl_cnf_config (self) :
+        for e in self.u.events[1:] :
+            if e.iscutoff : continue
+            s = set ([c.pre for c in e.pre | e.cont if c.pre])
+            if not s : continue
+            atm = -self.__dl_cnf_prop (e)
+            for ep in s :
+                self.cnf_clauses.add (frozenset ([atm, self.__dl_cnf_prop (ep)]))
+
+        self.__dl_cnf_trans ()
+
+    def __dl_cnf_trans (self) :
+        # encode symmetric conflicts
+        self.__dl_cnf_symm_all ()
+
+        # generate asymmetric conflict graph (without sym. conflicts)
+        g = self.u.asym_graph (False)
+
+        # search for sccs
+        sccs = networkx.algorithms.strongly_connected_components (g)
+        sccs = [x for x in sccs if len (x) >= 2]
+        db (len (sccs), 'non-trivial scc(s) of size(s)', [len (x) for x in sccs])
+        i = 0
+        for x in sccs :
+            print 'scc', x
+            self.__dl_cnf_trans_scc (g.subgraph (x))
+
+    def __dl_cnf_symm_all (self) :
+        for c in self.u.conds[1:] :
+            l = [e for e in c.post if not e.iscutoff]
+            if len (l) < 2 : continue
+            for i in xrange (len (l)) :
+                atm = - self.__dl_cnf_prop (l[i])
+                for j in xrange (i + 1, len (l)) :
+                    atm1 = - self.__dl_cnf_prop (l[j])
+                    self.cnf_clauses.add (frozenset ([atm, atm1]))
+
+    def __dl_cnf_trans_scc (self, g) :
+        for e in g :
+            atm = - self.__dl_cnf_prop (e)
+            for ep in g[e] :
+                cls = frozenset ([atm, - self.__dl_cnf_prop (ep),
+                        self.__dl_cnf_prop ((e, ep))])
+                self.cnf_clauses.add (cls)
+
+        for e in g :
+            for e1 in g :
+                if e == e1 : continue
+                atm = - self.__dl_cnf_prop ((e, e1))
+                atm1 = - self.__dl_cnf_prop ((e1, e))
+                self.cnf_clauses.add (frozenset ([atm, atm1]))
+
+        for e in g :
+            for e1 in g :
+                if e == e1 : continue
+                atm = - self.__dl_cnf_prop ((e, e1))
+                for e2 in g[e1] :
+                    if e == e2 or e2 in g[e] : continue
+                    atm1 = - self.__dl_cnf_prop ((e1, e2))
+                    atm2 = self.__dl_cnf_prop ((e, e2))
+                    self.cnf_clauses.add (frozenset ([atm, atm1, atm2]))
+
+    def __dl_cnf_dead (self) :
+        cls = set ()
+        for c in self.u.conds[1:] :
+            cls.clear ()
+            if len (c.post) + len (c.cont) == 0 : continue;
+            cls.add (self.__dl_cnf_prop (c))
+            if c.pre : cls.add (- self.__dl_cnf_prop (c.pre))
+            for e in c.post :
+                if not e.iscutoff : cls.add (self.__dl_cnf_prop (e))
+            self.cnf_clauses.add (frozenset (cls))
+
+        for e in self.u.events[1:] :
+            cls = frozenset (- self.__dl_cnf_prop (c) for c in e.pre | e.cont)
+            self.cnf_clauses.add (cls)
+
+    def __dl_cnf_prop (self, x) :
+        if x in self.cnf_prop_tab : return self.cnf_prop_tab[x]
+        self.cnf_prop_nr += 1
+        self.cnf_prop_tab[x] = self.cnf_prop_nr
+        return self.cnf_prop_nr
 
     def __dl_bc_dead (self) :
         t = time.clock ()
@@ -342,7 +475,7 @@ class Cnmc (object) :
         self.result['sym'] = t1 - t
         self.result['asym'] = time.clock () - t1
         return out
-        
+
     def __dl_bc_trans_scc (self, g, i) :
 #        db ('generating unit path...')
         out = ''
@@ -399,13 +532,13 @@ class Cnmc (object) :
         m = self.u.marking_of (conf)
         assert (0 == len (self.u.enabled (m)))
 
-    def __dl_model2config (self, m) :
+    def __dl_bc_model2config (self, m) :
         conf = set ()
         for k in m :
-            if 'e' == k[0] and m[k] : conf.add (self.__dl_prop2ref (k))
+            if 'e' == k[0] and m[k] : conf.add (self.__dl_bc_prop2ref (k))
         return conf
 
-    def __dl_prop2ref (self, s) :
+    def __dl_bc_prop2ref (self, s) :
         assert (len (s))
         assert (s[0] == 'c' or s[0] == 'e')
         idx = int (s[1:])
