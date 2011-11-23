@@ -179,7 +179,10 @@ class Cnmc (object) :
 
     def __dl_cnf_trans (self) :
         # encode symmetric conflicts
-        self.__dl_cnf_symm_all ()
+        if self.opt['symmetric'] == 'n2' :
+            self.__dl_cnf_symm_all_n2 ()
+        else :
+            self.__dl_cnf_symm_all_logn ()
 
         # generate asymmetric conflict graph (without sym. conflicts)
         g = self.u.asym_graph (False)
@@ -193,7 +196,7 @@ class Cnmc (object) :
 #            db ('scc', x)
             self.__dl_cnf_trans_scc (g.subgraph (x))
 
-    def __dl_cnf_symm_all (self) :
+    def __dl_cnf_symm_all_n2 (self) :
         for c in self.u.conds[1:] :
             l = [e for e in c.post if not e.iscutoff]
             if len (l) < 2 : continue
@@ -202,6 +205,34 @@ class Cnmc (object) :
                 for j in xrange (i + 1, len (l)) :
                     atm1 = - self.__dl_cnf_prop (l[j])
                     self.cnf_clauses.add (frozenset ([atm, atm1]))
+
+    def __dl_cnf_symm_all_logn (self) :
+        l2 = []
+        for c in self.u.conds[1:] :
+            l = [e for e in c.post if not e.iscutoff]
+            if len (l) < 2 : continue
+            for i in xrange (len (l)) : l2.append (self.__dl_cnf_prop (l[i]))
+            self.__dl_cnf_symm_logn (l2)
+            del l2[:]
+
+    def __dl_cnf_symm_logn (self, l) :
+        if len (l) <= 1 : return
+        if len (l) == 2 :
+            self.cnf_clauses.add (frozenset ([-l[0], -l[1]]))
+            return
+
+        l2 = []
+        if len (l) & 1 : l2.append (l.pop ())
+        for i in xrange (0, len (l), 2) :
+            atm1 = l[i]
+            atm2 = l[i + 1]
+            atm = self.__dl_cnf_prop ((atm1, atm2))
+
+            self.cnf_clauses.add (frozenset ([-atm1, -atm2]))
+            self.cnf_clauses.add (frozenset ([-atm1, atm]))
+            self.cnf_clauses.add (frozenset ([-atm2, atm]))
+            l2.append (atm)
+        self.__dl_cnf_symm_logn (l2)
 
     def __dl_cnf_trans_scc (self, g) :
         for e in g :

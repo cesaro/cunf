@@ -9,9 +9,10 @@ and OPTIONS is
     (dl)  assert    Verify that the deadlock is really a deadlock
     (dl)  conflicts States which encoding to use for conflicts. Legal values
                     are 'trans' (default), 'binary', 'cycle'
-    (dl)  symmetric States which encoding to use for symmetric conflicts,
-                    when the 'trans' encoding is used for conflicts.  Legal
-                    values are 'all' (default), 'sub'
+    (dl)  symmetric States which encoding to use for symmetric conflicts.
+                    When the 'trans' encoding is used for conflicts, legal
+                    values are 'all' (default), 'sub'.
+                    Can also be 'n2' and 'logn' if 'cnf' option is provided
     (dl)  disabled  How to encode that no event is enabled in the model.
                     Legal values are 'all' (default), 'sub'
 
