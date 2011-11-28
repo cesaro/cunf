@@ -8,7 +8,7 @@ and OPTIONS is
                     it
     (dl)  assert    Verify that the deadlock is really a deadlock
     (dl)  conflicts States which encoding to use for conflicts. Legal values
-                    are 'trans' (default), 'binary', 'cycle'
+                    are 'trans' (default), 'binary', 'unary', 'cycle'
     (dl)  symmetric States which encoding to use for symmetric conflicts.
                     When the 'trans' encoding is used for conflicts, legal
                     values are 'all' (default), 'sub'.

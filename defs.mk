@@ -44,6 +44,7 @@ TIME_NETS:=$(shell tools/nets.sh time)
 ALL_NETS:=$(shell tools/nets.sh no-huge)
 MCI_NETS:=$(shell tools/nets.sh mci)
 DEAD_NETS:=$(MCI_NETS)
+#DEAD_NETS:=$(shell tools/nets.sh cont-no-huge)
 
 # define the toolchain
 CROSS:=
@@ -96,7 +97,7 @@ CPP:=$(CROSS)cpp
 	tools/trt.py timeout=1200 t=dl.smod mci=$(<:%.tr=%) > $@
 
 %.dl.cnmc.tr : %.unf.cuf.tr
-	tools/trt.py timeout=600 t=dl.cnmc cuf=$(<:%.tr=%) > $@
+	tools/trt.py timeout=600 t=dl.cnmc cnf cuf=$(<:%.tr=%) > $@
 
 %.dl.clp.tr : %.unf.mci.tr
 	tools/trt.py timeout=600 t=dl.clp mci=$(<:%.tr=%) > $@

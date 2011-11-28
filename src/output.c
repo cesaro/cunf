@@ -303,6 +303,7 @@ void write_cuf (const char * filename)
 		if (e->iscutoff) ecff++;
 	}
 	ASSERT (i - 1 == u.unf.numev - 1);
+	u.unf.numecffs = ecff;
 
 	/* 1. number of conditions */
 	_write_int (filename, f, u.unf.numcond);
@@ -429,6 +430,7 @@ void write_cuf_old (const char * filename)
 			ecff++;
 		}
 	}
+	u.unf.numecffs = ecff;
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
 		if (e->id < 0) e->id = i++;

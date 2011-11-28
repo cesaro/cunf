@@ -9,7 +9,7 @@ import ptnet
 
 def db (*msg) :
     s = ' '.join (str(x) for x in msg)
-    sys.stderr.write ('cnmc: ' + s + '\n')
+    sys.stdout.write ('cnmc: ' + s + '\n')
 
 class Cnmc (object) :
     def __init__ (self, opt) :
@@ -167,6 +167,7 @@ class Cnmc (object) :
         return out
 
     def __dl_cnf_config (self) :
+        # a configuration is closed
         for e in self.u.events[1:] :
             if e.iscutoff : continue
             s = set ([c.pre for c in e.pre | e.cont if c.pre])
@@ -175,14 +176,16 @@ class Cnmc (object) :
             for ep in s :
                 self.cnf_clauses.add (frozenset ([atm, self.__dl_cnf_prop (ep)]))
 
-        self.__dl_cnf_trans ()
-
-    def __dl_cnf_trans (self) :
-        # encode symmetric conflicts
+        # without symmetric conflicts
         if self.opt['symmetric'] == 'n2' :
             self.__dl_cnf_symm_all_n2 ()
         else :
             self.__dl_cnf_symm_all_logn ()
+
+        # and without loops in the asymmetric conflict
+        self.__dl_cnf_asym ()
+
+    def __dl_cnf_asym (self) :
 
         # generate asymmetric conflict graph (without sym. conflicts)
         g = self.u.asym_graph (False)
@@ -190,11 +193,14 @@ class Cnmc (object) :
         # search for sccs
         sccs = networkx.algorithms.strongly_connected_components (g)
         sccs = [x for x in sccs if len (x) >= 2]
-#        db (len (sccs), 'non-trivial scc(s) of size(s)', [len (x) for x in sccs])
+        db (len (sccs), 'non-trivial scc(s) of size(s)', [len (x) for x in sccs])
         i = 0
-        for x in sccs :
-#            db ('scc', x)
-            self.__dl_cnf_trans_scc (g.subgraph (x))
+        if self.opt['conflicts'] == 'trans' :
+            for x in sccs : self.__dl_cnf_trans_scc (g.subgraph (x))
+        elif self.opt['conflicts'] == 'binary' or self.opt['conflicts'] == 'unary' :
+            for x in sccs : self.__dl_cnf_po_scc (g.subgraph (x))
+        else :
+            raise Exception, 'conflicts=%s: not implemented' % self.opt['conflicts']
 
     def __dl_cnf_symm_all_n2 (self) :
         for c in self.u.conds[1:] :
@@ -258,6 +264,49 @@ class Cnmc (object) :
                     atm1 = - self.__dl_cnf_prop ((e1, e2))
                     atm2 = self.__dl_cnf_prop ((e, e2))
                     self.cnf_clauses.add (frozenset ([atm, atm1, atm2]))
+
+    def __dl_cnf_po_scc (self, g) :
+        if self.opt['conflicts'] == 'binary' :
+            k = int (math.ceil (math.log (len (g), 2)))
+            db ('k', k);
+            for e in g :
+                for ep in g[e] :
+                    self.__dl_cnf_bin_ord (e, ep, k)
+        else :
+            for e in g :
+                for ep in g[e] :
+                    self.__dl_cnf_una_ord (e, ep)
+
+    def __dl_cnf_bin_ord (self, a, b, k) :
+#        db (repr (a), repr (b), k)
+        ai = self.__dl_cnf_prop ((a, 0))
+        bi = self.__dl_cnf_prop ((b, 0))
+        ci = self.__dl_cnf_prop ((a, b, 0))
+
+        self.cnf_clauses.add (frozenset ([ai, -ci]))
+        self.cnf_clauses.add (frozenset ([-ai, -bi, -ci]))
+#        self.cnf_clauses.add (frozenset ([-ai, bi, ci]))
+
+        for i in xrange (1, k) :
+            ai = self.__dl_cnf_prop ((a, i))
+            bi = self.__dl_cnf_prop ((b, i))
+            ci = self.__dl_cnf_prop ((a, b, i))
+            ci1 = self.__dl_cnf_prop ((a, b, i - 1))
+
+            self.cnf_clauses.add (frozenset ([ai, -bi, -ci]))
+            self.cnf_clauses.add (frozenset ([-ai, -bi, -ci1, ci]))
+            self.cnf_clauses.add (frozenset ([-ai, -bi, ci1, -ci]))
+            self.cnf_clauses.add (frozenset ([ai, bi, -ci1, ci]))
+            self.cnf_clauses.add (frozenset ([ai, bi, ci1, -ci]))
+#            self.cnf_clauses.add (frozenset ([-ai, bi, ci]))
+
+        ai = self.__dl_cnf_prop (a)
+        bi = self.__dl_cnf_prop (b)
+        ci = self.__dl_cnf_prop ((a, b, k - 1))
+        self.cnf_clauses.add (frozenset ([-ai, -bi, ci]))
+
+    def __dl_cnf_una_ord (self, a, b) :
+        pass
 
     def __dl_cnf_dead (self) :
         cls = set ()

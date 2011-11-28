@@ -64,7 +64,7 @@ void usage (void)
 "              'dot', 'fancy'.  Default is 'cuf'.\n"
 "\n"
 "For more information, see http://www.lsv.ens-cachan.fr/Software/cunf/\n"
-"Branch eager r44, compiled %s\n", __DATE__);
+"Branch eager r53, compiled %s\n", __DATE__);
 
 	exit (EXIT_FAILURE);
 }
@@ -219,6 +219,7 @@ int main (int argc, char **argv)
 		"pst(e)\t%.2f\n"
 
 		"cutoffs\t%d\n"
+		"evcffs\t%llu\n"
 		"net\t%s\n",
 
 		u.unf.usrtime / 1000.0,
@@ -246,6 +247,7 @@ int main (int argc, char **argv)
 
 
 		u.unf.numcutoffs,
+		u.unf.numecffs,
 		inpath);
 
 	return EXIT_SUCCESS;

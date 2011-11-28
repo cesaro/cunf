@@ -52,6 +52,7 @@ while [ -n "$*" ] ; do
 	"param")	list | grep 'test.nets.param.' ;;
 	"no-huge")	list | grep -v 'test.nets.*.huge.' ;;
 	"mci")		list | filter_mci ;;
+	"cont-no-huge")	list | grep 'test.nets.cont.' | grep -v 'test.nets.*.huge.';;
 	*)		echo "Invalid identifier '$1'" >&2
 	esac
 	shift

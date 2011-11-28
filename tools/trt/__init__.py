@@ -27,6 +27,7 @@ For the 'dl.lola' test:
 
 For the 'dl.cnmc' test:
   cuf       Input .cuf file to check.
+  cnf       Generate cnf and run minisat
 
 For the 'report' driver:
   in        Input file.  '-' for standard input.
@@ -95,7 +96,7 @@ class Cunf :
     NAME = 'cunf'
     FIELDS = [ 'test', 'stat', 'time', 'mem', 'hist', 'events', 'cond',
     'noncff', 'gen', 'read', 'comp', 'r(h)', 's(h)', 'co(r)', 'rco(r)',
-    'mrk(h)', 'pre(e)', 'ctx(e)', 'pst(e)', 'cutoffs', 'time2']
+    'mrk(h)', 'pre(e)', 'ctx(e)', 'pst(e)', 'cutoffs', 'evcffs', 'time2']
 
     @staticmethod
     def run (args) :
@@ -374,7 +375,7 @@ class Dlcnmc :
     @staticmethod
     def __run_cnf (args) :
         f = '/tmp/trt.%d.tmp' % os.getpid ()
-        cmd = 'tools/cnmc.py dl cnf print ' + args['cuf'] + ' 2> ' + f
+        cmd = 'tools/cnmc.py dl cnf symmetric=logn conflicts=binary print ' + args['cuf'] + ' 2> ' + f
         (c, s) = runit (cmd, args['timeout'], sh=True)
         cmd = ['time', 'minisat', f]
         (c1, s1) = runit (cmd, args['timeout'])
