@@ -50,8 +50,8 @@ int ec_conc_tst (struct ec *r, struct ec *rp);
 #define EC_BIT1(r)	(((unsigned long) r) & 2)
 #define EC_BITSET(r,x)	((struct ec *) (((unsigned long) EC_PTR (r)) + (x)))
 
-#define EC_ISGEN(r)	((r)->c->pre == (r)->h->e && (r)->h != 0)
-#define EC_ISREAD(r)	((r)->c->pre != (r)->h->e && (r)->h != 0)
+#define EC_ISGEN(r)	((r)->h != 0 && (r)->c->pre == (r)->h->e)
+#define EC_ISREAD(r)	((r)->h != 0 && (r)->c->pre != (r)->h->e)
 #define EC_ISCOMP(r)	((r)->h == 0)
 
 /* FIXME -- verify that pre(t) doesn't intersect cont(t) for any t in N */

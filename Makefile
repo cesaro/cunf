@@ -60,9 +60,9 @@ dl.clp.tr : $(DEAD_NETS:%.ll_net=%.dl.clp.tr)
 	@rm -f $@
 	@cat $(DEAD_NETS:%.ll_net=%.dl.clp.tr) > $@
 
-dl.cnmc.tr : $(DEAD_NETS:%.ll_net=%.dl.cnmc.tr)
+dl.cnmc.tr : $(CNMC_NETS:%.ll_net=%.dl.cnmc.tr)
 	@rm -f $@
-	@cat $(DEAD_NETS:%.ll_net=%.dl.cnmc.tr) > $@
+	@cat $(CNMC_NETS:%.ll_net=%.dl.cnmc.tr) > $@
 
 dl.lola.tr : $(DEAD_NETS:%.ll_net=%.dl.lola.tr)
 	@rm -f $@

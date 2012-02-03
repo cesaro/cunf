@@ -5,6 +5,7 @@ available:
   t         Defines the name of the test (driver) to run.
   f         Comma-separated list of fields to print.
   timeout   Number of seconds before killing the test; -1 to run indefinitely.
+  reps      Number of times to repeat the test; default 1
 
 For the 'cunf' test:
   net       Input .ll_net file to unfold.
@@ -42,6 +43,7 @@ It is mandatory to provide a value for the key 't'
 import os
 import sys
 import time
+import math
 import signal
 import select
 import tempfile
@@ -375,9 +377,9 @@ class Dlcnmc :
     @staticmethod
     def __run_cnf (args) :
         f = '/tmp/trt.%d.tmp' % os.getpid ()
-        cmd = 'tools/cnmc.py dl cnf symmetric=logn conflicts=binary print ' + args['cuf'] + ' 2> ' + f
+        cmd = 'tools/cnmc.py dl cnf symmetric=linear conflicts=binary disabled=all print ' + args['cuf'] + ' 2> ' + f
         (c, s) = runit (cmd, args['timeout'], sh=True)
-        cmd = ['time', 'minisat', f]
+        cmd = ['time', 'ms_inc', f]
         (c1, s1) = runit (cmd, args['timeout'])
         os.remove (f)
 
@@ -468,10 +470,13 @@ class Trt :
         return d
 
     @staticmethod
-    def output (k, v, fmt='%s') :
+    def output (k, d, fmt='%s') :
+        v = d[k]
         if type (v) == float :
             fmt = '%.3f'
         print ('%s\t' + fmt) % (k, v)
+        k = k + ':dev'
+        if k in d : print ('%s\t%s') % (k, d[k])
 
     def run (self, args) :
         if args['t'] not in self.byname :
@@ -490,8 +495,59 @@ class Trt :
         else :
             fields = T.FIELDS
 
-        res = T.run (args)
-        for f in fields : Trt.output (f, res[f])
+        reps = int (args['reps']) if 'reps' in args else 1
+        res = []
+        for i in xrange (reps) : res.append (T.run (args))
+        res = self.aggregate (res)
+
+        for f in fields : Trt.output (f, res)
+        if reps != 1 :
+            res['__reps'] =  reps
+            Trt.output ('__reps', res)
+
+    def aggregate (self, l) :
+        if len (l) == 1 : return l[0]
+        v = {}
+        res = {}
+        for d in l :
+            for k in d :
+                x = d[k]
+                try :
+                    x = float (x)
+                    d[k] = x
+                    if k in v :
+                        v[k] = float (v[k])
+                        v[k] += x
+                    else :
+                        v[k] = x
+                except ValueError :
+                    if k not in v : v[k] = x
+                    if x != v[k] : v[k] = 'NOTUNIQ'
+        for k in v :
+            if type (v[k]) != float :
+                res[k] = v[k]
+                continue
+            avg = v[k] / len (l)
+            pdev = 0
+            ndev = 0
+            ma = float ('-inf')
+            mi = float ('inf')
+            for d in l :
+                diff = d[k] - avg
+                if diff > 0 :
+                    pdev += diff
+                else : 
+                    ndev -= diff
+                if d[k] > ma : ma = d[k]
+                if d[k] < mi : mi = d[k]
+            pdev /= len (l)
+            ndev /= len (l)
+            if pdev >= 10e-3 or ndev >= 10e-3 :
+                res['%s:dev' % k] = \
+                        'min %.3f max %.3f +ad %.3f -ad %.3f' % (mi, ma, pdev, ndev)
+            if math.floor (avg) == avg : avg =  int (avg)
+            res[k] = avg
+        return res
 
     def warn (self, f, l, m) :
         warn (f + ':' + str(l) + ': ' + m)

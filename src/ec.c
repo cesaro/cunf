@@ -468,7 +468,7 @@ void __attribute__ ((noinline)) _ec_conc_add (struct ec *r, struct ec *rp,
 			al_add (&rp->rco, r);
 			u.unf.numrco++;
 		} else {
-			al_add (&r->rco, r);
+			al_add (&r->rco, rp);
 		}
 		return;
 	}
@@ -548,7 +548,10 @@ void __attribute__ ((noinline)) _ec_conc_add (struct ec *r, struct ec *rp,
 /* this is the original version.  Important: this function must not be inlined,
  * since _ec_conc_last must use all available registers to be fast (it is
  * usually the bottleneck.  The version above is an optimized one for several
- * conditions known a priori */
+ * conditions known a priori
+ * mercredi 30 novembre 2011, 17:53:46 (UTC+0100)  The code below seems not to
+ * be in sync with the code above, to be use carefully!
+ */
 static void _ec_conc_add (struct ec *r, struct ec *rp,
 		int mblack, int mgreen, int mred)
 {
@@ -594,7 +597,7 @@ static void _ec_conc_add (struct ec *r, struct ec *rp,
 			al_add (&ranc->rco, r);
 			u.unf.numrco++;
 		} else {
-			al_add (&r->rco, r);
+			al_add (&r->rco, rp);
 		}
 	} else {
 		bit1 = rp->c->m != mred || rp->c->cnt == x;

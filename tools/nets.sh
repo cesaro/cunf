@@ -28,7 +28,9 @@ function filter_time
 function filter_mci
 {
 	grep -v 'test.nets.cont.' | \
-	grep -v 'test.nets.param.' | \
+	grep -v 'test.nets.param.[^bc].*net' | \
+	grep -v 'test.nets.param.boolc.cont.' | \
+	grep -v 'test.nets.param.cellular.cont.' | \
 	grep -v 'test.nets.tiny.' | \
 	grep -v 'test.nets.*.huge.'
 }

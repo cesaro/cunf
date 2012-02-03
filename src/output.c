@@ -247,7 +247,7 @@ static void _write_int (const char * path, FILE * f, unsigned long int i)
 	int ret;
 
 	i = htonl (i);
-	ASSERT (sizeof (unsigned long int) == 4);
+	ASSERT (sizeof (unsigned long int) == 4 || 0 == (i >> 32));
 	ret = fwrite (&i, 4, 1, f);
 	if (ret != 1) gl_err ("'%s': %s", path, strerror (errno));
 }
@@ -302,7 +302,6 @@ void write_cuf (const char * filename)
 		if (e->id == 0) continue;
 		if (e->iscutoff) ecff++;
 	}
-	ASSERT (i - 1 == u.unf.numev - 1);
 	u.unf.numecffs = ecff;
 
 	/* 1. number of conditions */

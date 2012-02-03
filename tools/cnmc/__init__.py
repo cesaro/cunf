@@ -79,6 +79,7 @@ def start () :
     return 0
 
 def main () :
+#    sys.exit (start ())
     try :
         sys.exit (start ())
     except Exception, e :
