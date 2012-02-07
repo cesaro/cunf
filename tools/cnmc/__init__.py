@@ -3,19 +3,7 @@
 Where CMD is one of 
     deadlock|dl     Check for deadlocks in the model
 and OPTIONS is
-    (dl)  cnf       Generates a CNF formula instead of the boolean circuit
-    (dl)  print     Print the circuit instead of invoking the sat solver on
-                    it
     (dl)  assert    Verify that the deadlock is really a deadlock
-    (dl)  conflicts States which encoding to use for conflicts. Legal values
-                    are 'trans' (default), 'binary', 'unary', 'cycle'
-    (dl)  symmetric States which encoding to use for symmetric conflicts.
-                    When the 'trans' encoding is used for conflicts, legal
-                    values are 'all' (default), 'sub'.
-                    Can also be 'n2' and 'logn' if 'cnf' option is provided
-    (dl)  disabled  How to encode that no event is enabled in the model.
-                    Legal values are 'all' (default), 'sub'
-
     (all) verbose   be more verbose
 and PATH is the path to a .cuf file, or '-' for standard input
 '''
@@ -41,7 +29,7 @@ def usage (msg=None) :
 
 def parse () :
     cmd = {'dl' : 'dl', 'deadlock' : 'dl'}
-    options = {'dl' : ['cnf', 'print', 'assert', 'verbose', 'conflicts', 'symmetric', 'disabled']}
+    options = {'dl' : ['assert', 'verbose']}
     args = dict ()
 
     # at least two arguments, the command and the input file
