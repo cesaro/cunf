@@ -8,26 +8,41 @@ def db (*msg) :
     sys.stdout.write ('cnmc: ' + s + '\n')
 
 class Event (object) :
-    def __init__ (self, nr, l="", pre=set(), post=set(), cont=set(), iscutoff=False) :
+    def __init__ (self, nr, l="", pre=set(), post=set(), cont=set(),
+            white=True, gray=False) :
         self.nr = nr
         self.label = l
         self.pre = pre
         self.post = post
         self.cont = cont
-        self.iscutoff = iscutoff
+        self.isblack = not white and not gray
+        self.iswhite = white
+        self.isgray = gray
         self.mark = 0
         self.count = 0
+        #db ('Event', nr, l, pre, post, cont, 'white', white, 'gray', gray)
 
         for c in pre : c.post.add (self)
         for c in post : c.pre = self
         for c in cont : c.cont.add (self)
 
     def __repr__ (self) :
-        s = '*' if (self.iscutoff) else ''
+        if self.isblack :
+            s = '*'
+        elif self.isgray :
+            s = '+'
+        else :
+            s = ''
+
         return '%se%d:%s' % (s, self.nr, self.label)
 
     def __str__ (self) :
-        s = '*' if (self.iscutoff) else ''
+        if self.isblack :
+            s = '*'
+        elif self.isgray :
+            s = '+'
+        else :
+            s = ''
         return "%se%d:%s Pre %s;  Cont %s;  Post %s" \
                 % (s, self.nr, self.label, self.pre, self.cont, self.post)
 
@@ -58,7 +73,8 @@ class Unfolding (object) :
         self.conds = [None]
         self.events = [None]
         self.m0 = set ()
-        self.nr_cutoffs = 0
+        self.nr_black = 0
+        self.nr_gray = 0
         self.sanity_check = sanity_check
         self.mark = 1
 
@@ -94,7 +110,7 @@ class Unfolding (object) :
         if (pre == 0) : self.m0.add (c)
         return c
 
-    def add_event (self, l, pre=[], post=[], cont=[], iscutoff=False) :
+    def add_event (self, l, pre=[], post=[], cont=[], white=True, gray=False) :
         # validate condition identifiers
         if self.sanity_check :
             for i in pre : self.__sane_cond_id (i)
@@ -105,12 +121,12 @@ class Unfolding (object) :
         pr = set(self.conds[i] for i in pre)
         po = set(self.conds[i] for i in post)
         co = set(self.conds[i] for i in cont)
-        #db ('new event', l, pre, post, cont, 'cutoff', iscutoff)
 
         # create the new event and register it
-        e = Event (len (self.events), l, pr, po, co, iscutoff)
+        e = Event (len (self.events), l, pr, po, co, white, gray)
         self.events.append (e)
-        if iscutoff : self.nr_cutoffs += 1
+        if gray : self.nr_gray += 1
+        if not white and not gray : self.nr_black += 1
         return e
 
     def rem_cond (self, nr) :
@@ -135,6 +151,8 @@ class Unfolding (object) :
         for c in e.pre : c.post.remove (e)
         for c in e.cont : c.cont.remove (e)
         for c in e.post : c.pre = None
+        if e.isblack : self.nr_black -= 1
+        if e.isgray : self.nr_gray -= 1
         del e
         if nr != len (self.events) - 1 :
             db ('rem_event: ultimo antes del cambio', self.events[-1])
@@ -195,12 +213,17 @@ class Unfolding (object) :
     def __write_dot (self, f, m=0, prefx='', full=True) :
         if full : f.write ('digraph {\n')
         f.write ('\t/* events */\n')
-        f.write ('\tnode\t[shape=box style=filled fillcolor=grey80];\n')
+        f.write ('\tnode\t[shape=box style=filled fillcolor=gray80];\n')
         for e in self.events :
             if e == None or (m != 0 and e.mark != m) : continue
-            s = '\t%se%-6d [label="%s:e%d"' % \
-                    (prefx, e.nr, e.label, e.nr)
-            if (e.iscutoff) : s += ' shape=Msquare'
+            star = ''
+            if e.isgray :
+                star = '+'
+            elif e.isblack :
+                star = '*'
+            s = '\t%se%-6d [label="%s%s:e%d"' % \
+                    (prefx, e.nr, star, e.label, e.nr)
+            if e.isblack or e.isgray : s += ' shape=Msquare'
 #            if (e.mark) : s += ' fillcolor=blue'
             f.write (s + '];\n')
 
@@ -232,30 +255,37 @@ class Unfolding (object) :
             if (len (t) == 0) : break
             if (t == '\x00') : return s
             s += t
-        raise Exception, 'Corrupted .cuf file'
+        raise Exception, 'Corrupted CUF file'
 
     def __cuf2unf_readint (self, f) :
         s = f.read (4)
-        if (len (s) != 4) : raise Exception, 'Corrupted .cuf file'
+        if (len (s) != 4) : raise Exception, 'Corrupted CUF file'
         r = (ord (s[0]) << 24) + (ord (s[1]) << 16)
         r += (ord (s[2]) << 8) + ord (s[3])
         return r
 
     def read (self, f, fmt='cuf') :
         if fmt != 'cuf' : raise Exception, "'%s': unknown input format" % fmt
+        mag = self.__cuf2unf_readint (f)
+        if mag != 0x43554602 : raise Exception, "'%s': not a CUF02 file" % fmt
+
         # read first four fields
         nrc = self.__cuf2unf_readint (f)
         nre = self.__cuf2unf_readint (f)
-        nrf = self.__cuf2unf_readint (f)
+        nrw = self.__cuf2unf_readint (f)
+        nrg = self.__cuf2unf_readint (f)
         m = 1 + self.__cuf2unf_readint (f)
         #r, nrc, nre, nrf, m
 
-        # read nre event (nrf cutoff event) labels
-        for i in xrange (0, nre - nrf) :
+        # read nre event labels
+        for i in xrange (nrw) :
             self.add_event (self.__cuf2unf_readstr (f, m))
-        for i in xrange (nre - nrf, nre) :
+        for i in xrange (nrg) :
             l = self.__cuf2unf_readstr (f, m)
-            self.add_event (l, iscutoff=True)
+            self.add_event (l, white=False, gray=True)
+        for i in xrange (nre - nrg - nrw) :
+            l = self.__cuf2unf_readstr (f, m)
+            self.add_event (l, white=False, gray=False)
 
         # read condition labels, flow and context relations
         for i in xrange (0, nrc) :
@@ -275,8 +305,8 @@ class Unfolding (object) :
             self.add_cond (l, pre, post, cont)
         if self.sanity_check :
             for e in self.events[1:] :
-                if not e.pre :
-                    raise Exception, 'Event e%d has empty preset' % e.nr
+                if not e.pre and not e.cont :
+                    raise Exception, 'Event e%d has empty preset+context' % e.nr
 
     def enables (self, m, e) :
         return e.pre | e.cont <= m
@@ -354,24 +384,24 @@ class Unfolding (object) :
         g = networkx.DiGraph ()
         u = self.events[1:] if s == None else s
         for e in u :
-            if not cutoffs and e.iscutoff : continue
+            if not cutoffs and e.isblack : continue
             for c in e.pre :
                 if c.pre : g.add_edge (c.pre, e, color=1)
                 for ep in c.cont : self.__red_edge (g, ep, e, 2)
                 if symm :
                     for ep in c.post :
-                        if ep != e and (cutoffs or not ep.iscutoff) :
+                        if ep != e and (cutoffs or not ep.isblack) :
                             g.add_edge (ep, e, color=1)
                             g.add_edge (e, ep, color=1)
             for c in e.cont :
-                if c.pre and (cutoffs or not c.pre.iscutoff):
+                if c.pre and (cutoffs or not c.pre.isblack):
                     g.add_edge (c.pre, e, color=1)
 
         if s != None : g = g.subgraph (s)
 #        opt = ''
 #        if symm : opt += 'with symm. confl. '
 #        if s != None : opt += 'restricted to %d events ' % len (s)
-#        if cutoffs : opt += 'with cutoffs!'
+#        if cutoffs : opt += 'with cutoffs (black)!'
 #        db ('nodes', len (g), 'edges', len (g.edges()), opt)
 
         return g
@@ -380,6 +410,9 @@ class Unfolding (object) :
         g.add_edge (u, v)
         if not 'color' in g[u][v] or g[u][v]['color'] == 2 :
             g[u][v]['color'] = c
+
+    def stats_print (f, k, v, fmt='%s') :
+        f.write (fmt + '\t%s\n') % (v, k)
 
     def stats (self, f) :
         po = 0.0
@@ -394,11 +427,11 @@ class Unfolding (object) :
             po += len (e.post)
             pre += len (e.pre)
             co += len (e.cont)
-            if not e.iscutoff: poc += len (e.post)
+            if not e.isblack: wgpo += len (e.post)
 
             succ = set ()
             for c in e.post : succ |= c.post
-            succ = set (e for e in succ if not e.iscutoff)
+            succ = set (e for e in succ if not e.isblack)
             succlen += len (succ)
 
             if len (succ) == 0 :
@@ -412,38 +445,47 @@ class Unfolding (object) :
                 if len (ep.pre) > 2: found = True
             if not found : succpre2 += 1
 
-        f.write ('event post %.3f\n' % (po / len (self.events[1:])))
-        f.write ('event pre %.3f\n' % (pre / len (self.events[1:])))
-        f.write ('event cont %.3f\n' % (co / len (self.events[1:])))
-        f.write ('noncutoffevent post %.3f\n' % (poc / (len (self.events[1:]) - self.nr_cutoffs)))
-        f.write ('event noncutoffsucc %.3f\n' % (succlen / len (self.events[1:])))
-        f.write ('event noncutoffsucc=0 %.1f%%\n' % (succ0 * 100 / len (self.events[1:])))
-        f.write ('event noncutoffsucc.pre=1 %.1f%%\n' % (succpre1 * 100 / len (self.events[1:])))
-        f.write ('event noncutoffsucc.pre<=2 %.1f%%\n' % (succpre2 * 100 / len (self.events[1:])))
+        self.stats_print (f, po / len (self.events[1:]), 'avg(post(e))')
+        self.stats_print (f, pre / len (self.events[1:]), 'avg(pre(e))')
+        self.stats_print (f, co / len (self.events[1:]), 'avg(cont(e))')
+        self.stats_print (f, wgpo / (len (self.events[1:]) - self.nr_black), 'avg(post(e)) for non-black e')
+        f.write ('event nonblacksucc %.3f\n' % (succlen / len (self.events[1:])))
+        f.write ('event nonblacksucc=0 %.1f%%\n' % (succ0 * 100 / len (self.events[1:])))
+        f.write ('event nonblacksucc.pre=1 %.1f%%\n' % (succpre1 * 100 / len (self.events[1:])))
+        f.write ('event nonblacksucc.pre<=2 %.1f%%\n' % (succpre2 * 100 / len (self.events[1:])))
             
         po = 0.0
-        po0 = 0.0
-        po1 = 0.0
-        poc = 0.0
         pre = 0.0
         co = 0.0
+        po0 = 0.0
+        po1 = 0.0
+        wgpo = 0.0
+        top10 = []
         for c in self.conds[1:] :
             po += len (c.post)
             if c.pre != None : pre += 1
             co += len (c.cont)
-            poc += len ([e for e in c.post if not e.iscutoff])
+            k = len ([e for e in c.post if not e.isblack])
+            wgpo += k
+            top10.append ((k, len (c.post), c))
             if len (c.post) == 0 : po0 += 1
             if len (c.post) == 1 : po1 += 1
 
-        f.write ('cond pre %.3f\n' % (pre / len (self.conds[1:])))
-        f.write ('cond cont %.3f\n' % (co / len (self.conds[1:])))
-        f.write ('cond post %.3f\n' % (po / len (self.conds[1:])))
+        self.stats_print (f, pre / len (self.conds[1:]), 'avg(pre(c))')
+        self.stats_print (f, po / len (self.conds[1:]), 'avg(post(c))')
+        self.stats_print (f, co / len (self.conds[1:]), 'avg(cont(c))')
+        self.stats_print (f, poc / len (self.conds[1:]), 'avg(cont(c))')
+
         f.write ('cond post (without cffs) %.3f\n' % (poc / len (self.conds[1:])))
         per0 = 100.0 * po0 / len (self.conds[1:])
         per1 = 100.0 * po1 / len (self.conds[1:])
         f.write ('cond post=0 %.1f%%\n' % per0)
         f.write ('cond post=1 %.1f%%\n' % per1)
         f.write ('cond post>1 %.1f%%\n' % (100.0 - per0 - per1))
+        top10.sort ()
+        top10.reverse ()
+        del top10[40:]
+        f.write ('cond post top10 (postw/black, post, e): %s\n' % top10)
 
         ca = 0.0
         for e in self.events[1:] :
@@ -543,5 +585,14 @@ def test2 () :
     items = set ([u.events[1]])
 
     u.write (f1, 'ctxdot', items, 3)
+
+def test3 () :
+    u = Unfolding (True)
+    u.read (sys.stdin, fmt='cuf')
+    u.write (sys.stdout, fmt='dot')
+    sys.exit (0)
+
+if __name__ == '__main__' :
+    test3 ()
 
 # vi:ts=4:sw=4:et:

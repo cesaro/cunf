@@ -46,6 +46,9 @@ void nc_create_unfolding()
 	u.unf.numco = 0;
 	u.unf.numrco = 0;
 	u.unf.nummrk = 0;
+	u.unf.numeblack = 0;
+	u.unf.numegray = 0;
+	u.unf.numewhite = 0;
 
 	u.unf.numepost = 0;
 	u.unf.numecont = 0;

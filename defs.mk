@@ -97,7 +97,10 @@ CPP:=$(CROSS)cpp
 	tools/trt.py timeout=1200 t=dl.smod mci=$(<:%.tr=%) > $@
 
 %.dl.cnmc.tr : %.unf.cuf.tr
-	tools/trt.py timeout=900 reps=5 t=dl.cnmc cnf cuf=$(<:%.tr=%) > $@
+	tools/trt.py timeout=900 reps=10 t=dl.cnmc cnf cuf=$(<:%.tr=%) > $@
+
+%.dl.cndc.tr : %.unf.cuf.tr
+	tools/trt.py timeout=900 reps=10 t=dl.cndc cuf=$(<:%.tr=%) > $@
 
 %.dl.clp.tr : %.unf.mci.tr
 	tools/trt.py timeout=900 reps=10 t=dl.clp mci=$(<:%.tr=%) > $@

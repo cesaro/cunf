@@ -14,7 +14,7 @@ def db (*msg) :
 class Cnmc (object) :
     def __init__ (self, opt) :
         self.opt = {}
-        
+
         # general options
         self.opt['path'] = opt['path']
         self.opt['verbose'] = 'verbose' in opt
@@ -25,6 +25,24 @@ class Cnmc (object) :
         # other fields
         self.result = {}
         self.u = ptnet.unfolding.Unfolding (self.opt['assert'])
+
+        self.cnf_prop_nr = 0
+        self.cnf_prop_tab = {}
+        self.cnf_clauses = set ()
+
+        self.stubborn = {}
+        self.sfp = {}
+        self.asymg = None
+        self.sccs = []
+
+        self.t_s = set ()
+        self.c_s = set ()
+        self.post_t = {}
+        self.prec_t = {}
+        self.post_p = {}
+        self.inv_f = {}
+
+        self.ndecv = 0
 
         self.cnf_prop_nr = 0
         self.cnf_prop_tab = {}
@@ -43,27 +61,75 @@ class Cnmc (object) :
         except Exception, e:
             raise Exception, "'%s': %s" % (opt['path'], e)
 
-        self.result['opts'] = 'symmetric: linear; asymmetric: binary; disabled: all'
+        self.result['opts'] = '2tree/all bin/all t-based/all'
 
     def deadlock (self) :
 #        self.__dl_cnf_debugmodel ()
+#        i = 0;
+#        for e in self.u.events[1:] :
+#            if self.__is_stubborn (e) :
+#                print 'stubborn', e
+#                i += 1
+#        print '%st:', 100.0 * i / len (self.u.events[1:])
+
         s = self.__dl_cnf ()
         sys.stderr.write (s)
 
     def __dl_cnf (self) :
-        self.cnf_prop_nr = 0
-        self.cnf_prop_tab = {}
-        self.cnf_clauses = set ()
-
         # nothing to do if there is zero cutoffs
-        if self.u.nr_cutoffs == 0 :
-            return 'c zero cutoffs!\np cnf 1 1\n1 0\n'
+        if self.u.nr_black == 0 :
+            return 'c zero cutoffs!\np cnf 1 1 1\n1 0\n'
 
         # models are configurations in which all events are disabled
-        self.__dl_cnf_config ()
-        self.__dl_cnf_dead_all ()
+#        self.__compute_30 ()
+        self.__compute_sccs ()
+#        self.__compute_stubborn ()
 
-        out = 'p cnf %d %d\n' % (self.cnf_prop_nr, len (self.cnf_clauses))
+        self.__causal ()
+        self.result['var_ev'] = self.cnf_prop_nr
+        self.ndecv = self.cnf_prop_nr
+#        db ('after causal', self.cnf_prop_nr)
+        self.__symm_all_ktree (4)
+#        db ('after symm ktree', self.cnf_prop_nr)
+#        self.__symm_sub_ktree (4)
+        self.__asym ()
+#        db ('after asym', self.cnf_prop_nr)
+
+#        self.__fix ()
+#        self.__dl_cnf_dead_all_ev_1 ()
+#        self.__dl_cnf_dead_all_ev_2 ()
+#        self.__dis_tbased_all ()
+        self.__reach ()
+#        db ('after dis', self.cnf_prop_nr)
+#        self.__dis_tbased_sub ()
+
+#        i = 0
+#        for e in self.u.events[1:] :
+#            #if not e.isblack : continue
+#            # lundi 27 fevrier 2012, 18:51:41 (UTC+0100) deberia ser asi:
+#            if not e.isblack or not spf.__is_stubborn (e): continue
+#            s = self.__sfp (e)
+#            if len (s) == 1 :
+#                ep = list (s)[0]
+#                self.cnf_clauses.add (frozenset ([-self.__dl_cnf_prop (ep)]))
+#                print 'cutoff', repr (e), 'implies not', repr (ep)
+#                i += 1
+#        print '%note:', 100.0 * i / len (self.u.events[1:])
+#
+#        l2m = 0
+#        l2 = 0
+#        l2p = 0
+#        for x in self.cnf_clauses :
+#            if len (x) == 1 : l2m += 1
+#            if len (x) == 2 : l2 += 1
+#            if len (x) > 2 : l2p += 1
+#        print '%size=1:', 100.0 * l2m / len (self.cnf_clauses)
+#        print '%size=2:', 100.0 * l2 / len (self.cnf_clauses)
+#        print '%size>2:', 100.0 * l2p / len (self.cnf_clauses)
+            
+        self.ndecv = 0
+        if self.ndecv == 0 : self.ndecv = self.cnf_prop_nr
+        out = 'p cnf %d %d %d\n' % (self.cnf_prop_nr, len (self.cnf_clauses), self.ndecv)
         for cls in self.cnf_clauses :
             for x in cls : out += str (x) + ' '
             out += '0\n'
@@ -76,46 +142,140 @@ class Cnmc (object) :
             out += 'c %s => %s\n' % (k, self.cnf_prop_tab[k])
         return out
 
-    def __dl_cnf_config (self) :
+    def __compute_30 (self) :
+        # compute inv_f for places and post'_p (= postset + context)
+        for c in self.u.conds[1:] :
+            if not c.label in self.inv_f :
+                self.inv_f[c.label] = set ()
+                self.post_p[c.label] = set ()
+            self.inv_f[c.label].add (c)
+            self.post_p[c.label] |= set (e.label for e in c.post | c.cont)
+
+        # compute post_t and prec'_t ( = preset + context of t)
+        for e in self.u.events[1:] :
+            if e.label in self.post_t : continue
+            self.post_t[e.label] = set (c.label for c in e.post)
+            self.prec_t[e.label] = set (c.label for c in e.pre | e.cont)
+
+        # compute T_s
+        for e in self.u.events[1:] :
+            if e.isgray :
+                for p in self.post_t[e.label] :
+                    self.t_s |= self.post_p[p]
+
+        # compute C_s := inv_f (prec_t (T_s))
+        for t in self.t_s :
+            for p in self.prec_t[t] :
+                self.c_s |= self.inv_f[p]
+
+#        # compute C_s (alternative definition in the notebook)
+#        for e in self.u.events[1:] :
+#            if e.isgray :
+#                for p in self.post_t[e.label] :
+#                    for t in self.post_p[p] :
+#                        u = self.post_t[e.label] & self.pre_t[t]
+#                        v = self.pre_t[t] - self.post_t[e.label]
+#                        
+        # ()
+
+    def __fix (self) :
+        # computes (32)
+        # all T_s are disabled
+#        db ('fix starts')
+        for t in self.t_s :
+#            db ('fix disabled', self.prec_t[t])
+            l = [-self.__dl_cnf_prop (p) for p in self.prec_t[t]]
+            self.cnf_clauses.add (frozenset (l))
+
+        # marking of f(C_s)
+        for c in self.c_s :
+            if c.pre :
+                if c.pre.isblack : continue
+                if not self.__is_stubborn (c.pre) :
+                    s = set ([c.pre])
+                else :
+                    s = self.__sfp (c.pre)
+                s = set (-self.__dl_cnf_prop (e) for e in s)
+            else :
+                s = set ()
+            s |= set (self.__dl_cnf_prop (e) for e in c.post if not e.isblack)
+            s.add (self.__dl_cnf_prop (c.label))
+            self.cnf_clauses.add (frozenset (s))
+#            db ('fix marking', s)
+#        db ('fix ends')
+
+    def __causal (self) :
         # a configuration is closed
         for e in self.u.events[1:] :
-            if e.iscutoff : continue
-            s = set ([c.pre for c in e.pre | e.cont if c.pre])
-            if not s : continue
+            if e.isblack or self.__is_stubborn (e) : continue
+            s = self.__sfp (e)
             atm = -self.__dl_cnf_prop (e)
+            if not s : continue
             for ep in s :
                 self.cnf_clauses.add (frozenset ([atm, self.__dl_cnf_prop (ep)]))
 
-        # without conflicts
-        self.__dl_cnf_symm_all_linear ()
-        self.__dl_cnf_asym ()
-
-    def __dl_cnf_asym (self) :
+    def __compute_sccs (self) :
         # generate asymmetric conflict graph (without sym. conflicts)
-        g = self.u.asym_graph (False)
+        self.asymg = self.u.asym_graph (False)
 
         # search for sccs
-        sccs = networkx.algorithms.strongly_connected_components (g)
-        sccs = [x for x in sccs if len (x) >= 2]
+        sccs = networkx.algorithms.strongly_connected_components (self.asymg)
+        self.sccs = [x for x in sccs if len (x) >= 2]
+
+    def __asym (self) :
         sizes = []
-        for x in sccs :
-            h = self.__reduce (g.subgraph (x))
-#            h = g.subgraph (x)
+        for x in self.sccs :
+            h = self.__reduce (self.asymg.subgraph (x))
+#            h = self.asymg.subgraph (x)
 #            db (len (x), len (h))
-            sizes.append ((len (x), len (h)))
+            sizes.append ((len (x), self.asymg.subgraph(x).size (), len (h),
+                        h.size ()))
             self.__dl_cnf_po_scc (h)
         self.result['sccs'] = repr (sizes)
 
-    def __dl_cnf_symm_all_linear (self) :
+    def __dl_cnf_symm_ismaximal (self, c) :
+        # c tiene 2 en el postset al menos, y no cutoffs
+        m = self.u.mark
+        self.u.mark += 1
+        l = [e for e in c.post if not e.isblack]
+        n = len (l)
+        for e in l[1:] :
+            for cp in e.pre :
+                if cp == c : continue
+                if cp.mark != m :
+                    cp.mark = m
+                    cp.count = 1
+                else :
+                    cp.count += 1
+        for cp in l[0].pre :
+            if cp == c or cp.mark != m : continue
+            cp.count += 1
+            if cp.count == n :
+                np = len ([e for e in cp.post if not e.isblack])
+#                if n < np or cp.nr > c.nr : db ('symm_not_max', c, cp)
+                if n < np or cp.nr > c.nr : return False
+        return True
+
+    def __symm_sub_ktree (self, k) :
         l2 = []
         for c in self.u.conds[1:] :
-            l = [e for e in c.post if not e.iscutoff]
+            l = [e for e in c.post if not e.isblack]
             if len (l) < 2 : continue
-            for i in xrange (len (l)) : l2.append (self.__dl_cnf_prop (l[i]))
-            self.__dl_cnf_symm_linear (l2)
-            del l2[:]
+            if not self.__dl_cnf_symm_ismaximal (c) : continue
+            self.amo_ktree ([self.__dl_cnf_prop (e) for e in l], k)
+#            self.__dl_cnf_symm_2tree ([self.__dl_cnf_prop (e) for e in l])
+#            db ('2tree', [self.__dl_cnf_prop (e) for e in l])
 
-    def __dl_cnf_symm_linear (self, l) :
+    def __symm_all_ktree (self, k) :
+        l2 = []
+        for c in self.u.conds[1:] :
+            l = [e for e in c.post if not e.isblack]
+            if len (l) < 2 : continue
+            self.amo_ktree ([self.__dl_cnf_prop (e) for e in l], k)
+#            self.__dl_cnf_symm_2tree ([self.__dl_cnf_prop (e) for e in l])
+#            db ('2tree', [self.__dl_cnf_prop (e) for e in l])
+
+    def __dl_cnf_symm_2tree (self, l) :
         # for n >= 3 items, produce n-1 new vars and 3n-5 clauses
         if len (l) <= 1 : return
         l.sort ()
@@ -134,32 +294,63 @@ class Cnmc (object) :
             self.cnf_clauses.add (frozenset ([-atm1, atm]))
             self.cnf_clauses.add (frozenset ([-atm2, atm]))
             l2.append (atm)
-        self.__dl_cnf_symm_linear (l2)
+        self.__dl_cnf_symm_2tree (l2)
+
+    def amo_standard (self, l) :
+        # for n >= 0 items, produces (n^2-n)/2 clauses, no new variables
+        for i in xrange (len (l)) :
+            for j in xrange (i + 1, len (l)) :
+                self.cnf_clauses.add (frozenset ([-l[i], -l[j]]))
+
+    def amo_ktree (self, l, k) :
+        if len (l) <= 1 : return
+        l.sort ()
+        if len (l) == 2 :
+            self.cnf_clauses.add (frozenset ([-l[0], -l[1]]))
+            return
+        assert (k >= 2)
+        if len (l) <= k :
+            self.amo_standard (l)
+            return
+
+        l2 = l[: len (l) % k]
+        del l[: len (l) % k]
+        for i in xrange (0, len (l), k) :
+            l3 = l[i:i + k]
+            v = self.__dl_cnf_prop (('amo_ktree', frozenset (l3)))
+            for vi in l3 : self.cnf_clauses.add (frozenset ([-vi, v]))
+            self.amo_standard (l3)
+            l2.append (v)
+        self.amo_ktree (l2, k)
 
     def __dl_cnf_po_scc (self, g) :
+#        self.__dl_cnf_trans_scc (g)
+#        return
+
         k = int (math.ceil (math.log (len (g), 2)))
 #        k = 1
-        db ('k', k);
+#        db ('k', k);
         for e in g :
             for ep in g[e] :
                 self.__dl_cnf_bin_ord (e, ep, k)
+#                self.__dl_cnf_una_ord (e, ep, len (g))
+#            if len (g[e]) : self.__dl_cnf_una_unary (e, len (g))
 
     def __dl_cnf_bin_ord (self, a, b, k) :
         # a > b
 #        db (repr (a), repr (b), k)
         ai = self.__dl_cnf_prop ((a, 0))
         bi = self.__dl_cnf_prop ((b, 0))
-        ci = self.__dl_cnf_prop ((a, b, 0))
+        ci1 = self.__dl_cnf_prop ((a, b, 0))
 
-        self.cnf_clauses.add (frozenset ([ai, -ci]))
-        self.cnf_clauses.add (frozenset ([-ai, -bi, -ci]))
+        self.cnf_clauses.add (frozenset ([ai, -ci1]))
+        self.cnf_clauses.add (frozenset ([-ai, -bi, -ci1]))
 #        self.cnf_clauses.add (frozenset ([-ai, bi, ci])) # optim.
 
         for i in xrange (1, k) :
             ai = self.__dl_cnf_prop ((a, i))
             bi = self.__dl_cnf_prop ((b, i))
             ci = self.__dl_cnf_prop ((a, b, i))
-            ci1 = self.__dl_cnf_prop ((a, b, i - 1))
 
             self.cnf_clauses.add (frozenset ([ai, -bi, -ci]))
             self.cnf_clauses.add (frozenset ([-ai, -bi, -ci1, ci]))
@@ -167,33 +358,138 @@ class Cnmc (object) :
             self.cnf_clauses.add (frozenset ([ai, bi, -ci1, ci]))
             self.cnf_clauses.add (frozenset ([ai, bi, ci1, -ci]))
 #            self.cnf_clauses.add (frozenset ([-ai, bi, ci])) # optim.
+            ci1 = ci
 
-        ai = self.__dl_cnf_prop (a)
-        bi = self.__dl_cnf_prop (b)
-        ci = self.__dl_cnf_prop ((a, b, k - 1))
-        self.cnf_clauses.add (frozenset ([-ai, -bi, ci]))
+        if self.__is_stubborn (a) :
+            l = [-self.__dl_cnf_prop (e) for e in self.__sfp (a)]
+        else :
+            l = [-self.__dl_cnf_prop (a)]
 
-    def __dl_cnf_conds (self, l) :
-        cls = set ()
-        for c in l :
-            cls.clear ()
-            if c.pre and c.pre.iscutoff: continue
-#            if len (c.post) + len (c.cont) == 0 : continue; # not sound
-            cls.add (self.__dl_cnf_prop (c.label))
-            if c.pre : cls.add (- self.__dl_cnf_prop (c.pre))
-            for e in c.post :
-                if not e.iscutoff : cls.add (self.__dl_cnf_prop (e))
-            self.cnf_clauses.add (frozenset (cls))
-        
-    def __dl_cnf_dead_all (self) :
+        if self.__is_stubborn (b) :
+            l += [-self.__dl_cnf_prop (e) for e in self.__sfp (b)]
+        else :
+            l += [-self.__dl_cnf_prop (b)]
+        l.append (self.__dl_cnf_prop ((a, b, k - 1)))
+        self.cnf_clauses.add (frozenset (l))
+
+    def __tbased_mark (self, c) :
+        if c.pre and c.pre.isblack : return
+        cls = set ([self.__dl_cnf_prop (c.label)])
+        if c.pre :
+            if self.__is_stubborn (c.pre) :
+                for e in self.__sfp (c.pre) :
+                    cls.add (- self.__dl_cnf_prop (e))
+            else :
+                cls.add (- self.__dl_cnf_prop (c.pre))
+        l = [e for e in c.post if not e.isblack]
+        if len (l) == 1 and self.__is_stubborn (l[0]) :
+            for e in self.__sfp (l[0]) :
+                s = frozenset (cls | set ([self.__dl_cnf_prop (e)]))
+                self.cnf_clauses.add (s)
+            return
+        for e in l : cls.add (self.__dl_cnf_prop (e))
+        self.cnf_clauses.add (frozenset (cls))
+
+    def __cut (self, c) :
+        if c.pre and c.pre.isblack : return
+        atm = self.__dl_cnf_prop (c)
+        if c.pre :
+            if self.__is_stubborn (c.pre) :
+                for e in self.__sfp (c.pre) :
+                    l = [-atm, self.__dl_cnf_prop (e)]
+#                    print 'cut pred stubb', l
+                    self.cnf_clauses.add (frozenset (l))
+            else :
+                l = [-atm, self.__dl_cnf_prop (c.pre)]
+#                print 'cut pred nonstubb', l
+                self.cnf_clauses.add (frozenset (l))
+        l = [e for e in c.post if not e.isblack]
+        if len (l) == 1 and self.__is_stubborn (l[0]) :
+            l2 = [-self.__dl_cnf_prop (e) for e in self.__sfp (l[0])]
+            l2.append (-atm)
+#            print 'cut post 1stubb', l2
+            self.cnf_clauses.add (frozenset (l2))
+            return
+        for e in l :
+            atm1 = self.__dl_cnf_prop (e)
+#            print 'cut post nonstubb', [-atm, -atm1]
+            self.cnf_clauses.add (frozenset ([-atm, -atm1]))
+
+    def __reach (self) :
+#        cover = ['17-on/2x2']
+#        cover = ['17-on/2x2', '16-off/2x2']
+#        cover = ['17-on/2x2', '10-off/1x2', '14-off/2x1', '8-off/1x1']
+#        cover = ['1-on/0x0', '0-off/0x0']
+
+         # n = 3
+        cover = ['11-on/1x1', '23-on/2x3', '26-off/3x1', '21-on/2x2']
+
+         # n = 2
+#        cover = ['9-on/1x1', '7-on/1x0']
+#        cover = ['9-on/1x1', '6-off/1x0']
+#        cover = ['9-on/1x1', '15-on/2x1']
+
+        # n = 4
+#        cover = ['49-on/4x4', '38-off/3x4', '46-off/4x3']
+
+        d = {}
+        for c in self.u.conds[1:] :
+            if not c.label in cover : continue
+            if c.pre and c.pre.isblack : continue
+            if not c.label in d : d[c.label] = []
+            d[c.label].append (c)
+            self.__cut (c)
+        for p in cover :
+            if not p in d : d[p] = []
+            l = [self.__dl_cnf_prop (c) for c in d[p]]
+            self.cnf_clauses.add (frozenset (l))
+
+    def __dis_tbased_all (self) :
+#       first encoding: ! (pre (t)) for all t; p <- e & ~e1 & ... & ~en
 #        db ('dead all')
-        trans = set ()
+        tseen = set ()
+        pneed = set ()
         for e in self.u.events[1:] :
-#            if e.label in trans : continue
-            trans.add (e.label)
-            cls = frozenset (- self.__dl_cnf_prop (c.label) for c in e.pre | e.cont)
+            if not e.label in tseen :
+                tseen.add (e.label)
+                cls = [- self.__dl_cnf_prop (c.label) for c in e.pre | e.cont]
+                self.cnf_clauses.add (frozenset (cls))
+                pneed |= set (c.label for c in e.pre | e.cont)
+        
+        for c in self.u.conds[1:] :
+            if c.label in pneed :
+                self.__tbased_mark (c)
+
+    def __dis_tbased_sub (self) :
+#       first encoding on minimal sets of pre(t) + cont(t) for t in T
+
+        tmp = set ()
+        minimal = []
+        tseen = set ()
+        for e in self.u.events[1:] :
+            if e.label in tseen : continue
+            tseen.add (e.label)
+            new = frozenset (c.label for c in e.pre | e.cont)
+            tmp.clear ()
+            for elem in minimal :
+#                if new >= elem : db ('discarding', new);
+                if new >= elem : new = None; break
+                if new < elem : tmp.add (elem)
+            for elem in tmp : minimal.remove (elem)
+#            for elem in tmp : db ('removing', elem)
+            if new : minimal.append (new)
+#            if new : db ('taking', new)
+        tmp.clear ()
+
+        pneed = set ()
+        for elem in minimal :
+            cls = frozenset (- self.__dl_cnf_prop (p) for p in elem)
             self.cnf_clauses.add (cls)
-        self.__dl_cnf_conds (self.u.conds[1:])
+            pneed |= elem
+
+        for c in self.u.conds[1:] :
+            if c.label in pneed :
+                self.__tbased_mark (c)
 
     def __dl_cnf_prop (self, x) :
         if x in self.cnf_prop_tab : return self.cnf_prop_tab[x]
@@ -310,12 +606,51 @@ class Cnmc (object) :
         for w in l : g.remove_edge (v, w)
         return len (l) != 0
 
+    def __compute_stubborn (self) :
+        # exclude events consuming or reading conditions in C_s
+        for c in self.c_s :
+            for e in c.post | c.cont :
+                self.stubborn[e] = False
 
+        # for the remaining events, compute recursively
+        for e in self.u.events[1:] :
+            self.__is_stubborn (e)
 
+    def __is_stubborn (self, e) :
+        return False
+#       st3: post (pre (e) U cont (e)) without blacks subset of {e}
+        if e in self.stubborn : return self.stubborn[e]
 
+        # post (pre + cont) = e
+        b = True
+        for c in e.pre | e.cont :
+            for ep in c.post :
+                if not ep.isblack and ep != e :
+                    b = False
+                    break
 
+# only needed for the condition encoding?
+#        # cont (pre) are all stubborn
+#        for c in e.pre :
+#            for ep in c.cont :
+#                if b and not self.__is_stubborn (ep) :
+#                    b = False
+#                    break
 
+        self.stubborn[e] = b
+        return b
 
+    def __sfp (self, e) :
+        if e in self.sfp : return self.sfp[e]
+        s = set ();
+        for c in e.pre | e.cont :
+            if c.pre == None : continue
+            if self.__is_stubborn (c.pre) :
+                s |= self.__sfp (c.pre)
+            else :
+                s.add (c.pre)
+        self.sfp[e] = s
+        return self.sfp[e]
 
 
 
@@ -327,14 +662,14 @@ class Cnmc (object) :
     def __print_asym (self, f) :
         g = networkx.DiGraph ()
         for e in self.u.events[1:] :
-            if e.iscutoff : continue
+            if e.isblack : continue
             for c in e.pre :
                 if c.pre :
                     g.add_edge (c.pre, e, color=1)
                 for ep in c.cont :
                     self.__red_edge (g, ep, e, 2)
             for c in e.cont :
-                if c.pre and not c.pre.iscutoff:
+                if c.pre and not c.pre.isblack:
                     g.add_edge (c.pre, e, color=1)
         
         sccs = networkx.algorithms.strongly_connected_components (g)
@@ -372,7 +707,7 @@ class Cnmc (object) :
             found = False;
             evs = set (self.u.events[1:])
             for e in evs :
-                if e.iscutoff : continue
+                if e.isblack : continue
 #                if len (e.pre) != 1 or len (e.post) != 1 : continue # hack
                 s = set ()
                 for c in e.pre : s |= c.post
@@ -438,7 +773,7 @@ class Cnmc (object) :
             if type (obj) == type (self.u.events[1]) :
                 print 'appending', obj
                 m.append (obj)
-            assert (len (m) == 0 or not m[-1].iscutoff)
+            assert (len (m) == 0 or not m[-1].isblack)
         self.__dl_bc_assert (set (m))
 
     def __dl_bc (self) :
@@ -459,7 +794,7 @@ class Cnmc (object) :
 
     def __dl_cnf_symm_all_n2 (self) :
         for c in self.u.conds[1:] :
-            l = [e for e in c.post if not e.iscutoff]
+            l = [e for e in c.post if not e.isblack]
             if len (l) < 2 : continue
             for i in xrange (len (l)) :
                 atm = - self.__dl_cnf_prop (l[i])
@@ -469,10 +804,17 @@ class Cnmc (object) :
 
     def __dl_cnf_trans_scc (self, g) :
         for e in g :
-            atm = - self.__dl_cnf_prop (e)
+            if self.__is_stubborn (e) :
+                l = [-self.__dl_cnf_prop (ep) for ep in self.__sfp (e)]
+            else :
+                l = [-self.__dl_cnf_prop (e)]
+
             for ep in g[e] :
-                cls = frozenset ([atm, - self.__dl_cnf_prop (ep),
-                        self.__dl_cnf_prop ((e, ep))])
+                if self.__is_stubborn (ep) :
+                    l2 = [-self.__dl_cnf_prop (epp) for epp in self.__sfp (ep)]
+                else :
+                    l2 = [-self.__dl_cnf_prop (ep)]
+                cls = frozenset (l + l2 + [self.__dl_cnf_prop ((e, ep))])
                 self.cnf_clauses.add (cls)
 
         for e in g :
@@ -504,10 +846,18 @@ class Cnmc (object) :
 
     def __dl_cnf_una_ord (self, a, b, k) :
         # a > b
-        ai = self.__dl_cnf_prop (a)
-        bi = self.__dl_cnf_prop (b)
+        if self.__is_stubborn (a) :
+            l = [-self.__dl_cnf_prop (e) for e in self.__sfp (a)]
+        else :
+            l = [-self.__dl_cnf_prop (a)]
+
+        if self.__is_stubborn (b) :
+            l += [-self.__dl_cnf_prop (e) for e in self.__sfp (b)]
+        else :
+            l += [-self.__dl_cnf_prop (b)]
         c = self.__dl_cnf_prop ((a, b))
-        self.cnf_clauses.add (frozenset ([-ai, -bi, c]))
+        l.append (c)
+        self.cnf_clauses.add (frozenset (l))
 
         ai = self.__dl_cnf_prop ((a, 0))
         bi = self.__dl_cnf_prop ((b, k - 1))
@@ -547,19 +897,33 @@ class Cnmc (object) :
 #            for ep in c.post | c.cont : db ('ep', repr (ep), 'target', len (ep.pre) + len (ep.cont), 'count', ep.count)
         return True
 
-    def __dl_cnf_dead_sub (self) :
-#        db ('dead sub')
-        trans = set ()
+    def __dl_cnf_dead_all_ev_1 (self) :
+#       computes (variation of 17, with context)
         for e in self.u.events[1:] :
-            # if e.pre \cup e.cont minimal, update the marking
-            if not self.__dl_cnf_dead_isminimal (e) : continue
-            self.__dl_cnf_conds (e.pre | e.cont)
-            
-            # and if the f(e) not yet considered, state it is disabled
-            if e.label in trans : continue
-            trans.add (e.label)
-            cls = frozenset (- self.__dl_cnf_prop (c.label) for c in e.pre | e.cont)
-            self.cnf_clauses.add (cls)
+            if self.__is_stubborn (e) and not e.isblack : continue
+            s = set (-self.__dl_cnf_prop (ep) for ep in self.__sfp (e))
+            for c in e.pre | e.cont :
+                for ep in c.post :
+                    if not ep.isblack : s.add (self.__dl_cnf_prop (ep))
+            self.cnf_clauses.add (frozenset (s))
 
+    def __dl_cnf_dead_all_ev_2 (self) :
+#       computes (variation of 17, with context, and conditions)
+        seen = set ()
+        for e in self.u.events[1:] :
+            if self.__is_stubborn (e) and not e.isblack : continue
+            s = set (-self.__dl_cnf_prop (ep) for ep in self.__sfp (e))
+            for c in e.pre | e.cont :
+                if c in seen :
+                    s.add (self.__dl_cnf_prop (c))
+                    continue
+                l = [self.__dl_cnf_prop (ep) for ep in c.post
+                        if not ep.isblack]
+                if not l : continue;
+                seen.add (c)
+                s.add (self.__dl_cnf_prop (c))
+                l.append (-self.__dl_cnf_prop (c))
+                self.cnf_clauses.add (frozenset (l))
+            self.cnf_clauses.add (frozenset (s))
 
 # vi:ts=4:sw=4:et:

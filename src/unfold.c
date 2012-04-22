@@ -215,7 +215,7 @@ static void _unfold_progress (struct h *h)
 	}
 
 	if ((i & 0xfff) == 0) {
-		DPRINT ("  At size %6d, %d histories\n", h->size, i);
+		PRINT ("  At size %6d, %d histories\n", h->size, i);
 	}
 }
 

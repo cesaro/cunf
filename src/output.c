@@ -125,7 +125,7 @@ void write_dot_fancy (const char * filename)
 	}
 
 	P ("digraph unfolding {\n\t/* events */\n");
-	P ("\tnode    [shape=box style=filled fillcolor=grey60];\n");
+	P ("\tnode    [shape=box style=filled fillcolor=gray60];\n");
 	enr = 0;
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
@@ -261,11 +261,15 @@ static void _write_str (const char * path, FILE * f, const char * str)
 }
 
 /*
- * Contextual Unfolding Format (CUF)
+ * Contextual Unfolding Format (CUF 02)
  *
+ * 0. format version number: 0x 43 55 46 02
  * 1. number of conditions
  * 2. number of events
- * 3. number of cutoffs (last events in the list)
+ * 3. number of white events (events without cutoff histories, they come first
+ *    in the list
+ * 3'. number of gray events (events with at least one cutoff and one
+ *     non-cutoff history, they come after the white events)
  * 4. maximum size of a string in the next two sections
  * 5. list of events; each entry is the label of the event, transition name
  * 6. list of conditions; each entry consist on:
@@ -285,7 +289,11 @@ void write_cuf (const char * filename)
 	struct event * e;
 	struct cond * c;
 	struct ls * n;
-	int i, ecff;
+	int i, j, nwhite, nblack, mwhite;
+	char buff[1024];
+
+	/* generate one color */
+	mwhite = ++u.mark;
 
 	/* open file */
 	f = fopen (filename, "wb");
@@ -295,14 +303,34 @@ void write_cuf (const char * filename)
 	ls_reverse (&u.unf.events);
 	ls_reverse (&u.unf.conds);
 
-	/* count the number of cutoffs */
-	ecff = 0;
+	/* count the number of white and black events */
+	nwhite = 0;
+	nblack = 0;
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
 		if (e->id == 0) continue;
-		if (e->iscutoff) ecff++;
+		if (e->iscutoff) {
+			nblack++;
+		} else {
+			j = 0;
+			for (i = e->hist.deg - 1; i >= 0; i--) {
+				if (((struct h *) e->hist.adj[i])->corr) j++;
+			}
+			if (j == 0) {
+				nwhite++;
+				e->m = mwhite;
+			}
+		}
+		u.unf.numepost += e->post.deg;
+		u.unf.numecont += e->cont.deg;
+		u.unf.numepre += e->pre.deg;
 	}
-	u.unf.numecffs = ecff;
+	u.unf.numeblack = nblack;
+	u.unf.numegray = u.unf.numev - 1 - nwhite - nblack;
+	u.unf.numewhite = nwhite;
+
+	/* 0. format version number */
+	_write_int (filename, f, 0x43554602);
 
 	/* 1. number of conditions */
 	_write_int (filename, f, u.unf.numcond);
@@ -310,8 +338,12 @@ void write_cuf (const char * filename)
 	/* 2. number of events (without e0) */
 	_write_int (filename, f, u.unf.numev - 1);
 
-	/* 3. number of cutoffs (last events in the list) */
-	_write_int (filename, f, ecff);
+	/* 3. number of white events (events without cutoff histories) */
+	_write_int (filename, f, nwhite);
+
+	/* 3'. number of gray events (events with at least one cutoff and one *
+	 * non-cutoff history) */
+	_write_int (filename, f, u.unf.numev - 1 - nwhite - nblack);
 
 	/* 4. maximum size of a string in the next two sections */
 	i = 0;
@@ -323,22 +355,33 @@ void write_cuf (const char * filename)
 		t = ls_i (struct trans, n, nod);
 		if ((int) strlen (t->name) > i) i = strlen (t->name);
 	}
-	_write_int (filename, f, i);
+	_write_int (filename, f, i + 16);
 
-	/* 5. list of events, and re-number: first non-cutoffs, then cutoffs */
+	/* 5. list of events, and re-number: first white, then gray, then
+	 * black */
 	i = 1;
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
 		if (e->id == 0) continue;
-		if (! e->iscutoff) {
-			_write_str (filename, f, e->ft->name);
+		if (e->m == mwhite) {
+			snprintf (buff, 1024, "%d-%s", e->ft->id, e->ft->name);
+			_write_str (filename, f, buff);
+			e->id = i++;
+		}
+	}
+	for (n = u.unf.events.next; n; n = n->next) {
+		e = ls_i (struct event, n, nod);
+		if (e->id != 0 && e->m != mwhite && ! e->iscutoff) {
+			snprintf (buff, 1024, "%d-%s", e->ft->id, e->ft->name);
+			_write_str (filename, f, buff);
 			e->id = i++;
 		}
 	}
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
 		if (e->iscutoff) {
-			_write_str (filename, f, e->ft->name);
+			snprintf (buff, 1024, "%d-%s", e->ft->id, e->ft->name);
+			_write_str (filename, f, buff);
 			e->id = i++;
 		}
 	}
@@ -346,7 +389,8 @@ void write_cuf (const char * filename)
 	/* 6. list of conditions, flow and context relation */
 	for (n = u.unf.conds.next; n; n = n->next) {
 		c = ls_i (struct cond, n, nod);
-		_write_str (filename, f, c->fp->name);
+		snprintf (buff, 1024, "%d-%s", c->fp->id, c->fp->name);
+		_write_str (filename, f, buff);
 		if (c->pre->id != 0) {
 			_write_int (filename, f, c->pre->id);
 		} else {
@@ -429,7 +473,9 @@ void write_cuf_old (const char * filename)
 			ecff++;
 		}
 	}
-	u.unf.numecffs = ecff;
+	u.unf.numeblack = ecff;
+	u.unf.numewhite = 99999999;
+	u.unf.numegray = 99999999;
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
 		if (e->id < 0) e->id = i++;

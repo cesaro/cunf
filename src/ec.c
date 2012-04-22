@@ -427,8 +427,8 @@ void __attribute__ ((noinline)) _ec_conc_bgr (struct ec *r, int mblack, int mgre
 		((struct event *) r->h->sd.adj[i])->m = 0;
 	}
 
-	/* mark in red r(H) and any condition read by those events, counting
-	 * how many red events read it */
+	/* mark in red r(H) and any condition read by those events (if it's not
+	 * in black), counting how many red events read it */
 	for (i = r->h->rd.deg - 1; i >= 0; i--) {
 		e = (struct event *) r->h->rd.adj[i];
 		e->m = mred;

@@ -15,7 +15,7 @@
 
 include defs.mk
 
-.PHONY: fake all g test times clean distclean prof
+.PHONY: fake all g test clean distclean prof
 
 all: $(TARGETS)
 
@@ -63,6 +63,10 @@ dl.clp.tr : $(DEAD_NETS:%.ll_net=%.dl.clp.tr)
 dl.cnmc.tr : $(CNMC_NETS:%.ll_net=%.dl.cnmc.tr)
 	@rm -f $@
 	@cat $(CNMC_NETS:%.ll_net=%.dl.cnmc.tr) > $@
+
+dl.cndc.tr : $(CNMC_NETS:%.ll_net=%.dl.cndc.tr)
+	@rm -f $@
+	@cat $(CNMC_NETS:%.ll_net=%.dl.cndc.tr) > $@
 
 dl.lola.tr : $(DEAD_NETS:%.ll_net=%.dl.lola.tr)
 	@rm -f $@

@@ -64,7 +64,7 @@ void usage (void)
 "              'dot', 'fancy'.  Default is 'cuf'.\n"
 "\n"
 "For more information, see http://www.lsv.ens-cachan.fr/Software/cunf/\n"
-"Branch eager r53, compiled %s\n", __DATE__);
+"Branch eager r56, compiled %s\n", __DATE__);
 
 	exit (EXIT_FAILURE);
 }
@@ -125,7 +125,7 @@ int main (int argc, char **argv)
 	char *stoptr, *inpath, *outpath, *outformat;
 
 	/* initialize global parameters */
-	u.mark = 1;
+	u.mark = 2;
 
 	/* parse command line */
 	stoptr = 0;
@@ -187,8 +187,10 @@ int main (int argc, char **argv)
 	if (! strcmp (outformat, "cuf")) {
 		write_cuf (outpath);
 	} else if (! strcmp (outformat, "dot")) {
+		PRINT ("warn\tsome statics are not well reported under the selected output format\n");
 		write_dot (outpath);
 	} else {
+		PRINT ("warn\tsome statics are not well reported under the selected output format\n");
 		write_dot_fancy (outpath);
 	}
 
@@ -196,13 +198,12 @@ int main (int argc, char **argv)
 	db_mem ();
 #endif
 	rusage ();
-	PRINT ("time\t%.2f\n"
+	PRINT ("time\t%.3f\n"
 		"mem\t%ld\n"
 
 		"hist\t%d\n"
 		"events\t%d\n"
 		"cond\t%d\n"
-		"noncff\t%d\n"
 
 		"gen\t%d\n"
 		"read\t%d\n"
@@ -219,7 +220,9 @@ int main (int argc, char **argv)
 		"pst(e)\t%.2f\n"
 
 		"cutoffs\t%d\n"
-		"evcffs\t%llu\n"
+		"ewhite\t%llu\n"
+		"egray\t%llu\n"
+		"eblack\t%llu\n"
 		"net\t%s\n",
 
 		u.unf.usrtime / 1000.0,
@@ -228,7 +231,6 @@ int main (int argc, char **argv)
 		u.unf.numh - 1,
 		u.unf.numev - 1,
 		u.unf.numcond,
-		u.unf.numh - 1 - u.unf.numcutoffs,
 
 		u.unf.numgen,
 		u.unf.numread,
@@ -241,13 +243,16 @@ int main (int argc, char **argv)
 		u.unf.numrco / 
 			(float) (u.unf.numgen + u.unf.numread + u.unf.numcomp),
 		u.unf.nummrk / (float) (u.unf.numh - 1),
+
 		u.unf.numepre / (float) (u.unf.numev - 1),
 		u.unf.numecont / (float) (u.unf.numev - 1),
 		u.unf.numepost / (float) (u.unf.numev - 1),
 
 
 		u.unf.numcutoffs,
-		u.unf.numecffs,
+		u.unf.numewhite,
+		u.unf.numegray,
+		u.unf.numeblack,
 		inpath);
 
 	return EXIT_SUCCESS;

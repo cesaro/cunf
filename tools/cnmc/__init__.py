@@ -67,11 +67,6 @@ def start () :
     return 0
 
 def main () :
-#    sys.exit (start ())
-    try :
-        sys.exit (start ())
-    except Exception, e :
-        print 'cnmc:', e
-    sys.exit (1)
+    sys.exit (start ())
 
 # vi:ts=4:sw=4:et:

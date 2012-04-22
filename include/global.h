@@ -98,7 +98,9 @@ struct unf {
 	unsigned long long numco; /* number of pairs in the concurrency rel. */
 	unsigned long long numrco; /* number of pairs in r->rco arrays */
 	unsigned long long nummrk; /* number of conditions in the marking lists */
-	unsigned long long numecffs; /* number of *event* cutoffs */
+	unsigned long long numewhite; /* number of events without cutoff histories */
+	unsigned long long numegray; /* ... with at least 1 cutoff and 1 non cutoff */
+	unsigned long long numeblack; /* ... with only cutoff histories */
 
 	int numepost;		/* number of conditions event postsets */
 	int numecont;		/* number of conditions event contexts */

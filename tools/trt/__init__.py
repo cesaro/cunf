@@ -28,7 +28,9 @@ For the 'dl.lola' test:
 
 For the 'dl.cnmc' test:
   cuf       Input .cuf file to check.
-  cnf       Generate cnf and run minisat
+
+For the 'dl.cndc' test:
+  cuf       Input .cuf file to check.
 
 For the 'report' driver:
   in        Input file.  '-' for standard input.
@@ -96,9 +98,9 @@ def runit (args, timeout=-1, sh=False) :
 class Cunf :
     EXT = '.unf.cuf'
     NAME = 'cunf'
-    FIELDS = [ 'test', 'stat', 'time', 'mem', 'hist', 'events', 'cond',
-    'noncff', 'gen', 'read', 'comp', 'r(h)', 's(h)', 'co(r)', 'rco(r)',
-    'mrk(h)', 'pre(e)', 'ctx(e)', 'pst(e)', 'cutoffs', 'evcffs', 'time2']
+    FIELDS = [ 'test', 'stat', 'time', 'mem', 'hist', 'events', 'cond', 'gen',
+    'read', 'comp', 'r(h)', 's(h)', 'co(r)', 'rco(r)', 'mrk(h)', 'pre(e)',
+    'ctx(e)', 'pst(e)', 'cutoffs', 'ewhite', 'egray', 'eblack', 'time2']
 
     @staticmethod
     def run (args) :
@@ -265,33 +267,43 @@ class Dlclp :
     def run (args) :
         if 'mci' not in args : usage ("Parameter 'mci' mandatory")
         out = Trt.subs_ext (args['mci'], '.unf.mci', Dlclp.EXT)
-        cmd = ['clp', args['mci']]
+        net = Trt.subs_ext (args['mci'], '.unf.mci', '.ll_net')
+        cmd = ['clp', '-M1', '-d', net, args['mci']]
 
         t = os.times () [2]
         (c, s) = runit (cmd, args['timeout'])
         t = os.times () [2] - t
         c = str (c)
 
+        lines = s.splitlines ()
+        if lines[1] == " Error: incorrect syntax: the keyword `PetriBox' is expected" :
+            del lines[0:4]
+            c = '0'
+
+#        i = 0
+#        for l in lines :
+#            print 'line', i, '"%s"' % l
+#            i= i + 1
+
         res = Trt.init_res (Dlclp)
         res['test'] = out
-        res['stat'] = c
         res['stdout'] = s
         res['time'] = t
+        res['stat'] = c
         if c != '0' : return res
 
-        lines = s.splitlines ()
-        if len (lines) < 12 : return res
-        if 'NO' == lines[10] :
+        if len (lines) < 14 : return res
+        if 'NO' == lines[14] :
             res['result'] = 'LIVE'
             res['seq'] = 'na'
-        elif 'YES' == lines[10] :
+        elif 'YES' == lines[14] :
             res['result'] = 'DEAD'
-            if len (lines) >= 13 :
+            if len (lines) >= 16 :
                 res['seq'] = lines[12].replace (',', ' ')
 
-        tup = lines[6].split ()
+        tup = lines[10].split ()
         if len (tup) >= 3 : res['gen'] = float (tup[1])
-        tup = lines[8].split ()
+        tup = lines[12].split ()
         if len (tup) >= 3 : res['solve'] = float (tup[1])
         return res
 
@@ -372,14 +384,16 @@ class Dllola :
 class Dlcnmc :
     EXT = '.dl.cnmc'
     NAME = 'dl.cnmc'
-    FIELDS = [ 'test', 'stat', 'gen', 'solve', 'result', 'sym', 'asym', 'dis']
+    FIELDS = [ 'test', 'stat', 'solve', 'sccs', 'opts', 'result']
 
     @staticmethod
-    def __run_cnf (args) :
+    def run (args) :
+        if 'cuf' not in args : usage ("Parameter 'cuf' mandatory")
+
         f = '/tmp/trt.%d.tmp' % os.getpid ()
-        cmd = 'tools/cnmc.py dl cnf symmetric=linear conflicts=binary disabled=all print ' + args['cuf'] + ' 2> ' + f
+        cmd = 'tools/cnmc.py dl ' + args['cuf'] + ' 2> ' + f
         (c, s) = runit (cmd, args['timeout'], sh=True)
-        cmd = ['time', 'ms_inc', f]
+        cmd = ['time', 'ms_act_act', f]
         (c1, s1) = runit (cmd, args['timeout'])
         os.remove (f)
 
@@ -387,7 +401,6 @@ class Dlcnmc :
         res['test'] = Trt.subs_ext (args['cuf'], '.unf.cuf', Dlcnmc.EXT)
         res['stat'] = '%s/%s' % (c, c1)
         res['stdout'] = s + s1
-        res['time'] = 'na'
         if c != 0 : return res
         if c1 != 10 and c1 != 20 : return res
 
@@ -406,39 +419,46 @@ class Dlcnmc :
 
         return res
 
+class Dlcndc :
+    EXT = '.dl.cndc'
+    NAME = 'dl.cndc'
+    FIELDS = [ 'test', 'stat', 'opts', 'solve', 'sccs', 'result', 'vars', 'evvars', 'clauses']
+
     @staticmethod
     def run (args) :
         if 'cuf' not in args : usage ("Parameter 'cuf' mandatory")
-        if 'cnf' in args : return Dlcnmc.__run_cnf (args)
 
-#        cmd = ['tools/cnmc.py', 'dl', 'conflicts=trans', 'symmetric=sub', args['cuf']]
-        cmd = ['tools/cnmc.py', 'dl', 'conflicts=trans', args['cuf']]
+        f = '/tmp/trt.%d.tmp' % os.getpid ()
+        cmd = 'tools/cndc.py stb 2-tree nocy ' + args['cuf'] + ' > ' + f
+        (c, s) = runit (cmd, args['timeout'], sh=True)
+        cmd = ['time', 'minisat', f]
+        (c1, s1) = runit (cmd, args['timeout'])
+        os.remove (f)
 
-        t = os.times () [2]
-        (c, s) = runit (cmd, args['timeout'])
-        t = os.times () [2] - t
-        c = str (c)
-
-        res = Trt.init_res (Dlcnmc)
-        res['test'] = Trt.subs_ext (args['cuf'], '.unf.cuf', Dlcnmc.EXT)
-        res['stat'] = c
-        res['stdout'] = s
-        res['time'] = t
-        if c != '0' : return res
+        res = Trt.init_res (Dlcndc)
+        res['test'] = Trt.subs_ext (args['cuf'], '.unf.cuf', Dlcndc.EXT)
+        res['stat'] = '%s/%s' % (c, c1)
+        res['stdout'] = s + s1
+        if c != 0 : return res
+        if c1 != 10 and c1 != 20 : return res
 
         for l in s.splitlines () :
             (k, sep, v) = l.partition ('\t')
-            if k in Dlcnmc.FIELDS : res[k] = v
-
-        if res['result'] == 'DEAD-EVERY' :
-             res['sym'] = 'na'
-             res['asym'] = 'na'
-             res['dis'] = 'na'
+            if k in Dlcndc.FIELDS : res[k] = v
+        
+        for l in s1.splitlines () :
+            if l == 'UNSATISFIABLE' :
+                res['result'] = 'LIVE'
+            elif l == 'SATISFIABLE' :
+                res['result'] = 'DEAD'
+            elif 'user' in l and 'system' in l and 'elapsed' in l :
+                (u, sep, rest) = l.partition ('user')
+                res['solve'] = u
 
         return res
 
 class Trt :
-    TESTS = [Cunf, Mole, Dlmcm, Dlsmv, Dlsmod, Dlclp, Dllola, Dlcnmc]
+    TESTS = [Cunf, Mole, Dlmcm, Dlsmv, Dlsmod, Dlclp, Dllola, Dlcnmc, Dlcndc]
 
     def __init__ (self) :
         self.byname = {}
@@ -704,8 +724,6 @@ def start () :
     return 0
 
 def main () :
-    start ()
-    return 0
     try :
         sys.exit (start ())
     except Exception, e :

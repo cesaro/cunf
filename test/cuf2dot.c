@@ -42,7 +42,7 @@ static unsigned long int _read_int (const char * path, FILE * f)
 
 	ASSERT (sizeof (unsigned long int) == 4);
 	if (fread (&i, 4, 1, f) != 1) {
-		if (errno == 0) gl_err ("'%s': file corruption detected!", path);
+		if (errno == 0) gl_err ("'%s': a file corruption detected!", path);
 		gl_err ("'%s': %s", path, strerror (errno));
 	}
 	return ntohl (i);
@@ -55,19 +55,20 @@ static void _read_str (const char * path, FILE * f, char * buff, int size)
 	for (i = 0; i < size; i++) {
 		if (fread (buff + i, 1, 1, f) != 1) {
 			if (errno == 0) {
-				gl_err ("'%s': file corruption detected!", path);
+				BREAK (1);
+				gl_err ("'%s': b file corruption detected!", path);
 			}
 			gl_err ("'%s': %s", path, strerror (errno));
 		}
 		if (buff[i] == 0) return;
 	}
-	if (i >= size) gl_err ("'%s': file corruption detected!", path);
+	if (i >= size) gl_err ("'%s': c file corruption detected!", path);
 }
 
 static void cuf2dot (const char * infile, const char * outfile)
 {
 	FILE *fin, *fout;
-	int i, e, max, events, conds, cutoffs;
+	int i, e, max, events, conds, white, gray, magic;
 	char * buff;
 
 	/* open input and output files */
@@ -77,9 +78,14 @@ static void cuf2dot (const char * infile, const char * outfile)
 	if (fout == 0) gl_err ("'%s': %s", outfile, strerror (errno));
 
 	/* read first four fields */
+	magic = _read_int (infile, fin);
+	if (magic != 0x43554602) {
+		gl_err ("'%s': not a CUF2 file", outfile, strerror (errno));
+	}
 	conds = _read_int (infile, fin);
 	events = _read_int (infile, fin);
-	cutoffs = _read_int (infile, fin);
+	white = _read_int (infile, fin);
+	gray = _read_int (infile, fin);
 	max = _read_int (infile, fin);
 
 	/* allocate a buffer of size max + 16 :) */
@@ -87,13 +93,18 @@ static void cuf2dot (const char * infile, const char * outfile)
 	buff = gl_malloc (max);
 
 	/* read and print events */
-	P ("digraph {\n\t/* events */\n");
-	P ("\tnode\t[shape=box style=filled fillcolor=grey60];\n");
-	for (i = 1; i <= events - cutoffs; i++) {
+	P ("digraph {\n\t/* white events */\n");
+	P ("\tnode\t[shape=box style=filled fillcolor=gray95];\n");
+	for (i = 1; i <= white; i++) {
 		_read_str (infile, fin, buff, max);
 		P ("\te%-6d [label=\"%s:e%d\"];\n", i, buff, i);
 	}
-	P ("\n\t/* cutoff events */\n\tnode\t[shape=Msquare]\n");
+	P ("\n\t/* gray events */\n\tnode\t[fillcolor=gray40]\n");
+	for (; i <= white + gray; i++) {
+		_read_str (infile, fin, buff, max);
+		P ("\te%-6d [label=\"%s:e%d\"];\n", i, buff, i);
+	}
+	P ("\n\t/* black events */\n\tnode\t[shape=Msquare fillcolor=gray10 fontcolor=white]\n");
 	for (; i <= events; i++) {
 		_read_str (infile, fin, buff, max);
 		P ("\te%-6d [label=\"%s:e%d\"];\n", i, buff, i);
@@ -101,7 +112,7 @@ static void cuf2dot (const char * infile, const char * outfile)
 
 	/* read and print conditions and the flow and context relations */
 	P ("\n\t/* conditions, flow and context relations */\n");
-	P ("\tnode\t[shape=circle fillcolor=gray90];\n");
+	P ("\tnode\t[shape=circle fillcolor=gray90 fontcolor=black];\n");
 	for (i = 1; i <= conds; i++) {
 		_read_str (infile, fin, buff, max);
 		e = _read_int (infile, fin);
