@@ -1,0 +1,53 @@
+= Overview =
+
+The *Cunf tool* is a (contextual) Petri net unfolder that implements the
+algorithm described in (3).
+
+A contextual Petri net is a [http://en.wikipedia.org/wiki/Petri_net Petri net]
+extended with read arcs.  See Section 2 of (3) if you are unfamiliar to
+contextual nets.
+
+The tool accepts a contextual Petri net as input, represented in a modified
+version of the PEP's low level (ll_net) format -- see the tool's
+[http://code.google.com/p/cunf/downloads/detail?name=manual.pdf user manual]
+for details on the modification.  The output is a file in
+[http://code.google.com/p/cunf/source/browse/src/output.c CUF format] that
+stores the contextual unfolding of the net.
+
+For more information on contextual nets, contextual unfoldings as well as the
+theory behind the tool, see (4, 3, 1). In (2), and old version of the tool is
+described.
+
+= _New!_ Deadlock checking using contextual nets =
+
+The *Contextual Net Deadlock Checker* (cndc) is a
+[http://code.google.com/p/cunf/source/browse/tools/cndc.py preliminary python implementation]
+of a technique for deadlock checking based on (complete) contextual unfolding
+prefixes and SAT-solving.  Run the tool without arguments to get help about the
+command-line syntax.  See (5) for a detailed description of the operation it
+performs.  You will need a working SAT solver (such as [http://minisat.se/ Minisat])
+in order to solve the propositional formulas dumped by the tool.
+
+= Downloads =
+
+ * The Cunf tool [http://code.google.com/p/cunf/downloads/detail?name=manual.pdf user manual].
+ * Cunf [http://code.google.com/p/cunf/downloads/detail?name=cunf-v1.4_x86-64 v1.4] (also referred as _revision 55_) for Linux x86-64.
+
+= See also =
+
+ * Stefan Schwoon's [http://www.lsv.ens-cachan.fr/~schwoon/tools/mole/ Mole] unfolder.
+ * Victor Khomenko's [http://homepages.cs.ncl.ac.uk/victor.khomenko/tools/tools.html Punf] unfolder.
+ * The [http://theoretica.informatik.uni-oldenburg.de/~pep/ PEP] homepage.
+
+= References =
+
+ * (1) Paolo Baldan, Andrea Corradini, Barbara König and Stefan Schwoon.  [http://dx.doi.org/10.1007/978-3-540-89287-8_12 McMillan's Complete Prefix for Contextual Nets].  In Transactions on Petri Nets and Other Models of Concurrency I, pages 199-220, 2008.  Springer-Verlag.
+
+ * (2) César Rodríguez.  [http://www.lsv.ens-cachan.fr/Publis/PAPERS/PDF/cr-m2.pdf Implementation of a complete prefix unfolder for contextual nets].  Rapport de Master, Master Parisien de Recherche en Informatique, Paris, France, September 2010.
+
+ * (3) César Rodríguez, Stefan Schwoon, Paolo Baldan.  [http://www.lsv.ens-cachan.fr/Publis/PAPERS/PDF/RSB-concur11.pdf Efficient contextual unfolding].  In Proc. of CONCUR'11, volume 6901 of LNCS.  Springer, 2011.
+
+ * (4) César Rodríguez, Stefan Schwoon, Paolo Baldan [http://www.lsv.ens-cachan.fr/Publis/PAPERS/PDF/rr-lsv-2011-14.pdf Efficient contextual unfolding].  Research Report LSV-11-14, Laboratoire de Spécification et Vérification, ENS Cachan, France, June 2011
+ 
+ * (5) César Rodríguez, Stefan Schwoon.  [http://www.lsv.ens-cachan.fr/~rodrigue/tools/cunf/rs12.pdf Verification of Petri Nets with Read Arcs]. Submitted for publication.
+
