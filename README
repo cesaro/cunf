@@ -48,6 +48,6 @@ in order to solve the propositional formulas dumped by the tool.
  * (3) César Rodríguez, Stefan Schwoon, Paolo Baldan.  [http://www.lsv.ens-cachan.fr/Publis/PAPERS/PDF/RSB-concur11.pdf Efficient contextual unfolding].  In Proc. of CONCUR'11, volume 6901 of LNCS.  Springer, 2011.
 
  * (4) César Rodríguez, Stefan Schwoon, Paolo Baldan [http://www.lsv.ens-cachan.fr/Publis/PAPERS/PDF/rr-lsv-2011-14.pdf Efficient contextual unfolding].  Research Report LSV-11-14, Laboratoire de Spécification et Vérification, ENS Cachan, France, June 2011
- 
- * (5) César Rodríguez, Stefan Schwoon.  [http://www.lsv.ens-cachan.fr/~rodrigue/tools/cunf/rs12.pdf Verification of Petri Nets with Read Arcs]. Submitted for publication.
+
+ * (5) César Rodríguez, Stefan Schwoon.  [http://www.lsv.ens-cachan.fr/~rodriguez/tools/cunf/rs12.pdf Verification of Petri Nets with Read Arcs].  In Proc. of CONCUR'12. Springer, 2012. To appear.
 
