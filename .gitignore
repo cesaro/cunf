@@ -2,8 +2,12 @@
 *.pdf
 *.dot
 *.cuf
+*.mp
 *.cnf
 *.bc
 *.tr
 *.r
 *.d
+*.o
+*.pyc
+tags

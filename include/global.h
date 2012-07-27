@@ -80,7 +80,7 @@ struct net {
 	struct ls trans;	/* list of transitions */
 	int numpl, numtr;	/* number of places/transitions in net*/
 	struct trans *t0;	/* fake trans. generating initial marking */
-	int isplain;		/* true if there is no read arcs */
+	int isplain;		/* true iff there is no read arcs */
 };
 
 struct unf {

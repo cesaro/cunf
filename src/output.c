@@ -261,25 +261,39 @@ static void _write_str (const char * path, FILE * f, const char * str)
 }
 
 /*
- * Contextual Unfolding Format (CUF 02)
- *
- * 0. format version number: 0x 43 55 46 02
- * 1. number of conditions
- * 2. number of events
- * 3. number of white events (events without cutoff histories, they come first
- *    in the list
- * 3'. number of gray events (events with at least one cutoff and one
+ *  Contextual Unfolding Format (CUF 03)
+ *  All integers are 32-bit integers in network byte order
+ *  All indexes into any section start at 0
+ * 
+ *  0. format version number: 0x 43 55 46 03
+ *  2. number of places in the original net
+ *  1. number of transitions in the original net
+ *  3. number of conditions
+ *  4. number of events
+ *  5. number of white events (events without cutoff histories, they come first
+ *     in the list)
+ *  6. number of gray events (events with at least one cutoff and one
  *     non-cutoff history, they come after the white events)
- * 4. maximum size of a string in the next two sections
- * 5. list of events; each entry is the label of the event, transition name
- * 6. list of conditions; each entry consist on:
- * 	1. label of the condition, place name
- * 	2. 0 if initial condition; nr. of generating event otherwise
- * 	3. list of postset events
- * 	4. 0 (zero)
- * 	5. list of context events
- * 	6. 0 (zero)
+ *  7. maximum size of a string in sections 10 and 11
+ *  8. list of events; each entry is the index of the associated transition in
+ *     the transition table, in section 10; white events are the first, then
+ *     gray, the black
+ *  9. list of conditions; each entry consist on:
+ *  	1. index of the associated place, in section 11
+ *  	2. 0xffffffff if initial condition; index of generating event otherwise
+ *  	3. postset size
+ *  	4. context size
+ *  	5. list of indexes of the events in the postset
+ *  	6. list of indexes of events in the context
+ * 10. list of transitions; each entry consist on the name of the transition,
+ *     terminated by a null character
+ * 11. list of places; each entry consist on the name of the place, terminated
+ *     by a null character
  */
+
+#define PLACE_IDX(p)	(u.net.numpl - 1 - (p)->id)
+#define TRANS_IDX(t)	(u.net.numtr - (t)->id)
+#define EVENT_IDX(e)	(u.net.numtr - (t)->id)
 
 void write_cuf (const char * filename)
 {
@@ -290,7 +304,6 @@ void write_cuf (const char * filename)
 	struct cond * c;
 	struct ls * n;
 	int i, j, nwhite, nblack, mwhite;
-	char buff[1024];
 
 	/* generate one color */
 	mwhite = ++u.mark;
@@ -303,7 +316,7 @@ void write_cuf (const char * filename)
 	ls_reverse (&u.unf.events);
 	ls_reverse (&u.unf.conds);
 
-	/* count the number of white and black events */
+	/* count the number of white and black events and color the whites */
 	nwhite = 0;
 	nblack = 0;
 	for (n = u.unf.events.next; n; n = n->next) {
@@ -330,22 +343,28 @@ void write_cuf (const char * filename)
 	u.unf.numewhite = nwhite;
 
 	/* 0. format version number */
-	_write_int (filename, f, 0x43554602);
+	_write_int (filename, f, 0x43554603);
 
-	/* 1. number of conditions */
+	/* 1. number of places in the original net */
+	_write_int (filename, f, u.net.numpl);
+
+	/* 2. number of transitions in the original net */
+	_write_int (filename, f, u.net.numtr);
+
+	/* 3. number of conditions */
 	_write_int (filename, f, u.unf.numcond);
 	
-	/* 2. number of events (without e0) */
+	/* 4. number of events (without e0) */
 	_write_int (filename, f, u.unf.numev - 1);
 
-	/* 3. number of white events (events without cutoff histories) */
+	/* 5. number of white events (events without cutoff histories) */
 	_write_int (filename, f, nwhite);
 
-	/* 3'. number of gray events (events with at least one cutoff and one *
+	/* 6. number of gray events (events with at least one cutoff and one *
 	 * non-cutoff history) */
 	_write_int (filename, f, u.unf.numev - 1 - nwhite - nblack);
 
-	/* 4. maximum size of a string in the next two sections */
+	/* 7. maximum size of a string in sections 10 and 11 */
 	i = 0;
 	for (n = u.net.places.next; n; n = n->next) {
 		p = ls_i (struct place, n, nod);
@@ -355,207 +374,67 @@ void write_cuf (const char * filename)
 		t = ls_i (struct trans, n, nod);
 		if ((int) strlen (t->name) > i) i = strlen (t->name);
 	}
-	_write_int (filename, f, i + 16);
+	_write_int (filename, f, i + 1);
 
-	/* 5. list of events, and re-number: first white, then gray, then
+	/* 8. list of events, and re-number: first white, then gray, then
 	 * black */
-	i = 1;
+	i = 0;
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
 		if (e->id == 0) continue;
 		if (e->m == mwhite) {
-			snprintf (buff, 1024, "%d-%s", e->ft->id, e->ft->name);
-			_write_str (filename, f, buff);
+			_write_int (filename, f, TRANS_IDX (e->ft));
 			e->id = i++;
 		}
 	}
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
 		if (e->id != 0 && e->m != mwhite && ! e->iscutoff) {
-			snprintf (buff, 1024, "%d-%s", e->ft->id, e->ft->name);
-			_write_str (filename, f, buff);
+			_write_int (filename, f, TRANS_IDX (e->ft));
 			e->id = i++;
 		}
 	}
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
 		if (e->iscutoff) {
-			snprintf (buff, 1024, "%d-%s", e->ft->id, e->ft->name);
-			_write_str (filename, f, buff);
+			_write_int (filename, f, TRANS_IDX (e->ft));
 			e->id = i++;
 		}
 	}
 
-	/* 6. list of conditions, flow and context relation */
+	/* 9. list of conditions, flow and context relation */
 	for (n = u.unf.conds.next; n; n = n->next) {
 		c = ls_i (struct cond, n, nod);
-		snprintf (buff, 1024, "%d-%s", c->fp->id, c->fp->name);
-		_write_str (filename, f, buff);
-		if (c->pre->id != 0) {
-			_write_int (filename, f, c->pre->id);
+		_write_int (filename, f, PLACE_IDX (c->fp));
+		if (c->pre->id == 0 && c->pre->m != mwhite) {
+			_write_int (filename, f, 0xffffffff);
 		} else {
-			_write_int (filename, f, 0);
+			_write_int (filename, f, c->pre->id);
 		}
+		_write_int (filename, f, c->post.deg);
+		_write_int (filename, f, c->cont.deg);
 		for (i = c->post.deg - 1; i >= 0; i--) {
 			e = (struct event *) c->post.adj[i];
 			_write_int (filename, f, e->id);
 		}
-		_write_int (filename, f, 0);
 		for (i = c->cont.deg - 1; i >= 0; i--) {
 			e = (struct event *) c->cont.adj[i];
 			_write_int (filename, f, e->id);
 		}
-		_write_int (filename, f, 0);
 	}
 
-	fclose (f);
-}
-
-/*
- * Contextual Unfolding Format (CUF) - old version
- *
- * All integers are 32 bit long, in network byte order (big-endian)
- *
- * 1. number of conditions
- * 2. number of events
- * 3. number of cutoffs (last events in the list)
- * 4. list of events; entries:
- * 	1. number of transition associated to the event
- * 5. list of conditions:
- * 	1. number of the place associated to the condition
- * 	2. 0 if initial condition; nr. of generating event otherwise
- * 	3. list of postset events, as in 4
- * 	4. 0 (zero)
- * 	5. list of context events, as in 4
- * 	6. 0 (zero)
- * 6. number of places in the original net
- * 7. number of transitions in the original net
- * 8. maximum size of a string in the next two sections
- * 9. list of place names
- * 	1. character string storing the name
- * 	2. character '\0'
- * 10. character '\0'
- * 11. list of transitions names, as in 9.
- * 12. character '\0'
- */
-
-void write_cuf_old (const char * filename)
-{
-	FILE * f;
-	struct place * p;
-	struct trans * t;
-	struct event * e;
-	struct cond * c;
-	struct ls * n;
-	int i, ecff;
-
-	/* open file */
-	f = fopen (filename, "wb");
-	if (! f) gl_err ("'%s': %s", filename, strerror (errno));
-
-	/* reverse the list of events and conditions */
-	ls_reverse (&u.unf.events);
-	ls_reverse (&u.unf.conds);
-
-	/* re-number the events: first non-cutoffs then "cutoff events" */
-	i = 1;
-	ecff = 0;
-	for (n = u.unf.events.next; n; n = n->next) {
-		e = ls_i (struct event, n, nod);
-		if (e->id == 0) continue;
-		for (i = e->hist.deg - 1; i >= 0; i--) {
-			if (((struct h *) e->hist.adj[i])->corr == 0) break;
-		}
-		if (i >= 0) {
-			e->id = i++;
-		} else {
-			e->id = -1;
-			ecff++;
-		}
-	}
-	u.unf.numeblack = ecff;
-	u.unf.numewhite = 99999999;
-	u.unf.numegray = 99999999;
-	for (n = u.unf.events.next; n; n = n->next) {
-		e = ls_i (struct event, n, nod);
-		if (e->id < 0) e->id = i++;
-	}
-	ASSERT (i - 1 == u.unf.numev - 1);
-
-	/* 1. number of conditions */
-	_write_int (filename, f, u.unf.numcond);
-	
-	/* 2. number of events (without e0) */
-	_write_int (filename, f, u.unf.numev - 1);
-
-	/* 3. number of cutoffs (last events in the list) */
-	_write_int (filename, f, ecff);
-
-	/* 4. list of events */
-	for (n = u.unf.events.next; n; n = n->next) {
-		e = ls_i (struct event, n, nod);
-		if (e->id > 0) _write_int (filename, f, e->ft->id);
-	}
-	for (n = u.unf.events.next; n; n = n->next) {
-		e = ls_i (struct event, n, nod);
-		if (e->id < 0) {
-			_write_int (filename, f, e->ft->id);
-			e->id *= -1;
-		}
-	}
-
-	/* 5. list of conditions: */
-	for (n = u.unf.conds.next; n; n = n->next) {
-		c = ls_i (struct cond, n, nod);
-
-		_write_int (filename, f, c->fp->id);
-		if (c->pre->id != 0) {
-			_write_int (filename, f, c->pre->id);
-		} else {
-			_write_int (filename, f, 0);
-		}
-		for (i = c->post.deg - 1; i >= 0; i--) {
-			e = (struct event *) c->post.adj[i];
-			_write_int (filename, f, e->id);
-		}
-		_write_int (filename, f, 0);
-	}
-
-	/* 6. number of places in the original net */
-	_write_int (filename, f, u.net.numpl);
-
-	/* 7. number of transitions in the original net */
-	_write_int (filename, f, u.net.numtr);
-
-	/* 8. maximum size of a string in the next two sections */
-	i = 0;
-	for (n = u.net.places.next; n; n = n->next) {
-		p = ls_i (struct place, n, nod);
-		if ((int) strlen (p->name) > i) i = strlen (p->name);
-	}
-	for (n = u.net.trans.next; n; n = n->next) {
+	/* 10. list of transitions names (skiping _t0_), terminated with \0 */
+	for (n = u.net.trans.next, n = n->next; n; n = n->next) {
 		t = ls_i (struct trans, n, nod);
-		if ((int) strlen (t->name) > i) i = strlen (t->name);
+		_write_str (filename, f, t->name);
 	}
-	_write_int (filename, f, i);
 
-	/* 9. list of place names */
+	/* 11. list of place names, terminated with \0 */
 	for (n = u.net.places.next; n; n = n->next) {
 		p = ls_i (struct place, n, nod);
 		_write_str (filename, f, p->name);
 	}
 
-	/* 10. character '\0' */
-	_write_str (filename, f, "");
-
-	/* 11. list of transitions names, as in 9. */
-	for (n = u.net.trans.next; n; n = n->next) {
-		t = ls_i (struct trans, n, nod);
-		_write_str (filename, f, t->name);
-	}
-
-	/* 12. character '\0' */
-	_write_str (filename, f, "");
-
 	fclose (f);
 }
+

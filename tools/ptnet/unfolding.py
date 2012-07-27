@@ -1,30 +1,36 @@
 
+import mp
 import sys
 import net
+import struct
+import socket
 import networkx
+import time
 
 def db (*msg) :
     s = ' '.join (str(x) for x in msg)
-    sys.stdout.write ('cnmc: ' + s + '\n')
+    sys.stderr.write ('unfolding.py: ' + s + '\n')
 
-class Event (object) :
-    def __init__ (self, nr, l="", pre=set(), post=set(), cont=set(),
+def timeit (t = None, msg='') :
+    if t == None :
+        db ('### +0.000s', msg)
+    else :
+        db ('### +%.3fs' % (time.time () - t), msg)
+    return time.time ()
+
+class Event (net.Transition) :
+    def __init__ (self, nr, label, pre=set(), post=set(), cont=set(),
             white=True, gray=False) :
+        net.Transition.__init__ (self, nr)
         self.nr = nr
-        self.label = l
-        self.pre = pre
-        self.post = post
-        self.cont = cont
+        self.label = label
         self.isblack = not white and not gray
         self.iswhite = white
         self.isgray = gray
-        self.mark = 0
-        self.count = 0
-        #db ('Event', nr, l, pre, post, cont, 'white', white, 'gray', gray)
 
-        for c in pre : c.post.add (self)
-        for c in post : c.pre = self
-        for c in cont : c.cont.add (self)
+        for c in pre : self.pre_add (c)
+        for c in post : self.post_add (c)
+        for c in cont : self.cont_add (c)
 
     def __repr__ (self) :
         if self.isblack :
@@ -33,101 +39,30 @@ class Event (object) :
             s = '+'
         else :
             s = ''
+        return '%s%s:e%d' % (s, repr (self.label), self.nr)
 
-        return '%se%d:%s' % (s, self.nr, self.label)
-
-    def __str__ (self) :
-        if self.isblack :
-            s = '*'
-        elif self.isgray :
-            s = '+'
-        else :
-            s = ''
-        return "%se%d:%s Pre %s;  Cont %s;  Post %s" \
-                % (s, self.nr, self.label, self.pre, self.cont, self.post)
-
-class Condition (object) :
-    def __init__ (self, nr, l="", pre=None, post=set(), cont=set()) :
+class Condition (net.Place) :
+    def __init__ (self, nr, label, pre=set(), post=set(), cont=set()) :
+        net.Place.__init__ (self, nr)
         self.nr = nr
-        self.label = l
-        self.pre = pre
-        self.post = post
-        self.cont = cont
-        self.mark = 0
-        self.count = 0
+        self.label = label
+        self.m0 = 1 if len (pre) == 0 else 0
 
-        if (pre) : pre.post.add (self)
-        for e in post : e.pre.add (self)
-        for e in cont : e.cont.add (self)
+        for e in pre : self.pre_add (e)
+        for e in post : self.post_add (e)
+        for e in cont : self.cont_add (e)
 
     def __repr__ (self) :
-        return 'c%d:%s' % (self.nr, self.label)
+        return '%s:c%d' % (repr (self.label), self.nr)
 
-    def __str__ (self) :
-        return 'c%d:%s Pre %s;  Cont %s;  Post %s' \
-                % (self.nr, self.label, repr (self.pre), self.cont, self.post)
-
-class Unfolding (object) :
-
+class Unfolding (net.Net) :
     def __init__ (self, sanity_check=True) :
-        self.conds = [None]
-        self.events = [None]
-        self.m0 = set ()
+        net.Net.__init__ (self, sanity_check)
+        self.conds = self.places
+        self.events = self.trans
         self.nr_black = 0
         self.nr_gray = 0
-        self.sanity_check = sanity_check
-        self.mark = 1
-
-    def __is_event_id (self, i) :
-        return 0 <= i < len (self.events)
-
-    def __is_cond_id (self, i) :
-        return 1 <= i < len (self.conds)
-
-    def __sane_event_id (self, i) :
-        if (self.__is_event_id (i)) : return
-        raise Exception, '%s: invalid event nr' % i
-        
-    def __sane_cond_id (self, i) :
-        if (self.__is_cond_id (i)) : return
-        raise Exception, '%s: invalid condition nr' % i
-
-    def add_cond (self, l, pre=0, post=[], cont=[]) :
-        # validate event identifiers
-        if self.sanity_check :
-            self.__sane_event_id (pre)
-            for i in post : self.__sane_event_id (i)
-            for i in cont : self.__sane_event_id (i)
-
-        # map to object references
-        po = set(self.events[i] for i in post)
-        co = set(self.events[i] for i in cont)
-        #db ('new cond', l, pre, post, cont, 'initial', pre == 0)
-
-        # create the new condition and register it
-        c = Condition (len (self.conds), l, self.events[pre], po, co)
-        self.conds.append (c)
-        if (pre == 0) : self.m0.add (c)
-        return c
-
-    def add_event (self, l, pre=[], post=[], cont=[], white=True, gray=False) :
-        # validate condition identifiers
-        if self.sanity_check :
-            for i in pre : self.__sane_cond_id (i)
-            for i in post : self.__sane_cond_id (i)
-            for i in cont : self.__sane_cond_id (i)
-
-        # map to object references
-        pr = set(self.conds[i] for i in pre)
-        po = set(self.conds[i] for i in post)
-        co = set(self.conds[i] for i in cont)
-
-        # create the new event and register it
-        e = Event (len (self.events), l, pr, po, co, white, gray)
-        self.events.append (e)
-        if gray : self.nr_gray += 1
-        if not white and not gray : self.nr_black += 1
-        return e
+        self.net = net.Net (sanity_check)
 
     def rem_cond (self, nr) :
         if self.sanity_check : self.__sane_cond_id (nr)
@@ -163,179 +98,124 @@ class Unfolding (object) :
             for x in self.events[-1].pre : db ('rem_event: pre del ultimo despues', x)
         del self.events[-1]
 
-    def write (self, f, fmt='dot', ctxitems=set(), ctxn=0) :
-        if fmt == 'dot' : return self.__write_dot (f)
-        if fmt == 'ctxdot' : return self.__write_ctxdot (f, ctxitems, ctxn)
-        raise Exception, "'%s': unknown output format" % fmt
+    def read (self, f, fmt='cuf3') :
+        if fmt == 'cuf' : fmt = 'cuf3'
+        if fmt == 'cuf3' : return self.__read_cuf3 (f)
+        net.Net.read (self, f, fmt)
 
-    def __write_ctxdot (self, f, items, n) :
-        if len (items) != 0 : return self.__write_ctxdot_items (f, items, n)
-
-        f.write ('digraph {\n')
-        for e in self.events[1:] :
-            self.__write_ctxdot_items (f, set ([e]), n, repr (e), False)
-        f.write ('}\n')
-
-    def __write_ctxdot_items (self, f, items, n, prefx='', full=True) :
-        self.mark += 1
-        m = self.mark
-
-        t = set (items)
-        for x in t :
-            x.mark = m
-            x.count = n
-        while len (t) :
-            s = t
-            t = set ()
-            for x in s :
-                assert (x.mark == m)
-                if x.count <= 0 : continue
-
-                for y in x.post | x.cont :
-                    if y.mark == m : continue
-                    y.mark = m
-                    y.count = x.count - 1
-                    t.add (y)
-                if type (x.pre) == Event :
-                    if x.pre.mark != m :
-                        x.pre.mark = m
-                        x.pre.count = x.count - 1
-                        t.add (x.pre)
-                elif type (x.pre) == set :
-                    for y in x.pre :
-                        if y.mark == m : continue
-                        y.mark = m
-                        y.count = x.count - 1
-                        t.add (y)
-
-        self.__write_dot (f, m, prefx, full)
-
-    def __write_dot (self, f, m=0, prefx='', full=True) :
-        if full : f.write ('digraph {\n')
-        f.write ('\t/* events */\n')
-        f.write ('\tnode\t[shape=box style=filled fillcolor=gray80];\n')
-        for e in self.events :
-            if e == None or (m != 0 and e.mark != m) : continue
-            star = ''
-            if e.isgray :
-                star = '+'
-            elif e.isblack :
-                star = '*'
-            s = '\t%se%-6d [label="%s%s:e%d"' % \
-                    (prefx, e.nr, star, e.label, e.nr)
-            if e.isblack or e.isgray : s += ' shape=Msquare'
-#            if (e.mark) : s += ' fillcolor=blue'
-            f.write (s + '];\n')
-
-        f.write ('\n\t/* conditions, flow and context relations */\n')
-        f.write ('\tnode\t[shape=circle fillcolor=gray95];')
-        for c in self.conds :
-            if c == None or (m != 0 and c.mark != m): continue
-            s = '*' if c in self.m0 else ''
-            s = '\n\t%sc%-6d [label="%s:c%d%s"];' % (prefx, c.nr, c.label, c.nr, s)
-            if (c.pre == None) : s += ' /* initial */\n'
-            elif m == 0 or c.pre.mark == m :
-                s += '\n\t%se%-6d -> %sc%d;\n' % (prefx, c.pre.nr, prefx, c.nr)
-
-            for e in c.post :
-                if m == 0 or e.mark == m :
-                    s += '\t%sc%-6d -> %se%d;\n' % (prefx, c.nr, prefx, e.nr)
-            for e in c.cont :
-                if m == 0 or e.mark == m :
-                    s += '\t%sc%-6d -> %se%d [arrowhead=none color=red];\n' \
-                        % (prefx, c.nr, prefx, e.nr)
-            f.write (s)
-
-        if full : f.write ('}\n')
-
-    def __cuf2unf_readstr (self, f, m) :
-        s = ""
-        for i in xrange (0, m) :
-            t = f.read (1)
-            if (len (t) == 0) : break
-            if (t == '\x00') : return s
-            s += t
-        raise Exception, 'Corrupted CUF file'
+    def __check_event_id (self, i) :
+        if 0 <= i < len (self.events) : return
+        raise Exception, '%s: invalid event nr' % i
+    def __check_cond_id (self, i) :
+        if 0 <= i < len (self.conds) : return
+        raise Exception, '%s: invalid condition nr' % i
+    def __check_place_id (self, i) :
+        if 0 <= i < len (self.net.places) : return
+        raise Exception, '%s: invalid place nr' % i
+    def __check_trans_id (self, i) :
+        if 0 <= i < len (self.net.trans) : return
+        raise Exception, '%s: invalid transition nr' % i
 
     def __cuf2unf_readint (self, f) :
         s = f.read (4)
         if (len (s) != 4) : raise Exception, 'Corrupted CUF file'
-        r = (ord (s[0]) << 24) + (ord (s[1]) << 16)
-        r += (ord (s[2]) << 8) + ord (s[3])
-        return r
+        tup = struct.unpack ('I', s)
+        return socket.ntohl (tup[0])
 
-    def read (self, f, fmt='cuf') :
-        if fmt != 'cuf' : raise Exception, "'%s': unknown input format" % fmt
+    def __read_cuf3 (self, f) :
         mag = self.__cuf2unf_readint (f)
-        if mag != 0x43554602 : raise Exception, "'%s': not a CUF02 file" % fmt
+        if mag != 0x43554603 : raise Exception, 'Not a CUF03 file'
 
-        # read first four fields
+        # read first seven fields
+        nrp = self.__cuf2unf_readint (f)
+        nrt = self.__cuf2unf_readint (f)
         nrc = self.__cuf2unf_readint (f)
         nre = self.__cuf2unf_readint (f)
         nrw = self.__cuf2unf_readint (f)
         nrg = self.__cuf2unf_readint (f)
         m = 1 + self.__cuf2unf_readint (f)
-        #r, nrc, nre, nrf, m
+        # db (nrp, nrt, nrc, nre, nrw, nrg, m)
 
-        # read nre event labels
+        # create nrp places and nrt transitions in self.net
+        for i in xrange (nrp) :
+            self.net.places.append (net.Place (None))
+        for i in xrange (nrt) :
+            self.net.trans.append (net.Transition (None))
+
+        # read nre events
         for i in xrange (nrw) :
-            self.add_event (self.__cuf2unf_readstr (f, m))
+            idx = self.__cuf2unf_readint (f)
+            self.__check_trans_id (idx)
+            e = Event (len (self.events), self.net.trans[idx],
+                    white=True, gray=False)
+            # db ('event', len (self.events), 'trans idx', idx, 'white')
+            self.events.append (e)
         for i in xrange (nrg) :
-            l = self.__cuf2unf_readstr (f, m)
-            self.add_event (l, white=False, gray=True)
+            idx = self.__cuf2unf_readint (f)
+            self.__check_trans_id (idx)
+            e = Event (len (self.events), self.net.trans[idx],
+                    white=False, gray=True)
+            # db ('event', len (self.events), 'trans idx', idx, 'gray')
+            self.events.append (e)
         for i in xrange (nre - nrg - nrw) :
-            l = self.__cuf2unf_readstr (f, m)
-            self.add_event (l, white=False, gray=False)
+            idx = self.__cuf2unf_readint (f)
+            self.__check_trans_id (idx)
+            e = Event (len (self.events), self.net.trans[idx],
+                    white=False, gray=False)
+            # db ('event', len (self.events), 'trans idx', idx, 'black')
+            self.events.append (e)
+        self.nr_gray = nrg
+        self.nr_black = nre - nrg - nrw
 
         # read condition labels, flow and context relations
-        for i in xrange (0, nrc) :
-            l = self.__cuf2unf_readstr (f, m)
-            pre = self.__cuf2unf_readint (f)
-            post = []
-            cont = []
-            while True :
-                e = self.__cuf2unf_readint (f)
-                if (not e) : break
-                post.append (e)
-            while True :
-                e = self.__cuf2unf_readint (f)
-                if (not e) : break
-                cont.append (e)
-#            db (l, pre, post, cont)
-            self.add_cond (l, pre, post, cont)
+        for i in xrange (nrc) :
+            idx = self.__cuf2unf_readint (f)
+            self.__check_place_id (idx)
+            p = self.net.places[idx]
+            # db ('cond', len (self.conds), 'place idx', idx)
+
+            idx = self.__cuf2unf_readint (f)
+            pre = set ()
+            if idx != 0xffffffff :
+                self.__check_event_id (idx)
+                pre.add (self.events[idx])
+
+            pos = self.__cuf2unf_readint (f)
+            cos = self.__cuf2unf_readint (f)
+            post = set ()
+            cont = set ()
+            for i in xrange (pos) :
+                idx = self.__cuf2unf_readint (f)
+                self.__check_event_id (idx)
+                post.add (self.events[idx])
+            for i in xrange (cos) :
+                idx = self.__cuf2unf_readint (f)
+                self.__check_event_id (idx)
+                cont.add (self.events[idx])
+            c = Condition (len (self.conds), p, pre, post, cont)
+            self.conds.append (c)
+            if c.m0 > 0 : self.m0.add (c)
+
+        # finally, read transition and place names
+        s = f.read ()
+        if s[-1] != '\0' : raise Exception, 'Corrupted CUF file'
+        s = s[:-1]
+        l = s.split ('\0')
+        if len (l) != nrt + nrp : raise Exception, 'Corrupted CUF file'
+        for i in xrange (nrt) :
+            self.net.trans[i].name = l[i]
+            # db ('trans idx', i, 'name', l[i])
+        for i in xrange (nrp) :
+            self.net.places[i].name = l[nrt + i]
+            # db ('place idx', i, 'name', l[nrt + i])
+
+        # db (self.__dict__)
+
         if self.sanity_check :
-            for e in self.events[1:] :
+            for e in self.events :
                 if not e.pre and not e.cont :
-                    raise Exception, 'Event e%d has empty preset+context' % e.nr
-
-    def enables (self, m, e) :
-        return e.pre | e.cont <= m
-
-    def enabled (self, m) :
-        s, u = set (), set ()
-        for c in m : u |= set (c.post)
-        for e in u :
-            if self.enables (m, e) : s.add (e)
-        assert (s == self.enabled2 (m))
-        return s
-
-    def enabled2 (self, m) :
-        s = set ()
-        for e in self.events[1:] :
-            if self.enables (m, e) : s.add (e)
-        return s
-
-    def fire (self, run, m=None) :
-        if m == None : m = self.m0.copy ()
-        for e in run :
-#            db ('at', list (m))
-#            db ('firing', e)
-            if not self.enables (m, e) :
-                raise Exception, 'Cannot fire, event not enabled'
-            m -= set (e.pre)
-            m |= set (e.post)
-#        db ('reached', list (m), 'enables', self.enabled (m))
-        return m
+                    raise Exception, 'Event %s has empty preset+context' \
+                            % repr (e)
 
     def run_of (self, conf) :
         # TODO: implement the topological sort by hand
@@ -358,23 +238,21 @@ class Unfolding (object) :
 #        return run
 
     def is_configuration (self, s) :
+        pre = set ()
         for e in s :
-            pre = set ([c.pre for c in (e.pre | e.cont)])
-            pre.discard (None)
-#            if not (pre <= s) : db ('event', e, 'not cc')
-            if not (pre <= s) : return False
+            for c in e.pre | e.cont :
+                if not c.pre <= s : return False
+
         g = self.asym_graph (True, s, True)
-        b = networkx.is_directed_acyclic_graph (g)
-#        if not b : db ('is not a dag')
-        return b
+        return networkx.is_directed_acyclic_graph (g)
 
     def marking_of (self, conf) :
         m = self.m0.copy ()
         for e in conf :
-            m |= set (e.post)
+            m |= e.post
         for e in conf :
-            assert (set (e.pre) <= m)
-            m -= set (e.pre)
+            assert (e.pre <= m)
+            m -= e.pre
         assert (self.is_configuration (conf))
         assert (m == self.fire (self.run_of (conf)))
         return m
@@ -382,11 +260,11 @@ class Unfolding (object) :
     def asym_graph (self, symm=True, s=None, cutoffs=False) :
         # build the asymmetric conflict relaton
         g = networkx.DiGraph ()
-        u = self.events[1:] if s == None else s
+        u = self.events if s == None else s
         for e in u :
             if not cutoffs and e.isblack : continue
             for c in e.pre :
-                if c.pre : g.add_edge (c.pre, e, color=1)
+                if c.pre : g.add_edge (list (c.pre)[0], e, color=1)
                 for ep in c.cont : self.__red_edge (g, ep, e, 2)
                 if symm :
                     for ep in c.post :
@@ -394,8 +272,10 @@ class Unfolding (object) :
                             g.add_edge (ep, e, color=1)
                             g.add_edge (e, ep, color=1)
             for c in e.cont :
-                if c.pre and (cutoffs or not c.pre.isblack):
-                    g.add_edge (c.pre, e, color=1)
+                if c.pre :
+                    ep = list (e.pre)[0]
+                    if cutoffs or not ep.isblack :
+                        g.add_edge (ep, e, color=1)
 
         if s != None : g = g.subgraph (s)
 #        opt = ''
@@ -410,6 +290,94 @@ class Unfolding (object) :
         g.add_edge (u, v)
         if not 'color' in g[u][v] or g[u][v]['color'] == 2 :
             g[u][v]['color'] = c
+
+    def __ic_graph (self) :
+        g = networkx.DiGraph ()
+        for c in self.conds :
+            g.add_node (c)
+            if len (c.pre) :
+                g.add_edge (list (c.pre)[0], c)
+                for e in c.cont : g.add_edge (list (c.pre)[0], e)
+            for e in c.post : g.add_edge (c, e)
+        for n in g : g.node[n]['depth'] = {}
+        return g
+
+    def __merge_depths (self, g) :
+        # set up the list of labels whose depth each node has to track
+        l = networkx.topological_sort (g)
+        depths = {}
+        t = time.time () # timeit
+        for n in reversed (l) :
+            nd = g.node[n]['depth']
+            if isinstance (n, Condition) :
+                nd[n.label] = 0
+            for np in g[n] :
+                for label in g.node[np]['depth'] :
+                    nd[label] = 0
+        t = timeit (t, 'computing required places')
+        for n in l :
+            nd = g.node[n]['depth']
+            for np in g.predecessors (n) :
+                npd = g.node[np]['depth']
+                for label in nd :
+                    d = npd[label]
+                    if d > nd[label] : nd[label] = d
+            if isinstance (n, Condition) :
+                nd[n.label] += 1
+                depths[n] = nd[n.label] 
+        #db ('depthssssssssss', depths)
+        timeit (t, 'computing max')
+        return depths
+
+    def merge (self) :
+
+        # compute the immediate causality graph and condition depths
+        t = timeit (None, 'Starting')
+        g = self.__ic_graph ()
+        t = timeit (t, 'building ic graph')
+        d = self.__merge_depths (g)
+        t = timeit (t, 'computing depths')
+
+        # create the merged process and merge conditions (step 1)
+        mproc = mp.Mprocess (self.sanity_check)
+        mproc.net = self.net
+        mpconds = {}
+        for c in self.conds :
+            if (c.label, d[c]) not in mpconds :
+                #db ('new mp-cond', c.label, d[c])
+                mpc = mp.Mpcondition (c.label, d[c], 0)
+                mproc.mpconds.append (mpc)
+                mpconds[c.label, d[c]] = mpc
+            # warning! we dynamically create the field mpcond in Condition
+            c.mpcond = mpconds[c.label, d[c]]
+            #db ('condition', c, 'maps to mp-condition', c.mpcond)
+
+        # for all initial conditions, make associated mp-conditions initial
+        for c in self.m0 :
+            c.mpcond.m0 += c.m0
+            mproc.m0.add (c.mpcond)
+        t = timeit (t, 'merging conditions (step 1)')
+
+        # merge events (step 2)
+        mpevs = {}
+        for e in self.events :
+            pre = frozenset (c.mpcond for c in e.pre)
+            cont = frozenset (c.mpcond for c in e.cont)
+            post = frozenset (c.mpcond for c in e.post)
+            tup = (e.label, pre, cont, post)
+            if tup not in mpevs :
+                mpe = mp.Mpevent (e.label, pre, post, cont, e.isblack)
+                #db ('new mp-event', mpe.__dict__)
+                mproc.mpevents.append (mpe)
+                mpevs[tup] = mpe
+            # warning! we dynamically create a new field in Event !!
+            e.mpev = mpevs[tup]
+            if not e.isblack : mpevs[tup].iscutoff = False
+            #db ('event', e, 'maps to mp-event', e.mpev)
+        for mpe in mproc.mpevents :
+            if mpe.iscutoff : mproc.nr_cutoffs += 1
+        t = timeit (t, 'merging events (step 2)')
+        return mproc
 
     def stats_print (f, k, v, fmt='%s') :
         f.write (fmt + '\t%s\n') % (v, k)
@@ -589,7 +557,17 @@ def test2 () :
 def test3 () :
     u = Unfolding (True)
     u.read (sys.stdin, fmt='cuf')
-    u.write (sys.stdout, fmt='dot')
+    #u.write (sys.stdout, fmt='dot')
+    u.write (sys.stdout, fmt='pep')
+    sys.exit (0)
+
+def test4 () :
+    u = Unfolding (True)
+    f = open ('/tmp/depths.unf.cuf', 'r')
+    fout = open ('/tmp/depths.mp.ll_net', 'w')
+    u.read (f, fmt='cuf')
+    mp = u.merge ()
+    mp.write (fout, 'pep')
     sys.exit (0)
 
 if __name__ == '__main__' :
