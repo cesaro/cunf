@@ -20,14 +20,14 @@ def b3s23 () :
     # B3 / S23
     # name, pre, post, north, east, south, west
     # die if 0 or 4
-    l.append (('die0', 1, 0, 0, 0, 0, 0))
-    l.append (('die4', 1, 0, 1, 1, 1, 1))
+    l.append (('death0', 1, 0, 0, 0, 0, 0))
+    l.append (('death4', 1, 0, 1, 1, 1, 1))
 
     # die if 1
-    l.append (('die1no', 1, 0, 1, 0, 0, 0))
-    l.append (('die1ea', 1, 0, 0, 1, 0, 0))
-    l.append (('die1so', 1, 0, 0, 0, 1, 0))
-    l.append (('die1we', 1, 0, 0, 0, 0, 1))
+    l.append (('death1no', 1, 0, 1, 0, 0, 0))
+    l.append (('death1ea', 1, 0, 0, 1, 0, 0))
+    l.append (('death1so', 1, 0, 0, 0, 1, 0))
+    l.append (('death1we', 1, 0, 0, 0, 0, 1))
 
     # birth if 3
     l.append (('birth3no', 0, 1, 0, 1, 1, 1))
@@ -55,18 +55,18 @@ def b24s13 () :
     l.append (('birth2/6', 0, 1, 0, 0, 1, 1))
 
     # die if 0 or 4
-    l.append (('die0', 1, 0, 0, 0, 0, 0))
-    l.append (('die4', 1, 0, 1, 1, 1, 1))
+    l.append (('death0', 1, 0, 0, 0, 0, 0))
+    l.append (('death4', 1, 0, 1, 1, 1, 1))
 
     # die if 2
-    l.append (('die2/1', 1, 0, 1, 1, 0, 0))
-    l.append (('die2/2', 1, 0, 1, 0, 1, 0))
-    l.append (('die2/3', 1, 0, 1, 0, 0, 1))
+    l.append (('death2/1', 1, 0, 1, 1, 0, 0))
+    l.append (('death2/2', 1, 0, 1, 0, 1, 0))
+    l.append (('death2/3', 1, 0, 1, 0, 0, 1))
 
-    l.append (('die2/4', 1, 0, 0, 1, 1, 0))
-    l.append (('die2/5', 1, 0, 0, 1, 0, 1))
+    l.append (('death2/4', 1, 0, 0, 1, 1, 0))
+    l.append (('death2/5', 1, 0, 0, 1, 0, 1))
 
-    l.append (('die2/6', 1, 0, 0, 0, 1, 1))
+    l.append (('death2/6', 1, 0, 0, 0, 1, 1))
     return l
 
 def no (x, y) :
@@ -109,12 +109,11 @@ def mklife (n) :
                 t.cont_add (tab[we (x, y)][r[6]])
 
     seed = random.randint (1, 999)
-    seed = 468
     print 'seed', seed
     random.seed (seed)
     for x in xrange (n + 2) :
         for y in xrange (n + 2) :
-            b = random.randint (0, 6)
+            b = random.randint (0, 3)
 #            b = 1
             tab[x,y][0 if b else 1].m0 = True
 

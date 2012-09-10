@@ -19,7 +19,8 @@ printf "PEP\nPetriBox\nFORMAT_N2\nPL\n";
 $plc = 0;
 for ($i = 0; $i < $N; $i++) {
 	for ($j = 0; $j < $N; $j++) {
-		$marked = int(rand(2));
+		$marked = rand(100) - 10 < 0 ? 1 : 0;
+		#$marked = ($i + $j) % 2 == 0;
 		$plc++;
 		printf "%d\"P%d-%d-0\"%s\n",$plc,$i,$j,$marked? "" : "M1m1";
 		$plc++;
