@@ -74,14 +74,19 @@ CPP:=$(CROSS)cpp
 %.dot : %.ll_net
 	@echo "N2D $<"
 	@test/net2dot $< > $@
+	@#tools/pep2dot.py < $< > $@
 
-%.dot : %.cuf
-	@echo "C2D $<"
-	@test/cuf2dot $<
+%.ll_net : %.cuf
+	@echo "C2P $<"
+	@tools/cuf2pep.py < $< > $@
 
 %.unf.cuf : %.ll_net
 	@echo "UNF $<"
 	@src/main $<
+
+%.mp.mp : %.unf.cuf
+	@echo "MER $<"
+	@tools/merger.py < $< > $@
 
 %.unf.cuf.tr : %.ll_net
 	tools/trt.py timeout=5000 t=cunf net=$< > $@
@@ -114,18 +119,16 @@ CPP:=$(CROSS)cpp
 %.dl.mcm.tr : %.unf.mci.tr
 	tools/trt.py timeout=600 t=dl.mcm mci=$(<:%.tr=%) > $@
 
-%.cnf : %.bc
-	bc2cnf -all < $< > $@
-
-%.bc : %.cuf
-	tools/cnmc.py dl print $< 2> $@
-
 %.info : %.ll_net
 	@test/info $< | tools/distrib.py
 
 %.ll_net : %.xml
 	@echo "P2P $<"
 	@tools/pnml2pep.pl < $< > $@
+
+%.ll_net : %.gml
+	@echo "G2P $<"
+	@tools/gml2pep.py < $< > $@
 
 %.r : %.dot
 	@echo "RS  $<"

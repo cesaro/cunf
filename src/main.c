@@ -73,7 +73,7 @@ void rusage (void)
 {
 	struct rusage r;
 	char buff[128];
-	int ret;
+	int fd, ret;
 
 	u.unf.usrtime = 0;
 	u.unf.vmsize = 0;
@@ -87,10 +87,10 @@ void rusage (void)
 
 	/* this will only work in linux, in macos u.unf.vmsize is set to maxrss
 	 * in kb */
-	ret = open ("/proc/self/statm", O_RDONLY);
-	if (ret < 0) return;
-	read (ret, buff, 128);
-	close (ret);
+	fd = open ("/proc/self/statm", O_RDONLY);
+	if (fd < 0) return;
+	ret = read (fd, buff, 128);
+	close (fd);
 	buff[127] = 0;
 	u.unf.vmsize = strtoul (buff, 0, 10) * sysconf (_SC_PAGESIZE) >> 10;
 }
