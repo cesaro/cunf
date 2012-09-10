@@ -81,14 +81,12 @@ static void _unfold_postset (struct event *e)
 static void _unfold_combine (register struct ec *r)
 {
 	register struct ec *rp;
-	register struct cond *c;
 	register int i, j;
 	static struct da l;
 	static int init = 1;
 
 	ASSERT (r);
 	ASSERT (r->c);
-	c = r->c;
 
 	/* compute those rp from rco(r) which must be combined with r */
 	if (init) {
@@ -115,7 +113,6 @@ static void _unfold_combine (register struct ec *r)
 static void _unfold_enriched (struct h *h)
 {
 	struct event *e;
-	struct trans *t;
 	struct cond *c;
 	struct ec *r;
 	int i;
@@ -135,7 +132,6 @@ static void _unfold_enriched (struct h *h)
 	 * concurrency relation for r and use r to update pe with new possible
 	 * extensions */
 	e = h->e;
-	t = e->ft;
 	for (i = e->post.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->post.adj[i];
 		if (c->fp->post.deg + c->fp->cont.deg == 0) continue;

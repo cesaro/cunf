@@ -180,18 +180,6 @@ static void _h_parikh_trans2vector (struct h *h)
 	}
 }
 
-void __h (struct dls * l)
-{
-	struct dls *n;
-	struct h *h;
-
-	for (n = l->next; n; n = n->next) {
-		h = dls_i (struct h, n, auxnod);
-		DPRINT ("%02d h%d/e%d:%s\n", h->depth, h->id, h->e->id, h->e->ft->name);
-	}
-	DPRINT ("\n");
-}
-
 static int _h_cmp_foata (struct h *h1, struct h *h2)
 {
 	int depth, found, found2;
