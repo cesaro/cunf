@@ -6,9 +6,9 @@
 # The initial state of all signals is low except for the signals at the
 # top and left boundaries of the grid, which are high.  Only the rising edges
 # of signals are simulated -- no transition is generated for the falling edges,
-# since no falling edges will happen.
+# since no falling edge will happen.
 #
-# The output is a contextual net.  Referred in the TCS paper
+# The output is a contextual net.  Referred in the TCS 2012 paper.
 
 $N = $ARGV[0]+1;
 
