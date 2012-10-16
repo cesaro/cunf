@@ -18,6 +18,7 @@ include defs.mk
 .PHONY: fake all g test clean distclean prof
 
 all: $(TARGETS)
+	@cp src/main cunf
 
 fake :
 	@echo $(CC)

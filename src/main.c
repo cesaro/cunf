@@ -55,12 +55,12 @@ void usage (void)
 "Usage: cunf [OPTIONS] NETFILE\n"
 "\n"
 "Argument NETFILE is a path to the .ll_net input file.  Allowed OPTIONS are:\n"
-" -T NAME      Stop when transition NAME is inserted\n"
+" -t NAME      Stop when transition NAME is inserted\n"
 " -d DEPTH     Unfold up to given DEPTH\n"
-" -m FILE      Output file to store the unfolding in.  If not provided,\n"
+" -o FILE      Output file to store the unfolding in.  If not provided,\n"
 "              defaults to NETFILE with the last 7 characters removed\n"
 "              (extension '.ll_net') plus a suffix depending option the -O\n"
-" -O FORMAT    Write unfolding in format FORMAT. Available formats: 'cuf',\n"
+" -f FORMAT    Write unfolding in format FORMAT. Available formats: 'cuf',\n"
 "              'dot', 'fancy'.  Default is 'cuf'.\n"
 "\n"
 "For more information, see http://www.lsv.ens-cachan.fr/Software/cunf/\n"
@@ -135,19 +135,19 @@ int main (int argc, char **argv)
 	u.stoptr = 0;
 	u.depth = 0;
 	while (1) {
-		opt = getopt (argc, argv, "m:T:d:O:");
+		opt = getopt (argc, argv, "o:t:d:f:");
 		if (opt == -1) break;
 		switch (opt) {
-		case 'm' :
+		case 'o' :
 			outpath = optarg;
 			break;
-		case 'T' :
+		case 't' :
 			stoptr = optarg;
 			break;
 		case 'd' :
 			u.depth = atoi (optarg);
 			break;
-		case 'O' :
+		case 'f' :
 			outformat = optarg;
 			break;
 		default :

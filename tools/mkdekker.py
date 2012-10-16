@@ -2,11 +2,11 @@
 
 '''
 Builds a c-net representing a variant of the Dekker's agorithm on n processses,
-with n >= 2.  Each process has four states, p0 to p3; p0 is initial.  From
-there, the process executes 'try' and raises the its flag, reaching p1.  In p1,
-if at least one of the other process has a high flag, it 'withdraw's its intent
-and goes back to p0.  In p1, it 'enter's the critical section if all other
-process' flag is zero.  From p3, the process can only 'exit' the critical
+with n >= 2.  Each process has three states, p0, p1, and p3. p0 is initial.
+From there, the process executes 'try' and raises the its flag, reaching p1.
+In p1, if at least one of the other process has a high flag, it 'withdraw's its
+intent and goes back to p0.  In p1, it 'enter's the critical section if all
+other process' flag is zero.  From p3, the process can only 'exit' the critical
 section.
 
 Mutual exclusion and deadlock-freedom is guaranted.  Unfair runs are possible.
