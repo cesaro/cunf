@@ -90,8 +90,8 @@ def mklife (n) :
         for y in xrange (n + 2) :
             pon = ptnet.net.Place ('on/%dx%d' % (x, y))
             poff = ptnet.net.Place ('off/%dx%d' % (x, y))
-            net.places.add (pon)
-            net.places.add (poff)
+            net.places.append (pon)
+            net.places.append (poff)
             tab[x,y] = (poff, pon)
 
 #    rules = b3s23 ()
@@ -100,7 +100,7 @@ def mklife (n) :
         for y in xrange (1, n + 1) :
             for r in rules :
                 t = ptnet.net.Transition ('%s/%dx%d' % (r[0], x, y))
-                net.trans.add (t)
+                net.trans.append (t)
                 t.pre_add (tab[x,y][r[1]])
                 t.post_add (tab[x,y][r[2]])
                 t.cont_add (tab[no (x, y)][r[3]])

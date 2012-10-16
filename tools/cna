@@ -1,262 +1,93 @@
 #!/usr/bin/env python
 
+# Copyright (C) 2012-2013  Cesar Rodriguez <cesar.rodriguez@lsv.ens-cachan.fr>
+# Laboratoire de Specification et Verification (LSV), ENS Cachan, France
+# 
+# This program comes with ABSOLUTELY NO WARRANTY.  This is free software, and
+# you are welcome to redistribute it under certain conditions.  You should have
+# received a copy of the GNU General Public License along with this program.  If
+# not, see <http://www.gnu.org/licenses/>.
+
+''' cna [CUF] [OUTFILE] [OPTIONS]
+
+The Contextual Net Analyser (cna) computes whether a contextual Petri net is
+deadlok-free or if a given list of places is coverable.  The input is a CUF
+file storing the contextual unfolding of the net.  Use cunf(1) to build it.
+The output will be written to the standard output or to OUTFILE if provided.
+The input will be read from the file CUF, or standard input if no file is
+given.
+
+It accepts the folloing OPTIONS:
+  -h, --help
+        Show this help message and exit.
+
+  -d, --deadlock
+        Tell whether or not a deadlocked marking is reachable.
+        Optional.  Default: no. At least one of -d or -c must be present.
+
+  -c PLACE [PLACE ...], --cover PLACE [PLACE ...]
+        Tell whether or not the list of PLACEs are coverable.  You may consider
+        quoting place names if they contain spaces
+        Optional.  Default: no. At least one of -d or -c must be present.
+
+  -r REDUC [REDUC ...], --reduce REDUC [REDUC ...]
+        Use REDUCtions of the encoding to improve running time of the SAT
+        solver.  The following options are available:
+
+        k-tree  (where 1 < k < 10)  Use k-trees to implement the at-most-one
+                constraints in the encoding of symmetric conflicts.  If none of
+                the options 'seq', 'log' or 'pair' is present, 4-tree will be
+                used.
+        seq     Use the sequential encoding of [Sinz 05] for symmetric
+                conflicts.
+        log     Use the logaritmic encoding of [Frisch 05] for symmetric
+                conflicts.
+        pair    Use pairwise encoding for symmetric conflicts.
+        stb     Use elimination of stubborn events.
+        sub     Reduce the symmetric and disabled constraints to certain
+                maximal sets.
+        nocy    Do not produce constraints to check for cycles in the
+                asymmetric conflict relation.
+        bin     Generate acyclicity constraints using ranks with binary
+                encoding.  See [Codish 09].  If none of the options 'nocy',
+                'trans' or 'unary' is present, 'bin' will be used.
+        unary   Generate acyclicity constraints using ranks with unary
+                encoding.
+        trans   Generate acyclicity constraints encoding transitive closure.
+        sccred  Reduce the SCCs before generating the acyclicity constraints.
+
+        Default: 4-tree bin
+
+  -n FILE, --dont-solve FILE
+        Dump the propositional formula to FILE and exit, instead of running the
+        solver and displaying the result.
+
+  -v, --verbose
+        Causes the tool to print debugging messages.  Not implemented.
+ 
 '''
-The Contextual Net Deadlock Checker (cndc).
 
-Copyright (C) 2012  Cesar Rodriguez <cesar.rodriguez@lsv.ens-cachan.fr>
-Laboratoire de Specification et Verification (LSV), ENS Cachan, France
+try :
+    import os
+    import sys
+    import time
+    import math
+    import ptnet
+    import argparse
+    import networkx
+    import tempfile
+    import subprocess
+except Exception, e:
+    print 'Error!  It seems that your python installation is missing some package.'
+    print 'This tool requires, among others, argparse, networkx, tempfile, and subprocess'
+    print 'The runtime reported the following error:\n\n', str (e)
+    sys.exit (1)
+finally :
+    if sys.version_info < (2, 6, 1) :
+        print '\n\nWARNING: This tool requires Python v.2.6.1 at least!!\n'
 
-This program comes with ABSOLUTELY NO WARRANTY.  This is free software, and
-you are welcome to redistribute it under certain conditions.  You should have
-received a copy of the GNU General Public License along with this program.  If
-not, see <http://www.gnu.org/licenses/>.
-
-Usage: cndc.py [OPTIONS] PATH
-
-Where PATH is the filepath to a .cuf file, or '-' for standard input, and
-OPTIONS is a list of zero or more optimization identifiers chosen from the
-following:
-
-  k-tree  (where k >= 2)  Use k-trees to implement the at-most-one
-          constraints in the encoding of symmetric conflicts.
-          If none of the options 'seq', 'log' or 'pair' is present, 4-tree
-          will be used
-  seq     Use the sequential encoding of [Sinz 05] for symmetric conflicts.
-  log     Use the logaritmic encoding of [Frisch 05] for symmetric conflicts.
-  pair    Use pairwise encoding for symmetric conflicts.
-
-  stb     Use elimination of stubborn events.
-  sub     Reduce the symmetric and disabled constraints to certain maximal
-          sets.
-
-  nocy    Do not produce constraints to check for cycles in the asymmetric
-          conflict relation.
-  bin     Generate acyclicity constraints using ranks with binary encoding.
-          See [Codish 09].  If no none of the options 'nocy', 'trans' or
-          'unary' is present, 'bin' will be used.
-  unary   Generate acyclicity constraints using ranks with unary encoding.
-  trans   Generate acyclicity constraints encoding transitive closure.
-  sccred  Reduce the SCCs before generating the acyclicity constraints.
-'''
-
-import sys
-import time
-import math
-import networkx
-
-class Event (object) :
-    def __init__ (self, nr, l="", pre=set(), post=set(), cont=set(),
-            white=True, gray=False) :
-        self.nr = nr
-        self.label = l
-        self.pre = pre
-        self.post = post
-        self.cont = cont
-        self.isblack = not white and not gray
-        self.iswhite = white
-        self.isgray = gray
-        self.mark = 0
-        self.count = 0
-        #db ('Event', nr, l, pre, post, cont, 'white', white, 'gray', gray)
-
-        for c in pre : c.post.add (self)
-        for c in post : c.pre = self
-        for c in cont : c.cont.add (self)
-
-    def __repr__ (self) :
-        if self.isblack :
-            s = '*'
-        elif self.isgray :
-            s = '+'
-        else :
-            s = ''
-
-        return '%se%d:%s' % (s, self.nr, self.label)
-
-    def __str__ (self) :
-        if self.isblack :
-            s = '*'
-        elif self.isgray :
-            s = '+'
-        else :
-            s = ''
-        return "%se%d:%s Pre %s;  Cont %s;  Post %s" \
-                % (s, self.nr, self.label, self.pre, self.cont, self.post)
-
-class Condition (object) :
-    def __init__ (self, nr, l="", pre=None, post=set(), cont=set()) :
-        self.nr = nr
-        self.label = l
-        self.pre = pre
-        self.post = post
-        self.cont = cont
-        self.mark = 0
-        self.count = 0
-
-        if (pre) : pre.post.add (self)
-        for e in post : e.pre.add (self)
-        for e in cont : e.cont.add (self)
-
-    def __repr__ (self) :
-        return 'c%d:%s' % (self.nr, self.label)
-
-    def __str__ (self) :
-        return 'c%d:%s Pre %s;  Cont %s;  Post %s' \
-                % (self.nr, self.label, repr (self.pre), self.cont, self.post)
-
-class Unfolding (object) :
-
-    def __init__ (self, sanity_check=True) :
-        self.conds = [None]
-        self.events = [None]
-        self.m0 = set ()
-        self.nr_black = 0
-        self.nr_gray = 0
-        self.sanity_check = sanity_check
-        self.mark = 1
-
-    def __is_event_id (self, i) :
-        return 0 <= i < len (self.events)
-
-    def __is_cond_id (self, i) :
-        return 1 <= i < len (self.conds)
-
-    def __sane_event_id (self, i) :
-        if (self.__is_event_id (i)) : return
-        raise Exception, '%s: invalid event nr' % i
-        
-    def __sane_cond_id (self, i) :
-        if (self.__is_cond_id (i)) : return
-        raise Exception, '%s: invalid condition nr' % i
-
-    def add_cond (self, l, pre=0, post=[], cont=[]) :
-        # validate event identifiers
-        if self.sanity_check :
-            self.__sane_event_id (pre)
-            for i in post : self.__sane_event_id (i)
-            for i in cont : self.__sane_event_id (i)
-
-        # map to object references
-        po = set(self.events[i] for i in post)
-        co = set(self.events[i] for i in cont)
-        #db ('new cond', l, pre, post, cont, 'initial', pre == 0)
-
-        # create the new condition and register it
-        c = Condition (len (self.conds), l, self.events[pre], po, co)
-        self.conds.append (c)
-        if (pre == 0) : self.m0.add (c)
-        return c
-
-    def add_event (self, l, pre=[], post=[], cont=[], white=True, gray=False) :
-        # validate condition identifiers
-        if self.sanity_check :
-            for i in pre : self.__sane_cond_id (i)
-            for i in post : self.__sane_cond_id (i)
-            for i in cont : self.__sane_cond_id (i)
-
-        # map to object references
-        pr = set(self.conds[i] for i in pre)
-        po = set(self.conds[i] for i in post)
-        co = set(self.conds[i] for i in cont)
-
-        # create the new event and register it
-        e = Event (len (self.events), l, pr, po, co, white, gray)
-        self.events.append (e)
-        if gray : self.nr_gray += 1
-        if not white and not gray : self.nr_black += 1
-        return e
-
-    def __cuf2unf_readstr (self, f, m) :
-        s = ""
-        for i in xrange (0, m) :
-            t = f.read (1)
-            if (len (t) == 0) : break
-            if (t == '\x00') : return s
-            s += t
-        raise Exception, 'Corrupted CUF file'
-
-    def __cuf2unf_readint (self, f) :
-        s = f.read (4)
-        if (len (s) != 4) : raise Exception, 'Corrupted CUF file'
-        r = (ord (s[0]) << 24) + (ord (s[1]) << 16)
-        r += (ord (s[2]) << 8) + ord (s[3])
-        return r
-
-    def read (self, f, fmt='cuf') :
-        if fmt != 'cuf' : raise Exception, "'%s': unknown input format" % fmt
-        mag = self.__cuf2unf_readint (f)
-        if mag != 0x43554602 : raise Exception, "'%s': not a CUF02 file" % fmt
-
-        # read first four fields
-        nrc = self.__cuf2unf_readint (f)
-        nre = self.__cuf2unf_readint (f)
-        nrw = self.__cuf2unf_readint (f)
-        nrg = self.__cuf2unf_readint (f)
-        m = 1 + self.__cuf2unf_readint (f)
-        #r, nrc, nre, nrf, m
-
-        # read nre event labels
-        for i in xrange (nrw) :
-            self.add_event (self.__cuf2unf_readstr (f, m))
-        for i in xrange (nrg) :
-            l = self.__cuf2unf_readstr (f, m)
-            self.add_event (l, white=False, gray=True)
-        for i in xrange (nre - nrg - nrw) :
-            l = self.__cuf2unf_readstr (f, m)
-            self.add_event (l, white=False, gray=False)
-
-        # read condition labels, flow and context relations
-        for i in xrange (0, nrc) :
-            l = self.__cuf2unf_readstr (f, m)
-            pre = self.__cuf2unf_readint (f)
-            post = []
-            cont = []
-            while True :
-                e = self.__cuf2unf_readint (f)
-                if (not e) : break
-                post.append (e)
-            while True :
-                e = self.__cuf2unf_readint (f)
-                if (not e) : break
-                cont.append (e)
-#            db (l, pre, post, cont)
-            self.add_cond (l, pre, post, cont)
-        if self.sanity_check :
-            for e in self.events[1:] :
-                if not e.pre and not e.cont :
-                    raise Exception, 'Event e%d has empty preset+context' % e.nr
-
-    def asym_graph (self, symm=True, s=None, cutoffs=False) :
-        # build the asymmetric conflict relaton
-        g = networkx.DiGraph ()
-        u = self.events[1:] if s == None else s
-        for e in u :
-            if not cutoffs and e.isblack : continue
-            for c in e.pre :
-                if c.pre : g.add_edge (c.pre, e, color=1)
-                for ep in c.cont : self.__red_edge (g, ep, e, 2)
-                if symm :
-                    for ep in c.post :
-                        if ep != e and (cutoffs or not ep.isblack) :
-                            g.add_edge (ep, e, color=1)
-                            g.add_edge (e, ep, color=1)
-            for c in e.cont :
-                if c.pre and (cutoffs or not c.pre.isblack):
-                    g.add_edge (c.pre, e, color=1)
-
-        if s != None : g = g.subgraph (s)
-#        opt = ''
-#        if symm : opt += 'with symm. confl. '
-#        if s != None : opt += 'restricted to %d events ' % len (s)
-#        if cutoffs : opt += 'with cutoffs (black)!'
-#        db ('nodes', len (g), 'edges', len (g.edges()), opt)
-
-        return g
-
-    def __red_edge (self, g, u, v, c) :
-        g.add_edge (u, v)
-        if not 'color' in g[u][v] or g[u][v]['color'] == 2 :
-            g[u][v]['color'] = c
+def sgl (s) :
+    return (list (s))[0]
 
 class Cnf (object) :
     def __init__ (self) :
@@ -409,29 +240,34 @@ class Cnf (object) :
     def __str__ (self) :
         return self.__repr__ ()
 
-class Cndc (object) :
+class Cna :
     def __init__ (self, opt) :
         self.opt = {}
 
-        self.opt['path'] = opt['path']
-        self.opt['verbose'] = 'verbose' in opt and opt['verbose']
-        self.opt['assert'] = 'assert' in opt and opt['assert']
+        # define option switches
+        self.opt['deadlock'] = opt.deadlock
+        self.opt['coverability'] = opt.cover != None
+        self.opt['assert'] = True
+        self.opt['verbose'] = opt.verbose != None
+        self.opt['tree'] = 0
+        self.opt['seq'] = False
+        self.opt['log'] = False
+        self.opt['pair'] = False
+        self.opt['nocy'] = False
+        self.opt['bin'] = False
+        self.opt['unary'] = False
+        self.opt['trans'] = False
+        self.opt['sccred'] = False
+        self.opt['stb'] = False
+        self.opt['sub'] = False
+        if opt.reduce :
+            for o in opt.reduce :
+                if '-tree' in o :
+                    self.opt['tree'] = int ((o.split ('-'))[0])
+                else :
+                    self.opt[o] = True
 
-        self.opt['tree'] = opt['tree'] if 'tree' in opt else 0
-        self.opt['seq'] = 'seq' in opt and opt['seq']
-        self.opt['log'] = 'log' in opt and opt['log']
-        self.opt['pair'] = 'pair' in opt and opt['pair']
-
-        self.opt['nocy'] = 'nocy' in opt and opt['nocy']
-        self.opt['bin'] = 'bin' in opt and opt['bin']
-        self.opt['unary'] = 'unary' in opt and opt['unary']
-        self.opt['trans'] = 'trans' in opt and opt['trans']
-
-        self.opt['sccred'] = 'sccred' in opt and opt['sccred']
-        self.opt['stb'] = 'stb' in opt and opt['stb']
-        self.opt['sub'] = 'sub' in opt and opt['sub']
-
-        # validate options
+        # validate them and set defaults
         n = 0
         if self.opt['tree'] != 0 : n += 1
         if self.opt['seq'] : n += 1
@@ -448,44 +284,49 @@ class Cndc (object) :
         if self.opt['trans'] : n += 1
         if n == 0 : self.opt['bin'] = True
         if n > 1 : raise Exception, 'At most one of nocy, bin, unary or trans!'
-#        db (self.opt)
+
+        if self.opt['stb'] and self.opt['coverability'] :
+            raise Exception, \
+                    'Stubborn reduction only works with deadlock checking'
 
         # declare additional fields
         self.phi = Cnf ()
-        self.u = Unfolding (self.opt['assert'])
+        self.u = ptnet.unfolding.Unfolding (self.opt['assert'])
         self.result = {}
         self.stubborn = {}
         self.pred = {}
 
         # load the model
         try :
-            if opt['path'] == '-' :
-                f = sys.stdin
-            else :
-                f = open (opt['path'], 'r')
-            self.u.read (f, fmt='cuf')
-            f.close ()
+            self.u.read (opt.infile, fmt='cuf')
+            if opt.infile != sys.stdin : opt.infile.close ()
         except IOError as (e, m) :
-            raise Exception, "'%s': %s" % (opt['path'], m)
+            raise Exception, "input file: %s" % m
         except Exception, e:
-            raise Exception, "'%s': %s" % (opt['path'], e)
+            raise Exception, "input file: %s" % str (e)
 
+        # declare the reductions used in the construction of the formula
         s = ''
         for k in self.opt :
-            if k != 'path' and k != 'tree' and self.opt[k] : s += k + ' '
+            if k in ['tree', 'verbose', 'assert', 'deadlock', 'coverability'] :
+                continue
+            if self.opt[k] : s += k + ' '
         if self.opt['tree'] != 0 : s += '%d-tree' % self.opt['tree']
-        self.result['opts'] = s
+        self.result['reductions'] = s
 
-    def deadlock (self, f) :
+        # list of places for coverability
+        self.opt['places'] = \
+                self.__find_places (opt.cover if opt.cover else [])
 
+    def deadlock (self) :
         # nothing to do if there is zero cutoffs
         if self.u.nr_black == 0 :
-            f.write ('c zero cutoffs!\np cnf 1 1\n1 0\n')
-            return
+            self.phi.add ([self.phi.var (1)])
+            return self.phi
 
         # causal closure
         self.__causal ()
-        self.result['evvars'] = len (self.phi.varmap)
+        self.result['event variables'] = len (self.phi.varmap)
 
         # symmetric conflicts
         self.__sym ()
@@ -496,15 +337,23 @@ class Cndc (object) :
         # marking and disabled
         self.__dis ()
 
-        # output in DIMACS CNF
-        self.phi.write (f)
-
-        self.result['vars'] = len (self.phi.varmap)
+        self.result['variables'] = len (self.phi.varmap)
         self.result['clauses'] = len (self.phi.clsset)
+        return self.phi
+
+    def cover (self) :
+        self.__causal ()
+        self.result['event variables'] = len (self.phi.varmap)
+        self.__sym ()
+        self.__asym ()
+        self.__cover ()
+        self.result['variables'] = len (self.phi.varmap)
+        self.result['clauses'] = len (self.phi.clsset)
+        return self.phi
 
     def __causal (self) :
         # a configuration is causally closed ...
-        for e in self.u.events[1:] :
+        for e in self.u.events :
             if e.isblack or self.__is_stubborn (e) : continue
             s = self.__pred (e)
             atm = -self.phi.var (e)
@@ -515,22 +364,22 @@ class Cndc (object) :
     def __sym_ismaximal (self, c) :
         # c has at least two non-black events
         if not self.opt['sub'] : return True
-        m = self.u.mark
-        self.u.mark += 1
+        m = self.u.m
+        self.u.m += 1
         l = [e for e in c.post if not e.isblack]
         n = len (l)
         for e in l[1:] :
             for cp in e.pre :
                 if cp == c : continue
-                if cp.mark != m :
-                    cp.mark = m
-                    cp.count = 1
+                if cp.m != m :
+                    cp.m = m
+                    cp.c = 1
                 else :
-                    cp.count += 1
+                    cp.c += 1
         for cp in l[0].pre :
-            if cp == c or cp.mark != m : continue
-            cp.count += 1
-            if cp.count == n :
+            if cp == c or cp.m != m : continue
+            cp.c += 1
+            if cp.c == n :
                 np = len ([e for e in cp.post if not e.isblack])
 #                if n < np or cp.nr > c.nr : db ('symm_not_max', c, cp)
                 if n < np or cp.nr > c.nr : return False
@@ -701,15 +550,15 @@ class Cndc (object) :
 #            db (ai, 'is', (a, i+1))
 #            db ('clause', [-c, -bi, ai])
 
-    def __mark (self, c) :
-        if c.pre and c.pre.isblack : return
+    def __mark_dis (self, c) :
+        if c.pre and sgl (c.pre).isblack : return
         l = [self.phi.var (c.label)]
         if c.pre :
-            if self.__is_stubborn (c.pre) :
-                for e in self.__pred (c.pre) :
+            if self.__is_stubborn (sgl (c.pre)) :
+                for e in self.__pred (sgl (c.pre)) :
                     l.append (- self.phi.var (e))
             else :
-                l.append (- self.phi.var (c.pre))
+                l.append (- self.phi.var (sgl (c.pre)))
         l2 = [e for e in c.post if not e.isblack]
         if len (l2) == 1 and self.__is_stubborn (l2[0]) :
             for e in self.__pred (l2[0]) :
@@ -722,7 +571,7 @@ class Cndc (object) :
         tmp = set ()
         minimal = []
         tseen = set ()
-        for e in self.u.events[1:] :
+        for e in self.u.events :
             if e.label in tseen : continue
             tseen.add (e.label)
             new = frozenset (c.label for c in e.pre | e.cont)
@@ -743,9 +592,43 @@ class Cndc (object) :
             self.phi.add ([-self.phi.var (p) for p in elem])
             pneed |= elem
 
-        for c in self.u.conds[1:] :
+        for c in self.u.conds :
             if c.label in pneed :
-                self.__mark (c)
+                self.__mark_dis (c)
+
+    def __mark_cover (self, c) :
+        assert (not c.pre or not sgl (c.pre).isblack)
+        atm = self.phi.var (c)
+        if c.pre :
+            self.phi.add ([-atm, self.phi.var (sgl (c.pre))])
+        for e in c.post :
+            if e.isblack : continue
+            self.phi.add ([-atm, -self.phi.var (e)])
+
+    def __cover (self) :
+        h = {}
+        for p in self.opt['places'] : h[p] = []
+        for c in self.u.conds :
+            if c.label in h :
+                if c.pre and sgl (c.pre).isblack : continue
+                h[c.label].append (c)
+                self.__mark_cover (c)
+        for l in h.values () :
+            self.phi.add ([self.phi.var (c) for c in l])
+
+    def __find_places (self, l) :
+        h = {}
+        for p in l : h[p] = []
+        for p in self.u.net.places :
+            if p.name in h : h[p.name].append (p)
+        for p in h :
+            if len (h[p]) == 0 :
+                raise Exception, "Place '%s' not found" % p
+            if len (h[p]) > 1 :
+                raise Exception, "There is %d places named '%s', you need to\
+                        change the names in the net and unfold again!" \
+                        % (len (h[p]), p)
+        return [ll[0] for ll in h.values ()]
 
     def __reduce (self, g) :
         again = True
@@ -875,79 +758,203 @@ class Cndc (object) :
         if e in self.pred : return self.pred[e]
         s = set ();
         for c in e.pre | e.cont :
-            if c.pre == None : continue
-            if self.__is_stubborn (c.pre) :
-                s |= self.__pred (c.pre)
+            if not c.pre : continue
+            if self.__is_stubborn (sgl (c.pre)) :
+                s |= self.__pred (sgl (c.pre))
             else :
-                s.add (c.pre)
+                s.add (sgl (c.pre))
         self.pred[e] = s
         return self.pred[e]
+
+    def __runit (self, args, timeout=-1, sh=False) :
+    #    db (args, timeout)
+        try :
+            p = subprocess.Popen (args, bufsize=8192, stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    preexec_fn=os.setsid, shell=sh)
+        except Exception :
+            raise Exception, "Unable to execute the command `minisat2', is minisat installed?"
+
+    #    db ('pid', p.pid)
+        try :
+            killed = False
+            s = ''
+            p.stdin.close ()
+            if timeout > 0 :
+                tref = time.time ()
+                while True :
+                    t = timeout - (time.time () - tref)
+                    if t <= 0 : t = 0
+    #                db ('select at', time.time () - tref, t)
+                    (r, w, x) = select.select ([p.stdout], [], [p.stdout], t)
+    #                db ('return at', time.time () - tref, r, w, x)
+                    if len (r) :
+                        # read (n) waits for n bytes before returning
+                        c = p.stdout.read (1)
+                        if len (c) == 0 : break
+                        s += c
+                    else :
+    #                    db ('killing', p.pid)
+                        os.killpg (p.pid, signal.SIGTERM)
+                        killed = True
+                        break
+            p.wait ()
+            s += p.stdout.read ()
+            return (p.returncode if not killed else 254, s)
+        except KeyboardInterrupt :
+            os.killpg (p.pid, signal.SIGKILL)
+            p.wait ()
+            raise
+
+    def solve (self) :
+        pathin, pathout = '', ''
+        try :
+            # make temporary files for the formula and minisat's output
+            fdin, pathin = tempfile.mkstemp (suffix='cna')
+            fdout, pathout = tempfile.mkstemp (suffix='cna')
+            # write the formula in dimacs format
+            fin = os.fdopen (fdin, 'w')
+            fout = os.fdopen (fdout, 'r')
+            self.phi.write (fin)
+            fin.close ()
+            # call the solver
+            s, out = self.__runit (['minisat2', pathin, pathout])
+            # load minisat's results
+            out = fout.readlines ()
+            fout.close ()
+        finally :
+            # remove temporary files
+            os.unlink (pathin)
+            os.unlink (pathout)
+
+        places = ' '.join (["'%s'" % p.name for p in self.opt['places']])
+
+        # unsatisfiable
+        if s == 20 :
+            r = 'NO '
+            if self.opt['deadlock'] :
+                r += ', the net is deadlock-free'
+            if self.opt['coverability'] :
+                r += ', no rechable marking covers %s' % places
+            self.result['answer'] = r
+            return
+
+        # errors
+        if s != 10 :
+            raise Exception, \
+                    'Minisat terminated with unknown exit status %d' % s
+
+        # satisfiable
+        r = 'YES'
+        if self.opt['deadlock'] :
+            r += ', a deadlocked marking is reachable'
+        if self.opt['coverability'] :
+            if len (self.opt['places']) > 1 :
+                s = 's'
+                are = 'are'
+            else :
+                s = ''
+                are = 'is'
+            r += ', place%s %s %s coverable' % (s, places, are)
+        self.result['answer'] = r
+
+        # build the trace
+        if len (out) != 2 :
+            raise Exception, 'Error while parsing minisat output'
+        out = out[1].split ()
+        try :
+            out = [int (x) for x in out]
+        except :
+            raise Exception, 'Error when parsing minisat output'
+        out = set ([x for x in out if x > 0])
+        trace = set ()
+        for e in self.u.events :
+            if self.phi.var (e) in out : trace |= self.u.cone (e)
+        try :
+            trace = ["'%s'" % repr (e) for e in self.u.run_of (trace)]
+        except :
+            trace = ["'%s'" % repr (e) for e in trace]
+            self.result['note'] = \
+'Looks like the trace contains a cycle of asymmetric conflict. Did you use \
+the "nocy" reduction?'
+        self.result['trace'] = ' '.join (trace)
 
 def db (*msg) :
     s = ' '.join (str(x) for x in msg)
     sys.stderr.write ('debug: ' + s + '\n')
 
-def usage () :
-    sys.stderr.write (__doc__)
-    sys.exit (1)
+def opendef (p, s, m) :
+    if s == '-' :
+        return sys.stdin if m == 'r' else sys.stdout
+    try :
+        return open (s, m)
+    except IOError as (e, t) :
+        p.error ("'%s': %s" % (s, t))
+    except Exception, e:
+        p.error ("'%s': %s" % (s, str (e)))
 
 def parse () :
-    opts = {}
-    opts['seq'] = False
-    opts['log'] = False
-    opts['pair'] = False
-    opts['stb'] = False
-    opts['sub'] = False
-    opts['nocy'] = False
-    opts['bin'] = False
-    opts['unary'] = False
-    opts['trans'] = False
-    opts['sccred'] = False
-    path = None
+    p = argparse.ArgumentParser (usage = __doc__)
+    g = p.add_mutually_exclusive_group (required=True)
+    p.add_argument ('-v', '--verbose', action = 'store_true')
+    g.add_argument ('-d', '--deadlock', action = 'store_true')
+    g.add_argument ('-c', '--cover', nargs = '+')
+    p.add_argument ('-n', '--dont-solve')
+    p.add_argument ('-r', '--reduce',
+        nargs = '+',
+        choices = [ '2-tree', '3-tree', '4-tree', '5-tree', '6-tree', '7-tree',
+                '8-tree', '9-tree', 'seq', 'log', 'pair', 'stb', 'sub', 'nocy',
+                'bin', 'unary', 'trans', 'sccred'])
 
-    # at least one argument, the input file
-    if len (sys.argv) < 2 : usage ()
+    p.add_argument ('infile',
+        nargs = '?',
+        type = lambda x : opendef (p, x, 'r'),
+        default = '-')
 
-    # fill the arguments with the expected options
-    for arg in sys.argv[1:] :
-        if arg in opts :
-            opts[arg] = True
-        elif '-tree' in arg :
-            (k, sep, s) = arg.partition ('-tree')
-            try :
-                if len (s) : raise Exception
-                opts['tree'] = int (k)
-            except Exception, e :
-                if path != None :
-                    raise Exception, "'%s': unknown option" % arg
-                path = arg
-        else :
-            if path != None :
-                raise Exception, "'%s': unknown option" % arg
-            path = arg
-    if path == None : raise Exception, 'Please, specify a path'
-    opts['path'] = path
-    return opts
+    p.add_argument ('outfile',
+        nargs = '?',
+        type = lambda x : opendef (p, x, 'w'),
+        default = '-')
 
-def output (k, v, fmt='%s') :
-    sys.stderr.write (('%s\t' + fmt + '\n') % (k, v))
+    args = p.parse_args ()
+    if args.dont_solve != None :
+        args.dont_solve = opendef (p, args.dont_solve, 'w')
+    return args
+
+def output (f, k, v, n, fmt='%s') :
+    f.write (('%-*s : ' + fmt + '\n') % (n, k, v))
 
 def main () :
-    try :
-        dc = Cndc (parse ())
-        dc.deadlock (sys.stdout)
-        r = dc.result
-        r['stat'] = 'ok'
-    except Exception, e :
-        r = {}
-        r['stat'] = 'error: %s' % str (e)
+    # parse command line
+    args = parse ()
 
-    l = list (r)
+    # build a Cna object and construct the formula
+    cna = Cna (args)
+    assert (args.deadlock or args.cover)
+    if args.deadlock : cna.deadlock ()
+    if args.cover : cna.cover ()
+
+    # either dump the formula or solve it
+    if args.dont_solve :
+        args.dont_solve.write (repr (cna.phi))
+    else :
+        cna.solve ()
+
+    # write verification results to args.outfile
+    n = max ([len (k) for k in cna.result])
+    l = list (cna.result)
     l.sort ()
-    for k in l : output (k, r[k])
+    for k in l : output (args.outfile, k, cna.result[k], n)
 
 if __name__ == '__main__' :
-    main ()
+    try :
+        main ()
+    except KeyboardInterrupt :
+        print 'cna: interrupted'
+        sys.exit (1)
+    except Exception as e :
+        print 'cna: error: %s' % str (e)
+        sys.exit (1)
     sys.exit (0)
 
 # vi:ts=4:sw=4:et:

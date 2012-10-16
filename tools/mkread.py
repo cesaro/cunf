@@ -27,11 +27,11 @@ def mkread (n) :
     t.post_add (s)
 
     r.m0 = True
-    net.places.add (r)
-    net.places.add (p)
-    net.places.add (s)
-    net.trans.add (t)
-    net.trans.add (u)
+    net.places.append (r)
+    net.places.append (p)
+    net.places.append (s)
+    net.trans.append (t)
+    net.trans.append (u)
 
     for i in xrange (n) :
         r = ptnet.net.Place ('r/%d' % i)
@@ -43,9 +43,9 @@ def mkread (n) :
         t.post_add (s)
         t.cont_add (p)
 
-        net.places.add (r)
-        net.places.add (s)
-        net.trans.add (t)
+        net.places.append (r)
+        net.places.append (s)
+        net.trans.append (t)
 
     net.write (sys.stdout, 'pep')
 

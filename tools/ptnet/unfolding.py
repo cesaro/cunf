@@ -7,6 +7,9 @@ import socket
 import networkx
 import time
 
+def sgl (s) :
+    return (list (s))[0]
+
 def db (*msg) :
     s = ' '.join (str(x) for x in msg)
     sys.stderr.write ('unfolding.py: ' + s + '\n')
@@ -67,10 +70,10 @@ class Unfolding (net.Net) :
     def rem_cond (self, nr) :
         if self.sanity_check : self.__sane_cond_id (nr)
         c = self.conds[nr]
-        if c.pre == None :
+        if sgl (c.pre) == None :
             self.m0.discard (c)
         else :
-            c.pre.post.remove (c)
+            sgl (c.pre).post.remove (c)
         for e in c.cont : e.cont.remove (c)
         for e in c.post : e.pre.remove (c)
         del c
@@ -85,7 +88,7 @@ class Unfolding (net.Net) :
         assert (e != None)
         for c in e.pre : c.post.remove (e)
         for c in e.cont : c.cont.remove (e)
-        for c in e.post : c.pre = None
+        for c in e.post : c.pre = set ()
         if e.isblack : self.nr_black -= 1
         if e.isgray : self.nr_gray -= 1
         del e
@@ -241,7 +244,7 @@ class Unfolding (net.Net) :
         pre = set ()
         for e in s :
             for c in e.pre | e.cont :
-                if not c.pre <= s : return False
+                if not sgl (c.pre) <= s : return False
 
         g = self.asym_graph (True, s, True)
         return networkx.is_directed_acyclic_graph (g)
@@ -264,7 +267,7 @@ class Unfolding (net.Net) :
         for e in u :
             if not cutoffs and e.isblack : continue
             for c in e.pre :
-                if c.pre : g.add_edge (list (c.pre)[0], e, color=1)
+                if c.pre : g.add_edge (sgl (c.pre), e, color=1)
                 for ep in c.cont : self.__red_edge (g, ep, e, 2)
                 if symm :
                     for ep in c.post :
@@ -273,7 +276,7 @@ class Unfolding (net.Net) :
                             g.add_edge (e, ep, color=1)
             for c in e.cont :
                 if c.pre :
-                    ep = list (e.pre)[0]
+                    ep = sgl (c.pre)
                     if cutoffs or not ep.isblack :
                         g.add_edge (ep, e, color=1)
 
@@ -511,9 +514,9 @@ class Unfolding (net.Net) :
         cone = set (work)
         for e in work :
             for c in e.pre | e.cont :
-                if c.pre and not c.pre in cone :
-                    cone.add (c.pre)
-                    work.append (c.pre)
+                if c.pre and not sgl (c.pre) in cone :
+                    cone.add (sgl (c.pre))
+                    work.append (sgl (c.pre))
         return cone
 
     def anti_cone (self, e) :
