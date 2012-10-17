@@ -43,7 +43,7 @@ void usage (void)
 "\n"
 "The cunf tool -- a low level contextual Petri net unfolder\n"
 "\n"
-"Copyright (C) 2011  Cesar Rodriguez <cesar.rodriguez@lsv.ens-cachan.fr>\n"
+"Copyright (C) 2010-2012  Cesar Rodriguez <cesar.rodriguez@lsv.ens-cachan.fr>\n"
 "Laboratoire de Specification et Verification (LSV), ENS Cachan, France\n"
 "\n"
 "This program comes with ABSOLUTELY NO WARRANTY.  This is free software, and you\n"
@@ -64,7 +64,7 @@ void usage (void)
 "              'dot', 'fancy'.  Default is 'cuf'.\n"
 "\n"
 "For more information, see http://www.lsv.ens-cachan.fr/Software/cunf/\n"
-"Branch eager r56, compiled %s\n", __DATE__);
+"Branch eager v1.5, compiled %s\n", __DATE__);
 
 	exit (EXIT_FAILURE);
 }
