@@ -126,9 +126,9 @@ CPP:=$(CROSS)cpp
 	@echo "P2P $<"
 	@tools/pnml2pep.pl < $< > $@
 
-%.ll_net : %.gml
+%.ll_net : %.grml
 	@echo "G2P $<"
-	@tools/gml2pep.py < $< > $@
+	@tools/grml2pep.py < $< > $@
 
 %.r : %.dot
 	@echo "RS  $<"

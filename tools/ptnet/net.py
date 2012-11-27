@@ -112,7 +112,8 @@ class Net :
     def write (self, f, fmt='pep', m=0) :
         if fmt == 'pep' : return self.__write_pep (f, m)
         if fmt == 'dot' : return self.__write_dot (f, m)
-        if fmt == 'gml' : return self.__write_gml (f, m)
+        if fmt == 'grml' : return self.__write_grml (f, m)
+        if fmt == 'pnml' : return self.__write_pnml (f, m)
         if fmt == 'ctxdot' : return self.__write_ctxdot (f, 5, 1)
         raise Exception, "'%s': unknown output format" % fmt
 
@@ -232,7 +233,63 @@ class Net :
             f.write ('\n\tgraph [label="%d transitions\\n%d places"];\n}\n' %
                     (len (self.trans), len (self.places)))
 
-    def __write_gml (self, f, m=0) :
+    def __write_pnml (self, f, m=0) :
+        s = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        s += '<pnml xmlns="http://www.pnml.org/version-2009/grammar/pnml">\n'
+        s += '<net id="n1" type="http://www.pnml.org/version-2009/grammar/ptnet">\n'
+        s += '<name> <text>"%s" version "%s", by "%s"</text> </name>\n' % \
+            (self.title, self.version, self.author)
+        s += '<page id="page">\n'
+
+        f.write (s + '\n<!-- places -->\n')
+        tab = {}
+        for p in self.places :
+            if m != 0 and c.m != m : continue
+            s = '<place id="p%d">\n' % len (tab)
+            s += '<name><text>%s</text></name>\n' % repr (p)
+            s += '<initialMarking> <text>%d</text> </initialMarking>\n' % p.m0
+            s += '</place>\n'
+            f.write (s)
+            tab[p] = len (tab)
+
+        f.write ('\n<!-- transitions -->\n')
+        for t in self.trans :
+            if m != 0 and t.m != m : continue
+            s = '<transition id="t%d">\n' % len (tab)
+            s += '<name><text>%s</text></name>\n' % repr (t)
+            s += '</transition>\n'
+            f.write (s)
+            tab[t] = len (tab)
+
+        f.write ('\n<!-- flow relation -->\n')
+        for p in self.places :
+            if m != 0 and c.m != m : continue
+            s = ''
+            for t in p.pre :
+                if m == 0 or t.m == m :
+                    s += '<arc id="a%d" source="t%d" target="p%d" />\n' \
+                            % (len (tab), tab[t], tab[p])
+                    tab[t, p, 'a'] = len (tab)
+            for t in p.post :
+                if m == 0 or t.m == m :
+                    s += '<arc id="a%d" source="p%d" target="t%d" />\n' \
+                            % (len (tab), tab[p], tab[t])
+                    tab[p, t, 'a'] = len (tab)
+            for t in p.cont :
+                if m == 0 or t.m == m :
+                    s += '<!-- read arc: -->\n'
+                    s += ' <arc id="ra%d" source="p%d" target="t%d" />\n' \
+                            % (len (tab), tab[p], tab[t])
+                    tab[p, t, 'ra'] = len (tab)
+                    s += ' <arc id="ra%d" source="t%d" target="p%d" />\n' \
+                            % (len (tab), tab[t], tab[p])
+                    tab[t, p, 'ra'] = len (tab)
+            f.write (s)
+
+        f.write ('\n</page>\n</net>\n</pnml>\n')
+
+
+    def __write_grml (self, f, m=0) :
         s = '<?xml version="1.0" encoding="UTF-8"?>\n'
         s += '<model formalismUrl="http://formalisms.cosyverif.org/pt-net.fml"\n'
         s += '  xmlns="http://cosyverif.org/ns/model">\n\n'
@@ -288,29 +345,29 @@ class Net :
 
     def read (self, f, fmt='pep') :
         if fmt == 'pep' : return self.__read_pep (f)
-        if fmt == 'gml' : return self.__read_gml (f)
+        if fmt == 'grml' : return self.__read_grml (f)
         raise Exception, "'%s': unknown input format" % fmt
 
     def __read_pep (self, f) :
         raise Exception, 'reading PEP files not yet implemented'
 
-    def __read_gml (self, f) :
+    def __read_grml (self, f) :
         par = xml.parsers.expat.ParserCreate ()
-        par.StartElementHandler = self.__gml_start
-        par.EndElementHandler = self.__gml_end
-        par.CharacterDataHandler = self.__gml_data
+        par.StartElementHandler = self.__grml_start
+        par.EndElementHandler = self.__grml_end
+        par.CharacterDataHandler = self.__grml_data
 
-        self.__gmlq = []
-        self.__gmlidx = {}
+        self.__grmlq = []
+        self.__grmlidx = {}
         par.ParseFile (f)
-        del self.__gmlq
-        del self.__gmlidx
+        del self.__grmlq
+        del self.__grmlidx
 
-    def __gml_start (self, tag, attr):
+    def __grml_start (self, tag, attr):
         # print "START", repr (tag), attr
 
         attr['__data'] = ''
-        self.__gmlq.append (attr)
+        self.__grmlq.append (attr)
         if tag == 'model' :
             if not 'formalismUrl' in attr :
                 raise Exception, "no 'formalismUrl' defined"
@@ -322,57 +379,57 @@ class Net :
             attr['__type'] = attr['nodeType']
         elif tag != 'attribute' :
                 raise Exception, "'%s': unknown tag" % tag
-        # print self.__gmlq
+        # print self.__grmlq
 
-    def __gml_end (self, tag):
+    def __grml_end (self, tag):
         # print "END", repr (tag)
 
         if tag == 'attribute' :
-            if len (self.__gmlq) < 2 : raise Exception, 'Misplaced attribute'
-            d = self.__gmlq.pop ()
-            self.__gmlq[-1][d['name']] = d['__data']
+            if len (self.__grmlq) < 2 : raise Exception, 'Misplaced attribute'
+            d = self.__grmlq.pop ()
+            self.__grmlq[-1][d['name']] = d['__data']
 
         elif tag == 'node' :
-            d = self.__gmlq.pop ()
+            d = self.__grmlq.pop ()
             if 'id' not in d : raise Exception, 'id missing in node tag'
             if 'marking' not in d : d['marking'] = 0
             if 'name' not in d : d['name'] = ''
             if d['__type'] == 'place' :
                 p = Place (d['name'], int (d['marking']))
                 self.places.append (p)
-                self.__gmlidx[d['id']] = p
+                self.__grmlidx[d['id']] = p
                 if p.m0 > 0 : self.m0.add (p)
             elif d['__type'] == 'transition' :
                 t = Transition (d['name'])
                 self.trans.append (t)
-                self.__gmlidx[d['id']] = t
+                self.__grmlidx[d['id']] = t
             else :
                 raise Exception, "'%s': unknown nodeType" % d['__type']
 
         elif tag == 'arc' :
-            d = self.__gmlq.pop ()
+            d = self.__grmlq.pop ()
             if 'id' not in d or 'source' not in d or 'target' not in d :
                 raise Exception, 'id, source or target missing in arc tag'
             if 'valuation' not in d : d['valuation'] = 1
             if d['valuation'] != '1' :
                 raise Exception, 'Arc valuations different than 1 not supported'
-            if d['source'] not in self.__gmlidx :
+            if d['source'] not in self.__grmlidx :
                 raise Exception, 'node with id %d has not yet been seen' \
                         % d['source']
-            if d['target'] not in self.__gmlidx :
+            if d['target'] not in self.__grmlidx :
                 raise Exception, 'node with id %d has not yet been seen' \
                         % d['target']
             if d['__type'] == 'arc' :
-                self.__gmlidx[d['source']].post_add (
-                        self.__gmlidx[d['target']])
+                self.__grmlidx[d['source']].post_add (
+                        self.__grmlidx[d['target']])
             elif d['__type'] == 'readarc' :
-                self.__gmlidx[d['source']].cont_add (
-                        self.__gmlidx[d['target']])
+                self.__grmlidx[d['source']].cont_add (
+                        self.__grmlidx[d['target']])
             else :
                 raise Exception, "'%s': unknown arcType" % d['__type']
 
         elif tag == 'model' :
-            d = self.__gmlq.pop ()
+            d = self.__grmlq.pop ()
             if 'authors' in d : self.author = d['__data']
             if 'title' in d : self.title = d['__data']
             if 'date' in d : self.date = d['__data']
@@ -381,14 +438,14 @@ class Net :
         else :
             raise Exception, 'Not a pt-net'
 
-    def __gml_data (self, data):
+    def __grml_data (self, data):
         # print "DATA", repr (data)
-        if len (self.__gmlq) : self.__gmlq[-1]['__data'] = data
+        if len (self.__grmlq) : self.__grmlq[-1]['__data'] = data
 
 def test1 () :
     n = Net (True)
-    n.read (sys.stdin, 'gml')
-    n.write (sys.stdout, 'gml')
+    n.read (sys.stdin, 'grml')
+    n.write (sys.stdout, 'grml')
 
 if __name__ == '__main__' :
     test1 ()

@@ -625,8 +625,7 @@ class Cna :
             if len (h[p]) == 0 :
                 raise Exception, "Place '%s' not found" % p
             if len (h[p]) > 1 :
-                raise Exception, "There is %d places named '%s', you need to\
-                        change the names in the net and unfold again!" \
+                raise Exception, "There is %d places named '%s', you need to change the names in the net and unfold again!" \
                         % (len (h[p]), p)
         return [ll[0] for ll in h.values ()]
 
@@ -634,7 +633,7 @@ class Cna :
         again = True
         while again :
             again = False
-            for v in g :
+            for v in list (g) :
                 i = g.in_degree (v)
                 o = g.out_degree (v)
                 if i == 1 :
