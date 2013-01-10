@@ -30,6 +30,94 @@ class Mprocess (net.Net) :
         self.nr_cutoffs = 0
         self.net = net.Net (sanity_check)
 
+    def read (self, f, fmt='pep') :
+        if fmt == 'mp' : return self.__read_mp (f)
+        net.Net.read (self, f, fmt)
+
+    def __read_mp (self, f) :
+        nr = 1
+        it = iter (f)
+        try :
+            line = next (it)
+        except StopIteration :
+            raise Exception, 'FIXME'
+
+        l = line.split ()
+        if len (l) != 4 : raise Exception, 'FIXME'
+        nrmpconds = int (l[0])
+        nrmpevents = int (l[1])
+        nrplaces = int (l[2])
+        nrtrans = int (l[3])
+
+        # create transitions and places of the net
+        for i in range (nrplaces) :
+            self.net.places.append (net.Place (''))
+        for i in range (nrtrans) :
+            self.net.trans.append (net.Transition (''))
+        assert (nrplaces == len (self.net.places))
+
+        # read mp-conditions
+        for i in range (nrmpconds) :
+            try :
+                line = next (it)
+                nr += 1
+                l = line.split ()
+                if len (l) != 3 : raise Exception, 'FIXME'
+                mpc  = Mpcondition (self.net.places[int (l[0]) - 1], int (l[1]), int (l[2]))
+                self.mpconds.append (mpc)
+                if mpc.m0 : self.m0.add (mpc)
+            except StopIteration :
+                raise Exception, 'FIXME' 
+
+        # read mp-events and flow relation
+        for i in range (nrmpevents) :
+            try :
+                line = next (it)
+                nr += 1
+                l = line.split ()
+                if len (l) < 4 : raise Exception, 'FIXME'
+                nrpre = int (l[2])
+                nrpost = int (l[3])
+                if len (l) != 4 + nrpre + nrpost : raise Exception, 'FIXME'
+                mpe  = Mpevent (self.net.trans[int (l[0]) - 1], cff=(l[1] == '1'))
+                for j in range (nrpre) :
+                    mpe.pre_add (self.mpconds[int (l[4 + j])])
+                for j in range (nrpost) :
+                    mpe.post_add (self.mpconds[int (l[4 + nrpre + j])])
+                self.mpevents.append (mpe)
+                if mpe.iscutoff : self.nr_cutoffs += 1
+            except StopIteration :
+                raise Exception, 'FIXME' 
+
+        # skip maximal string length
+        try :
+            next (it)
+            nr += 1
+        except :
+            pass
+         
+        # read place and transition names
+        for i in range (nrplaces) :
+            try :
+                self.net.places[i].name = next (it).rstrip ()
+                nr += 1
+            except :
+                raise Exception, 'FIXME' 
+        for i in range (nrtrans) :
+            try :
+                self.net.trans[i].name = next (it).rstrip ()
+                nr += 1
+            except :
+                raise Exception, 'FIXME' 
+        
+        # check there is no more lines
+        try :
+            next (it)
+            nr += 1
+            raise Exception, 'Extra lines'
+        except StopIteration :
+            pass
+
     def write (self, f, fmt='pep') :
         if fmt == 'mp' : return self.__write_mp (f)
         net.Net.write (self, f, fmt)
@@ -50,12 +138,15 @@ class Mprocess (net.Net) :
             i += 1
         i = 1
         m = 0
+        out = ''
         for p in self.net.places :
+            out += p.name + '\n'
             idxp[p] = i
             i += 1
             m = max (m, len (p.name))
         i = 1
         for t in self.net.trans :
+            out += t.name + '\n'
             idxt[t] = i
             i += 1
             m = max (m, len (t.name))
@@ -69,16 +160,15 @@ class Mprocess (net.Net) :
                 len (e.pre) + len (e.cont),
                 len (e.post) + len (e.cont)))
 
+            i = len (e.pre) + len (e.cont) + len (e.post) + len (e.cont)
             for c in e.pre | e.cont :
-                f.write ('%d ' % idxc[c])
+                i -= 1
+                f.write ('%d%s' % (idxc[c], ' ' if i else ''))
             for c in e.post | e.cont :
-                f.write ('%d ' % idxc[c])
+                i -= 1
+                f.write ('%d%s' % (idxc[c], ' ' if i else ''))
             f.write ('\n')
                 
-        f.write ('%d\n' % (m + 1))
-        for p in self.net.places :
-            f.write ('%s\n' % p.name)
-        for t in self.net.trans :
-            f.write ('%s\n' % t.name)
+        f.write ('%d\n%s' % (m + 1, out))
 
 # vi:ts=4:sw=4:et:

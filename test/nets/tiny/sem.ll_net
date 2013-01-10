@@ -2,8 +2,8 @@ PEP
 PetriBox
 FORMAT_N2
 PL
-1"s0"M1
-2"s1"M1
+1"s0"M1m1
+2"s1"M1m1
 3"s2"
 4"s3"
 TR

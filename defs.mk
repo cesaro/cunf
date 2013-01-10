@@ -72,13 +72,17 @@ CPP:=$(CROSS)cpp
 	@dot -T jpg < $< > $@
 
 %.dot : %.ll_net
-	@echo "N2D $<"
+	@echo "P2D $<"
 	@test/net2dot $< > $@
 	@#tools/pep2dot.py < $< > $@
 
 %.ll_net : %.cuf
 	@echo "C2P $<"
 	@tools/cuf2pep.py < $< > $@
+
+%.ll_net : %.mp
+	@echo "C2P $<"
+	@tools/mp2pep.py < $< > $@
 
 %.unf.cuf : %.ll_net
 	@echo "UNF $<"
@@ -133,3 +137,7 @@ CPP:=$(CROSS)cpp
 %.r : %.dot
 	@echo "RS  $<"
 	@tools/rs.pl $< > $@
+
+%.dot : %.mci
+	@echo "M2D $<"
+	@mci2dot $< > $@

@@ -128,13 +128,13 @@ class Net :
         tab = {'first' : 'element'}
         for p in self.places :
             if m != 0 and p.m != m : continue
-            m1 = 'M%dm%d' % (p.m0, p.m0) if p.m0 > 0 else ''
-            f.write ('%d"%s"%s\n' % (len (tab), repr (p), m1))
+            m1 = 'M%d' % p.m0 if p.m0 > 0 else ''
+            f.write ('%d"%s"9@9%s\n' % (len (tab), repr (p), m1))
             tab[p] = len (tab)
         f.write ('TR\n')
         for t in self.trans :
             if m != 0 and t.m != m : continue
-            f.write ('%d"%s"\n' % (len (tab), repr (t)))
+            f.write ('%d"%s"9@9\n' % (len (tab), repr (t)))
             tab[t] = len (tab)
 
         out = ''

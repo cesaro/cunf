@@ -266,8 +266,8 @@ static void _write_str (const char * path, FILE * f, const char * str)
  *  All indexes into any section start at 0
  * 
  *  0. format version number: 0x 43 55 46 03
- *  2. number of places in the original net
- *  1. number of transitions in the original net
+ *  1. number of places in the original net
+ *  2. number of transitions in the original net
  *  3. number of conditions
  *  4. number of events
  *  5. number of white events (events without cutoff histories, they come first

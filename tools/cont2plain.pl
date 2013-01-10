@@ -44,7 +44,7 @@ for $pl (keys %readers) {
 # The places and transitions remain unchanged.
 print "PL\n";
 for $pl (sort {$a <=> $b} keys %places) {
-	printf "%d\"%s\"%s\n", $pl, $ident{$pl}, $initial{$pl}? "M1m1" : "";
+	printf "%d\"%s\"8\@8%s\n", $pl, $ident{$pl}, $initial{$pl}? "M1" : "";
 }
 print "TR\n";
 for $tr (sort {$a <=> $b} keys %trans) {
