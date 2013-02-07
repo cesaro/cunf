@@ -33,6 +33,21 @@ class Transition :
         self.post.add (p)
         p.pre_add (self)
 
+    def pre_rem (self, p) :
+        if p not in self.pre : return
+        self.pre.remove (p)
+        p.post_rem (self)
+
+    def cont_rem (self, p) :
+        if p not in self.cont : return
+        self.cont.remove (p)
+        p.cont_rem (self)
+
+    def post_rem (self, p) :
+        if p not in self.post : return
+        self.post.remove (p)
+        p.pre_rem (self)
+
 class Place :
     def __init__ (self, name, m0=0) :
         self.name = name
@@ -65,6 +80,21 @@ class Place :
         self.post.add (t)
         t.pre_add (self)
 
+    def pre_rem (self, t) :
+        if t not in self.pre : return
+        self.pre.remove (t)
+        t.post_rem (self)
+
+    def cont_rem (self, t) :
+        if t not in self.cont : return
+        self.cont.remove (t)
+        t.cont_rem (self)
+
+    def post_rem (self, t) :
+        if t not in self.post : return
+        self.post.remove (t)
+        t.pre_rem (self)
+
 class Net :
     def __init__ (self, sanity_check=True) :
         self.places = []
@@ -78,6 +108,21 @@ class Net :
         self.date = ''
         self.note = ''
         self.version = ''
+
+    def place_add (self, name, m0=0) :
+        p = Place (name, m0)
+        self.places.append (p)
+        if m0 : self.m0.add (p)
+        return p
+
+    def trans_add (self, name) :
+        t = Transition (name)
+        self.trans.append (t)
+        return t
+
+    def m0_add (self, p, n=1) :
+        p.m0 = n
+        self.m0.add (p)
 
     # limited support for firing executions in 1-safe nets
     def enables (self, m, t) :
@@ -108,6 +153,25 @@ class Net :
             m |= set (t.post)
 #        db ('reached', list (m), 'enables', self.enabled (m))
         return m
+
+    def plain2cont (self) :
+        for t in self.trans :
+            s = t.pre & t.post
+            for p in s :
+                t.pre_rem (p)
+                t.post_rem (p)
+                t.cont_add (p)
+
+    def cont2plain (self) :
+        for t in self.trans :
+            for p in t.cont :
+                t.pre_add (p)
+                t.post_add (p)
+            for p in list (t.cont) :
+                t.cont_rem (p)
+
+    def cont2pr (self) :
+        pass
 
     def write (self, f, fmt='pep', m=0) :
         if fmt == 'pep' : return self.__write_pep (f, m)

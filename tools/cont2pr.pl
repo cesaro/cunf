@@ -51,11 +51,11 @@ for $pl (sort {$a <=> $b} keys %places) {
 	$base{$pl} = $newnr;
 	if (defined($readers{$pl})) {
 		for $tr (split(/%/,$readers{$pl})) {
-			printf "%d\"%s-%s\"%s\n", $newnr++, $ident{$pl}, $tr,
+			printf "%d\"%s-%s\"9\@9%s\n", $newnr++, $ident{$pl}, $tr,
 					$initial{$pl}? "M1m1" : "";
 		}
 	} else {
-		printf "%d\"%s\"%s\n", $newnr++, $ident{$pl},
+		printf "%d\"%s\"9\@9%s\n", $newnr++, $ident{$pl},
 					$initial{$pl}? "M1m1" : "";
 	}
 }

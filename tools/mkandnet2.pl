@@ -20,9 +20,9 @@ for ($i = 0; $i < $N; $i++) {
 	for ($j = 0; $j < $N; $j++) {
 		$one = ($i == 0) || ($j == 0);
 		$plc++;
-		printf "%d\"off/%dx%d\"%s\n",$plc,$i,$j,$one? "" : "M1m1";
+		printf "%d\"off/%dx%d\"7\@7%s\n",$plc,$i,$j,$one? "" : "M1m1";
 		$plc++;
-		printf "%d\"on/%dx%d\"%s\n",$plc,$i,$j,$one? "M1m1" : "";
+		printf "%d\"on/%dx%d\"7\@7%s\n",$plc,$i,$j,$one? "M1m1" : "";
 	}
 }
 
@@ -41,27 +41,27 @@ ra($left,0); ra($up,0); zero($b);
 
 for ($i = 0; $i < $N; $i++) {
 	$trc++;
-	printf "%d\"raise/0-%d\"\n", $trc, $i;
+	printf "%d\"raise/0-%d\"8\@8\n", $trc, $i;
 	$low = place ("0,$i", 0);
 	$high = place ("0,$i", 1);
 	push @consume, "$low>$trc";
 	push @produce, "$trc<$high";
 
 	$trc++;
-	printf "%d\"fall/0-%d\"\n", $trc, $i;
+	printf "%d\"fall/0-%d\"8\@8\n", $trc, $i;
 	push @consume, "$high>$trc";
 	push @produce, "$trc<$low";
 
 	if ($i == 0) { next; }
 	$trc++;
-	printf "%d\"raise/%d-0\"\n", $trc, $i;
+	printf "%d\"raise/%d-0\"8\@8\n", $trc, $i;
 	$low = place ("$i,0", 0);
 	$high = place ("$i,0", 1);
 	push @consume, "$low>$trc";
 	push @produce, "$trc<$high";
 
 	$trc++;
-	printf "%d\"fall/%d-0\"\n", $trc, $i;
+	printf "%d\"fall/%d-0\"8\@8\n", $trc, $i;
 	push @consume, "$high>$trc";
 	push @produce, "$trc<$low";
 }
@@ -102,7 +102,7 @@ sub newtrans {
 	my ($name,$b) = @_;
 	$trc++;
 	$b =~ s/,/-/;
-	printf "%d\"%s/%s\"\n",$trc,$name,$b;
+	printf "%d\"%s/%s\"9\@9\n",$trc,$name,$b;
 }
 
 sub place {

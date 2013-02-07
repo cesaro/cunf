@@ -380,6 +380,24 @@ class Unfolding (net.Net) :
         for mpe in mproc.mpevents :
             if mpe.iscutoff : mproc.nr_cutoffs += 1
         t = timeit (t, 'merging events (step 2)')
+
+        ## cesar test
+        #revmap = {}
+        #for c in self.conds :
+        #    if c.mpcond not in revmap :
+        #        revmap[c.mpcond] = []
+        #    revmap[c.mpcond].append (c)
+        #for mpc in revmap :
+        #    print 'len', len (revmap[mpc]), 'od', mpc.depth, 'list', revmap[mpc]
+        #print
+        #revmap = {}
+        #for e in self.events :
+        #    if e.mpev not in revmap :
+        #        revmap[c.mpcond] = []
+        #    revmap[c.mpcond].append (c)
+        #for mpc in revmap :
+        #    print 'len', len (revmap[mpc]), 'od', mpc.depth, 'list', revmap[mpc]
+        #print
         return mproc
 
     def stats_print (f, k, v, fmt='%s') :

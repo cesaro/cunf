@@ -80,9 +80,9 @@ CPP:=$(CROSS)cpp
 	@echo "C2P $<"
 	@tools/cuf2pep.py < $< > $@
 
-%.ll_net : %.mp
-	@echo "C2P $<"
-	@tools/mp2pep.py < $< > $@
+#%.ll_net : %.mp
+#	@echo "C2P $<"
+#	@tools/mp2pep.py < $< > $@
 
 %.unf.cuf : %.ll_net
 	@echo "UNF $<"
@@ -141,3 +141,19 @@ CPP:=$(CROSS)cpp
 %.dot : %.mci
 	@echo "M2D $<"
 	@mci2dot $< > $@
+
+%.punf.r.c.txt : %.ll_net
+	-punf -r -c -n=200000 -N=1 -s -t -@4 '-#' $< > $@ 2>&1
+	echo >> $@
+	echo "mci2mp:" >> $@
+	mci2mp $(basename $<).mci >> $@
+	echo >> $@
+	echo "prcompress:" >> $@
+	./prcompress -v $(basename $<).mci >> $@
+	./tools/merger.py < $(basename $<).pr.cuf > /dev/null 2>> $@
+
+%.punf.c.txt : %.ll_net
+	-punf -c -n=200000 -N=1 -s -t -@4 '-#' $< > $@ 2>&1
+	echo >> $@
+	echo "mci2mp:" >> $@
+	mci2mp $(basename $<).mci >> $@

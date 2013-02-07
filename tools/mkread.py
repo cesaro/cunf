@@ -18,20 +18,21 @@ def mkread (n) :
     r = ptnet.net.Place ('r')
     p = ptnet.net.Place ('p')
     s = ptnet.net.Place ('s')
+    for x in [r, p, s] :
+        net.places.append (x)
 
     u = ptnet.net.Transition ('u')
     t = ptnet.net.Transition ('t')
+    for x in [u, t] :
+        net.trans.append (x)
+
     u.pre_add (r)
     u.post_add (p)
     t.pre_add (p)
     t.post_add (s)
 
     r.m0 = True
-    net.places.append (r)
-    net.places.append (p)
-    net.places.append (s)
-    net.trans.append (t)
-    net.trans.append (u)
+    net.m0.add (r)
 
     for i in xrange (n) :
         r = ptnet.net.Place ('r/%d' % i)
@@ -47,6 +48,7 @@ def mkread (n) :
         net.places.append (s)
         net.trans.append (t)
 
+    #net.cont2plain ()
     net.write (sys.stdout, 'pep')
 
 if __name__ == '__main__' :
