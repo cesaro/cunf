@@ -90,7 +90,7 @@ CPP:=$(CROSS)cpp
 
 %.mp.mp : %.unf.cuf
 	@echo "MER $<"
-	@tools/merger.py < $< > $@
+	@tools/cmerge.py < $< > $@
 
 %.unf.cuf.tr : %.ll_net
 	tools/trt.py timeout=5000 t=cunf net=$< > $@
@@ -150,7 +150,7 @@ CPP:=$(CROSS)cpp
 	echo >> $@
 	echo "prcompress:" >> $@
 	./prcompress -v $(basename $<).mci >> $@
-	./tools/merger.py < $(basename $<).pr.cuf > /dev/null 2>> $@
+	./tools/cmerge.py < $(basename $<).pr.cuf > /dev/null 2>> $@
 
 %.punf.c.txt : %.ll_net
 	-punf -c -n=200000 -N=1 -s -t -@4 '-#' $< > $@ 2>&1

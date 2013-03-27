@@ -1,4 +1,5 @@
 import net
+import networkx
 
 class Mpevent (net.Transition) :
     def __init__ (self, label, pre=set(), post=set(), cont=set(), cff=False) :
@@ -123,6 +124,14 @@ class Mprocess (net.Net) :
         except StopIteration :
             pass
 
+        # merge consume/produce loops into read arcs
+        for e in self.mpevents :
+            s = e.pre & e.post
+            for c in s :
+                e.pre_rem (c)
+                e.post_rem (c)
+                e.cont_add (c)
+
     def write (self, f, fmt='pep') :
         if fmt == 'mp' : return self.__write_mp (f)
         net.Net.write (self, f, fmt)
@@ -175,5 +184,68 @@ class Mprocess (net.Net) :
             f.write ('\n')
                 
         f.write ('%d\n%s' % (m + 1, out))
+
+    def ac_graph (self) :
+        g = networkx.DiGraph ()
+        for e in self.mpevents :
+            for c in e.post :
+                g.add_edge (e, c, color='black')
+            for c in e.pre :
+                g.add_edge (c, e, color='black')
+            for c in e.cont :
+                g.add_edge (c, e, color='orange')
+        for c in self.mpconds :
+            if len (c.cont) and len (c.post) :
+                v = (c, 'v')
+                for e in c.cont :
+                    g.add_edge (e, v, color='red')
+                for e in c.post :
+                    g.add_edge (v, e, color='red')
+        return g
+
+    def ac_dot (self, f) :
+        g = self.ac_graph ()
+        idx = {}
+        col = {}
+
+#        for n in g :
+#            print repr (n)
+#            for np in g[n] :
+#                print '         ', repr (np), g[n][np], g[n][np]['color']
+#                print g[n][np]['color']
+
+        sccs = networkx.algorithms.strongly_connected_components (g)
+        sccs = [x for x in sccs if len (x) >= 2]
+        for s in sccs :
+            print '/* scc', len (s), s, '*/'
+            for n in s :
+                col[n] = 'blue'
+        i = 1
+        for n in g :
+            idx[n] = i
+            i += 1
+
+        f.write ('digraph {\n')
+        f.write ('node [style=filled];\n')
+        for n in g :
+            color = col[n] if n in col else 'white'
+            sha = ''
+            if n in self.mpevents :
+                sha = 'box'
+            elif n in self.mpconds :
+                sha = 'ellipse'
+            else :
+                sha = 'hexagon'
+
+            f.write ('%d\t[fillcolor=%s shape=%s]\n' % (idx[n], color, sha))
+        f.write ('\n\n')
+
+        for n in g :
+            for np in g[n] :
+                f.write ('%d -> %d\t[color=%s]\n' % (
+                        idx[n], idx[np], g[n][np]['color']))
+        f.write ('}\n')
+
+                    
 
 # vi:ts=4:sw=4:et:
