@@ -138,6 +138,10 @@ CPP:=$(CROSS)cpp
 	@echo "RS  $<"
 	@tools/rs.pl $< > $@
 
+%.ll_net : %.g
+	@echo "X2P $<"
+	@petrify -ip < $< | tools/stg2pep.py > $@
+
 %.dot : %.mci
 	@echo "M2D $<"
 	@mci2dot $< > $@

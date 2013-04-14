@@ -579,6 +579,9 @@ int h_cmp (struct h *h1, struct h *h2)
 		return h1->parikh.size - h2->parikh.size;
 	}
 
+#ifdef CONFIG_SIZELEX
+	return 0;
+#endif
 	/* sizes and parikh vectors are equal, check foata stuff */
 	return _h_cmp_foata (h1, h2);
 }

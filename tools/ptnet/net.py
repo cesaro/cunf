@@ -113,11 +113,13 @@ class Net :
         p = Place (name, m0)
         self.places.append (p)
         if m0 : self.m0.add (p)
+        # print 'place_add', name, m0
         return p
 
     def trans_add (self, name) :
         t = Transition (name)
         self.trans.append (t)
+        # print 'trans_add', name
         return t
 
     def m0_add (self, p, n=1) :
@@ -229,6 +231,7 @@ class Net :
         f.write ('}\n')
 
     # FIXME -- this method has never been tested !!
+    # FIXME -- the line type (x.pre) will return Instance, not Event!
     def __write_ctxdot_items (self, f, items, n, prefx='', full=True) :
         self.m += 1
         m = self.m
@@ -410,6 +413,7 @@ class Net :
     def read (self, f, fmt='pep') :
         if fmt == 'pep' : return self.__read_pep (f)
         if fmt == 'grml' : return self.__read_grml (f)
+        if fmt == 'stg' : return self.__read_stg (f)
         raise Exception, "'%s': unknown input format" % fmt
 
     def __read_pep (self, f) :
@@ -426,6 +430,54 @@ class Net :
         par.ParseFile (f)
         del self.__grmlq
         del self.__grmlidx
+
+    def __read_stg (self, f) :
+        # TODO: signals of the form a+/4 ...
+        nr = 0
+        idx = {}
+        for l in f :
+            nr += 1
+            l = l.strip ()
+            if len (l) == 0 : continue
+            if l[0] == '#' : continue
+            if l[0:7] == '.inputs' :
+                for s in l[7:].split () : idx[s] = None
+            if l[0:8] == '.outputs' :
+                for s in l[8:].split () : idx[s] = None
+            if l[0:9] == '.internal' :
+                for s in l[9:].split () : idx[s] = None
+            if l[0:6] == '.dummy' :
+                for s in l[6:].split () : idx[s] = self.trans_add (s)
+            if l == '.graph' :
+                for s in list (idx) :
+                    idx[s + '+'] = self.trans_add (s + '+')
+                    idx[s + '-'] = self.trans_add (s + '-')
+            if l[0:8] == '.marking' :
+                l = l[8:].strip (' {}')
+                if '<' in l or '>' in l :
+                    raise Exception, 'line %d: implicit places disallowed' % nr
+                for s in l.split () :
+                    if s not in idx :
+                        raise Exception, 'line %d: place "%s" not found' % \
+                                (nr, s)
+                    if idx[s].__class__ != Place :
+                        raise Exception, 'line %d: "%s" is not a place' % \
+                                (nr, s)
+                    idx[s].m0 = 1
+                    self.m0.add (idx[s])
+                continue
+            if l[0] == '.' : continue
+
+            ll = l.split ()
+            if len (ll) < 2 :
+                raise Exception, 'line %d: not a valid arc definition' % nr
+            if ll[0] not in idx : idx[ll[0]] = self.place_add (ll[0])
+            for n in ll[1:] :
+                if n not in idx : idx[n] = self.place_add (n)
+                if idx[ll[0]].__class__ == idx[n].__class__ :
+                    raise Exception, 'line %d: not a p-t or t-p arc' % nr
+                idx[ll[0]].post_add (idx[n])
+                # print 'arc', idx[ll[0]], '->', idx[n]
 
     def __grml_start (self, tag, attr):
         # print "START", repr (tag), attr
