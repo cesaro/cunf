@@ -42,7 +42,7 @@ class Event (net.Transition) :
             s = '+'
         else :
             s = ''
-        return '%s%s:e%d' % (s, repr (self.label), self.nr)
+        return '%s:%se%d' % (repr (self.label), s, self.nr)
 
 class Condition (net.Place) :
     def __init__ (self, nr, label, pre=set(), post=set(), cont=set()) :
