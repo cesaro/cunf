@@ -21,6 +21,7 @@
 
 #include "ls/ls.h"
 #include "al/al.h"
+#include "bv/bv.h"
 
 struct place {
 	struct ls nod;	/* node for the list of places */
@@ -121,6 +122,8 @@ struct u {
 	struct trans * stoptr;
 	int depth;
 	/* int interactive; */
+
+	struct bv pmask;
 };
 
 struct u u;

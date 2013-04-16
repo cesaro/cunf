@@ -21,9 +21,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "global.h"
-#include "ec.h"
-#include "h.h"
 
 #define PRINT(args...) fprintf (stdout, ##args)
 /* #define PRINT printf */
@@ -51,6 +48,11 @@
 #define BREAK(expr)    		if (expr) breakme ()
 //#define BREAK(expr)
 #endif
+
+struct event;
+struct cond;
+struct h;
+struct ec;
 
 void breakme (void);
 

@@ -229,6 +229,9 @@ void unfold (void)
 #endif
 #endif
 
+#ifdef PMASK
+	ec_pmask_init ();
+#endif
 	nc_create_unfolding ();
 	marking_init ();
 	pe_init ();

@@ -473,6 +473,10 @@ void __attribute__ ((noinline)) _ec_conc_add (struct ec *r, struct ec *rp,
 		return;
 	}
 
+#ifdef PMASK
+	if (! ec_pmask_tst (r->c->fp, rp->c->fp)) return;
+#endif
+
 	if (rp->c->m == mred) {
 		bit0 = 1;
 		x = 0;
@@ -719,3 +723,113 @@ int ec_conc_tst (register struct ec *r, register struct ec *rp)
 	}
 	return 0;
 }
+
+#define PM_GET(p1,p2) bv_get (&u.pmask, (p1)->id * u.net.numpl + (p2)->id)
+#define PM_SET(p1,p2) \
+	do { \
+		bv_set (&u.pmask, (p1)->id * u.net.numpl + (p2)->id); \
+		bv_set (&u.pmask, (p2)->id * u.net.numpl + (p1)->id); \
+	} while (0)
+
+static void _ec_pmask_set (struct place * p1, struct place * p2)
+{
+	int i, j;
+	struct trans * t;
+
+	/* return if bit already set, or p1=p2; set p1,p2 in the relation
+	 * otherwise */
+	if (p1 == p2 || PM_GET (p1, p2)) return;
+	PM_SET (p1, p2);
+	//DEBUG ("set %d %d - '%s' '%s'", p1->id, p2->id, p1->name, p2->name);
+
+	/* for all p3 preceding p1, set p3,p2 in the relation */
+	for (i = p1->pre.deg - 1; i >= 0; i--) {
+		t = (struct trans *) p1->pre.adj[i];
+		for (j = t->pre.deg - 1; j >= 0; j--) {
+			_ec_pmask_set ((struct place *) t->pre.adj[j], p2);
+		}
+		for (j = t->cont.deg - 1; j >= 0; j--) {
+			_ec_pmask_set ((struct place *) t->cont.adj[j], p2);
+		}
+	}
+	for (i = p1->cont.deg - 1; i >= 0; i--) {
+		t = (struct trans *) p1->cont.adj[i];
+		for (j = t->pre.deg - 1; j >= 0; j--) {
+			_ec_pmask_set ((struct place *) t->pre.adj[j], p2);
+		}
+		for (j = t->cont.deg - 1; j >= 0; j--) {
+			_ec_pmask_set ((struct place *) t->cont.adj[j], p2);
+		}
+	}
+
+	/* for all p3 preceding p2, set p1,p3 in the relation */
+	for (i = p2->pre.deg - 1; i >= 0; i--) {
+		t = (struct trans *) p2->pre.adj[i];
+		for (j = t->pre.deg - 1; j >= 0; j--) {
+			_ec_pmask_set (p1, (struct place *) t->pre.adj[j]);
+		}
+		for (j = t->cont.deg - 1; j >= 0; j--) {
+			_ec_pmask_set (p1, (struct place *) t->cont.adj[j]);
+		}
+	}
+	for (i = p2->cont.deg - 1; i >= 0; i--) {
+		t = (struct trans *) p2->cont.adj[i];
+		for (j = t->pre.deg - 1; j >= 0; j--) {
+			_ec_pmask_set (p1, (struct place *) t->pre.adj[j]);
+		}
+		for (j = t->cont.deg - 1; j >= 0; j--) {
+			_ec_pmask_set (p1, (struct place *) t->cont.adj[j]);
+		}
+	}
+}
+
+void ec_pmask_init ()
+{
+	int i, j;
+	struct trans *t;
+	struct place *p1, *p2;
+	struct ls *n;
+
+	bv_init (&u.pmask, u.net.numpl * u.net.numpl);
+
+	/* for all t, set in the relation all places p, p' in pre(t) \cup
+	 * ctx(t) such that p != p' */
+	for (n = u.net.trans.next; n; n = n->next) {
+		t = ls_i (struct trans, n, nod);
+		//TRACE (t->name, "s");
+		for (i = t->pre.deg - 1; i >= 0; i--) {
+			p1 = (struct place *) t->pre.adj[i];
+			for (j = t->pre.deg - 1; j >= 0; j--) {
+				p2 = (struct place *) t->pre.adj[j];
+				_ec_pmask_set (p1, p2);
+			}
+			for (j = t->cont.deg - 1; j >= 0; j--) {
+				p2 = (struct place *) t->cont.adj[j];
+				_ec_pmask_set (p1, p2);
+			}
+		}
+		for (i = t->cont.deg - 1; i >= 0; i--) {
+			p1 = (struct place *) t->cont.adj[i];
+			for (j = t->cont.deg - 1; j >= 0; j--) {
+				p2 = (struct place *) t->cont.adj[j];
+				_ec_pmask_set (p1, p2);
+			}
+		}
+	}
+
+	for (i = 0; i < u.net.numpl; i++) {
+		for (j = 0; j < u.net.numpl; j++) {
+			//bv_set (&(u.pmask), i * u.net.numpl + j);
+			if (bv_get (&u.pmask, i * u.net.numpl + j) !=
+				bv_get (&u.pmask, j * u.net.numpl + i)) {
+				TRACE (i, "d");
+				TRACE (j, "d");
+				TRACE (bv_get (&u.pmask, i * u.net.numpl + j), "d");
+				TRACE (bv_get (&u.pmask, j * u.net.numpl + i), "d");
+
+				ASSERT (0);
+			}
+		}
+	}
+}
+

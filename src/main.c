@@ -179,6 +179,7 @@ int main (int argc, char **argv)
 	DPRINT ("  It is a %s net\n", u.net.isplain ? "plain" : "contextual");
 	nc_static_checks (stoptr);
 
+
 	/* unfold */
 	unfold ();
 

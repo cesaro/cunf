@@ -1,5 +1,7 @@
 
-/* 
+/*
+ * Bit Array -- interface and implementation :)
+ * 
  * Copyright (C) 2010, 2011  Cesar Rodriguez <cesar.rodriguez@lsv.ens-cachan.fr>
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,17 +18,36 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* test and debug */
-#undef CONFIG_DEBUG
+#ifndef _BV_BV_H_
+#define _BV_BV_H_
 
-/* unfold order */
-#undef CONFIG_MCMILLAN
-#define CONFIG_ERV
-#undef CONFIG_ERV_MOLE
-#undef CONFIG_SIZELEX
+#include <string.h>
+#include "glue.h"
 
-/* see src/nodelist.c */
-#define CONFIG_NODELIST_STEP 1024
+struct bv {
+	int len;
+	unsigned char * tab;
+};
 
-#undef PMASK
+#define bv_init(b,l) \
+	do { \
+		(b)->len = 1 + (l) / 8; \
+		(b)->tab = (unsigned char *) gl_realloc (0, (b)->len); \
+		memset ((b)->tab, 0, (b)->len); \
+	} while (0)
 
+#define bv_term(b) \
+		gl_free ((b)->tab)
+
+#define bv_get(b,i) \
+		(((b)->tab[(i) >> 3] & (1 << ((i) & 7))) ? 1 : 0)
+#define bv_clear(b,i) \
+		(b)->tab[(i) >> 3] &= ~(1 << ((i) & 7))
+#define bv_set(b,i) \
+		(b)->tab[(i) >> 3] |= 1 << ((i) & 7)
+#define bv_setv(b,i,v) \
+		(b)->tab[(i) >> 3] = \
+			((b)->tab[(i) >> 3] & ~(1 << ((i) & 7))) | \
+			(((v) & 1) << ((i) & 7))
+
+#endif

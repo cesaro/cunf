@@ -54,7 +54,9 @@ int ec_conc_tst (struct ec *r, struct ec *rp);
 #define EC_ISREAD(r)	((r)->h != 0 && (r)->c->pre != (r)->h->e)
 #define EC_ISCOMP(r)	((r)->h == 0)
 
-/* FIXME -- verify that pre(t) doesn't intersect cont(t) for any t in N */
+void ec_pmask_init ();
+#define ec_pmask_tst(p1,p2) \
+			bv_get (&u.pmask, (p1)->id * u.net.numpl + (p2)->id)
 
 #endif
 
