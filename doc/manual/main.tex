@@ -1,52 +1,79 @@
 \documentclass[a4paper]{refart}
-%\documentclass[article,oneside,a4paper]{memoir}
-%\chapterstyle{dowding}
-%\chapterstyle{thatcher}
-%\usepackage{geometry}
 
 \usepackage[utf8]{inputenc}
-\usepackage{algorithmic}
-\usepackage{algorithm}
-\usepackage{amsfonts}
-\usepackage{figlatex}
-\usepackage{amsmath}
-\usepackage{hyperref}
+\usepackage[T1]{fontenc}
 \usepackage[osf,sc]{mathpazo}
+\usepackage[english,nameinlink]{cleveref}
 \usepackage{microtype}
-\usepackage{cite}
+\usepackage{figlatex}
+\usepackage{textcomp}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{tocloft}
 \usepackage{xspace}
-\usepackage{cleveref}
+\usepackage{cite}
+
+\hypersetup{
+  bookmarksdepth=2,
+  bookmarksnumbered=true,
+  bookmarksopen=true,
+  bookmarksopenlevel=2,
+  colorlinks=true,
+  linktocpage=true,
+  breaklinks=true,
+  pageanchor=true,
+  allcolors=[rgb]{0.7,0.1,0.1},
+  pdftitle={The Cunf Tool User's Manual, v1.6},
+  pdfauthor={Cesar Rodriguez}
+}
 
 \input{defs}
 
-\title{The \cunft User's Manual \hfill v1.6}
+\title{The \cunft{} User's Manual \hfill v1.6}
 \author{C\'esar Rodr\'iguez}
 \date{April 2013}
 
 \begin{document}
 \maketitle
-\begin{abstract}
 
+\begin{abstract}
+This is both a user guide and a tutorial of the \cunft{}.
+The \cunft{} is a toolset for carrying out unfolding-based
+verification of Petri nets extended with read arcs, also called
+\emph{contextual nets} (c-nets).
+Unfoldings fully represent the state-space (reachable markings) of a c-net
+by a partial order rather than by a set of interleavings;
+they are often exponentially smaller than the reachablity graph, and never
+larger than it.
+Additionally, c-net unfoldings can be exponentially more compact than
+those of corresponding Petri nets.
+The toolset specifically contains one unfolding-construction
+tool and one reachablity and deadlock-checking tool.
 \end{abstract}
+
 \tableofcontents
 
 \section{Introduction}%{{{
 \label{s:intro}
 
-The \cunft is actually a set of tools for carrying out unfolding-based
+The \emph{\cunft{}} is actually a \emph{set}
+of tools for carrying out unfolding-based
 verification of Petri nets extended with read arcs, \aka contextual
 nets, or c-nets.  The package specifically contains the following tools:
-\begin{itemize}
+\begin{enumerate}
 \item
-  \cunf{}: constructs the unfolding of a c-net;
+  \cunf: constructs the unfolding of a c-net;
 \item
-  \cna{}: performs reachability and deadlock analysis using unfoldings
+  \cna: performs reachability and deadlock analysis using unfoldings
   constructed by \cunf.
-\end{itemize}
+\item
+  Scripts such as \verb!pep2dot! or \verb!grml2pep! to do format conversion
+  between Petri net formats, unfolding formats, \etc
+\end{enumerate}
 
 Petri nets are a modelling language for concurrent systems.
-The reader unfamiliar to the topic could perhaps start with\cite{Wiki-pn}
-or\cite{Murata}.
+The reader unfamiliar to the topic could perhaps start with\cite{wiki:pn}
+or\cite{Mur89}.
 
 Contextual nets are Petri nets where, in addition to the ordinary
 \textit{arrows} between places and transitions, one may find
@@ -56,46 +83,74 @@ tokens exist in a place before firing, but don't consume them
 when firing.
 Transitions can then be thought of reading a
 \emph{context} required to fire, hence the name.
-See Section~2 of\cite{RSB11} for a brief formalization and\cite{MR95} for more
-details.
+See Section~2 of\cite{BBCKRS12} for a brief formalization
+and\cite{MR95} for more details.
 
 Observe that every Petri net is a contextual net (without read arcs).
 Also notice that for every c-net we obtain an equivalent Petri net after
-substituting the read arcs for pairs of \emph{consume-produce} loops.  We
+substituting read arcs for pairs of \emph{consume-produce} loops.  We
 call this Petri net the \emph{plain encoding} of the c-net.
+An example of this encoding is shown in \cref{f:examples}.
 
-The unfolding of a contextual net is another well-defined contextual net of
+\begin{figure}[h]
+\hspace{-1ex}
+\includegraphics{fig/examples.fig}
+\caption{(a) a c-net; (b) its encoding into a Petri net; (c) unfolding of
+(b)}
+\label{f:examples}
+\end{figure}
+
+The unfolding of a c-net is another well-defined c-net of
 acyclic structure that fully represents the \textit{behaviour} (reachable
-markings) of the first\cite{EH08}.
+markings) of the first,
+see \cref{f:examples}~(c) for an example.
 A c-net unfolding is at most as big as the reachablity graph of the
-c-net.
-For highly concurrent c-nets, however, unfoldings are often much
+c-net.\footnote{The careful reader may notice that there is more events in
+\cref{f:examples}~(c) than reachable markings in \cref{f:examples}~(b).
+This is a matter of presentation.
+(c) is actually the \emph{full unfolding}\cite{BBCKRS12}
+of (b), while the term \emph{unfolding} in this document refers
+to the finite marking-complete unfolding prefix that one can build
+using a total adequate order\cite{BBCKRS12}.
+In other words, (c) contains some cut-off events (actually only 1)
+that, when removed, would
+yield a marking-complete prefix not larger than the state-space of (b).}
+Because unfoldings represent behaviour by partial orders rathen than by
+interleavings,
+for highly concurrent c-nets, unfoldings are often much
 (exponentially) smaller, which makes for natural interest in them
-for the research of verification methods of concurrent systems.
+for the verification of concurrent systems.
 
-C-net unfoldings bring additional advantages \wrt Petri net unfoldings.
-The unfolding of a c-net can be exponentially smaller than the unfolding of its
-plain encoding.
-Consider the c-net of \cref{f:encodings} FIXME.
+C-net unfoldings bring additional advantages \wrt ordinary Petri net
+unfoldings.
+The unfolding of a c-net can be exponentially smaller than the unfolding of
+its plain encoding.
+For instance, \cref{f:examples}~(a) is a c-net
+and (b) its plain encoding.
+The unfolding of (b) is (c), but the unfolding of (a) is a c-net isomorphic
+to (a).
+If (a) was generalized to $n$ \emph{reading transitions} (copies of $t_2$),
+we would still have an isomorphic contextual unfolding, but (c) would blow
+up.  See \cite{BBCKRS12} for more details.
 
 An unfolding is suitable for checking certain properties of the net giving
-rise to it, such as reachability or deadlock absence.
+rise to it, such as reachability or deadlock-freeness.
 Checking these directly on the net is
 computationally difficult (PSPACE-complete).
 Building the unfolding is (for highly concurrent systems) efficient,
 and checking these properties using the
-unfolding is also `\textit{easy}' --- NP-complete.
+unfolding is also \textit{easy} --- NP-complete.
 Together, unfolding construction and unfolding analysis is 
 almost always faster than verification based on the reachability graph.
 Also notice that we can check many properties once the unfolding is built.
 
-The \cunft implements the c-net unfolding procedure proposed by Baldan et
+The \cunft{} implements the c-net unfolding procedure proposed by Baldan et
 \al in\cite{BCKS08}.  The algorithms and data structures actually
 implemented have been partially described in\cite{RSB11,BBCKRS12}.  While
 the theoretical results of\cite{BCKS08,RSB11,BBCKRS12} allow for unfolding
 bounded c-nets in general, \cunf can only unfold 1-safe c-nets (\ie, no
-reachable marking puts more than one taocken on every place), and (for the
-time being) the tool will blindly assume the input is a 1-safe c-net ---
+reachable marking puts more than one token on every place), and for the
+time being the tool will blindly assume the input is 1-safe ---
 the unfolding could be wrong if this is not fulfilled.
 In\cite{Rod10}, and old and inefficient version of the tool is described.
 
@@ -103,7 +158,7 @@ In\cite{Rod10}, and old and inefficient version of the tool is described.
 \section{Author and Contact}%{{{
 \label{s:author}
 
-The \cunft is developed and maintained by 
+The \cunft{} is developed and maintained by 
 
 \medskip
 
@@ -126,7 +181,7 @@ or just wish to let me know that you are using it, send me an e-mail.
 %}}}
 \section{Installation}%{{{
 
-The \cunft has only been tested in Linux and Mac~OS~X; it should
+The \cunft{} has only been tested in Linux and Mac~OS~X; it should
 run well in other Unix systems.
 You can choose to install precompiled binaries or compile and install from the
 source code.
@@ -136,42 +191,52 @@ available in the \verb!$PATH!.
 For your convenience, \minisat v.2.2.0 is distributed with the precompiled
 binaries and can be found in the \verb!minisat/! folder of the repository.
 
-\subsection{Installing Precompiled Binaries}
+\subsection{From Precompiled Binaries}
 \label{s:precompiled}
 
-From the following address, choose the bundle adequate for your machine,
-download and unpack it:
+From the following address, choose the bundle with precompiled binaries
+that suits your machine,
+download, and unpack it:
 \begin{center}
-\url{URL}
+\url{https://code.google.com/p/cunf/downloads/list}
 \end{center}
-Then following the next steps:
+Then follow the next steps:
 \begin{enumerate}
 \item
   Copy all files in the \verb!bin/! folder to any folder in your
   computer pointed by your \verb!$PATH!.\footnote{In particular, the \minisat
-  tool has to be somewhere where the \textit{system(1)} C-library function will
-  find it.}
+  tool has to be somewhere where the \textit{system(3)} C-library function
+  will find it.}
 \item
   The folder \verb!lib/ptnet/! contains a Python module that should be
-  correctly installed in your system for \cna to work.
-  Copy it to any folder pointed by your installation-dependent 
-  Python's default \textit{Module Search Path}, or to any
-  folder pointed by the environment variable \verb!$PYTHONPATH!.
-  \footnote{To discover the actual search path
-  that Python is using run the command: \\
-  \cod{echo 'import sys; print sys.path' | python}.}
+  correctly installed in your system for \cna and other Python scripts
+  to work.
+  Copy it to, \textbf{either},
+  \begin{itemize}
+  \item
+    any folder pointed by your installation-dependent Python's default
+    \textit{Module Search Path},\footnote{To discover the actual search
+    path that Python is using run the command: \\
+    \cod{echo 'import sys; print sys.path' | python}.}
+  \item
+    \textbf{or} any folder pointed by (one of the paths in) the
+    environment variable \verb!PYTHONPATH!,
+  \item
+    \textbf{or} the same folder where you copied \cna and the other Python
+    scripts, as Python will first search for modules in that folder.
+  \end{itemize}
 \end{enumerate}
 
 \subsection{Compilation and Installation from the Source Code}
 \label{s:compilation}
 
-First, get the source code, you have two options:
+First, get the source code.  You have two options:
 \begin{enumerate}
 \item
   Download and unpack the boundle containing the source code of version 1.6 of
   the tool, from
   \begin{center}
-  \url{URL}
+  \url{https://code.google.com/p/cunf/downloads/list}
   \end{center}
 \item
   \textit{Clone} the \verb!Git! repository where the development takes place,
@@ -182,7 +247,7 @@ First, get the source code, you have two options:
 \end{enumerate}
 
 \cunf is written in C, the source code is the \verb!src/! and
-\verb!include/! folders of the tools repository. \cna is
+\verb!include/! folders of the tool repository. \cna is
 written in Python, and uses the \verb!ptnet! Python module,
 both are located in the \verb!tools/! folder.
 
@@ -209,21 +274,22 @@ considerably increase \cunf's running times.
 
 \item[\cod{CONFIG\_MCMILLAN}]  Define this macro to use McMillan's adequate
 order\cite{MM95} when \cunf picks possible extensions to append to the
-unfolding prefix.  One, and only one, of the macros \verb!CONFIG_MCMILLAN!,
+unfolding prefix.  One and only one of the macros \verb!CONFIG_MCMILLAN!,
 \verb!CONFIG_ERV! or \verb!CONFIG_ERV_MOLE! has to be active.
 
 \item[\cod{CONFIG\_ERV}]  Selects the $\prec_F$ complete adequate order
 of\cite{ERV02}.
 
-\item[\cod{CONFIG\_SIZELEX}]  FIXME
+\item[\cod{CONFIG\_SIZELEX}]  Selects the \emph{size-lexicographic} order
+of\cite[definition 4.51]{EH08}.
 
 \item[\cod{CONFIG\_ERV\_MOLE}]  Selects the adequate order used in the Mole
-unfolder\cite{Mole}.  This order is a minor, non-documented modification of
+unfolder\cite{Mole}.  This is a minor, non-documented modification of
 the order $\prec_F$.  It makes possible to compare the unfolding prefixes
 computed by \cunf and \mole.  Refer to the function \verb!h_cmp!, in
 \verb!src/h.c!, for more details.
 
-\item[\cod{CONFIG\_NODELIST\_STEP}]  Defines the number items to be
+\item[\cod{CONFIG\_NODELIST\_STEP}]  Defines the number of items to be
 allocated together whenever certain dynamic linked-lists need to grow.  Among
 other uses, these lists are used to store markings.
 
@@ -243,28 +309,24 @@ searches for modules in the same directory where the executable is located.
 \section{Getting Started}%{{{
 \label{s:getting}
 
-FIXME - editing a net and unfolding
-	- coloane
-	- conversion scripts
-
-In this section,
-we explain the usage of the \cunft by a simple, well-known example.
+In this section
+we explain the usage of the \cunft{} with a simple, well-known example.
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.51]{fig/dekker2.pdf}
+\includegraphics[scale=0.50]{fig/dekker2.pdf}
 \caption{A variant of Dekker's mutual exclusion algorithm for two processes}
 \label{f:dekker}
 \end{figure}
 
 \Cref{f:dekker} shows a c-net representing a variant of Dekker's mutual
-exclusion algorithm\cite{FIXME}
-for two processes, represented by numbers $0$ and~$1$ in the figure.
+exclusion algorithm for two processes, represented by numbers $0$ and~$1$
+in the figure.
 A process may fire \verb!try! and set a
 \verb!flag! to signal intention to enter the critical section. 
 It can then \verb!enter! the critical section \verb!p3!
 if the other process is not trying.
-Otherwise it may \verb!withdraw! its intention and unset the flag.  Read arcs
+Otherwise it may \verb!withdraw! its intention and clear the flag.  Read arcs
 allow \verb!enter! and \verb!withdraw! to read the flag of the other process.
 
 This c-net is distributed in the \verb!examples/! folder, included in the
@@ -272,7 +334,7 @@ boundle of \cref{s:precompiled} or the \verb!dist/! folder generated after
 compilation, see \cref{s:compilation}.
 The file in question is
 \begin{verbatim}
-examples/dekker/dek02.ll_net
+examples/dekker/dek02.ll_net.
 \end{verbatim}
 For the purposes of this presentation, let us just give it a shorter name:
 \begin{verbatim}
@@ -280,16 +342,15 @@ $ cp examples/dekker/dek02.ll_net dek02.ll_net
 \end{verbatim}
 This file, as any other c-net in the \verb!examples/! folder, is formated
 in a simple modification of the PEP's \emph{low-level} Petri net
-format\cite{BG98}, which will be described in \cref{s:formats}.
-For historical reasons, this is the only input format of the \cunft.
+format, which will be described in \cref{s:formats}.
+For historical reasons, this is the only input format of the \cunft{}.
 The toolset comes, however, with
-scripts to translate the \textit{GRML} output format of \coloane\cite{Coloane}
-and the \textit{XML} format of PIPE2~v.2.5\cite{BPK07} graphical editors.
-Furthermore, later
-we discuss how to produce \verb!ll_net! files from other formats or
-programmatically.
+scripts to translate the GRML output format of \coloane\cite{Coloane}
+and the XML format of PIPE2~v2.5\cite{BPK07} graphical editors.
+In \cref{s:producing} we discuss how edit c-nets with these tools,
+or produce them programmatically.
 
-\subsection{Constructing Unfoldings with \cunf}%{{{
+\subsection{Constructing Unfoldings with Cunf}%{{{
 \label{s:constructing}
 
 Assume we wish to check if \verb!dek02.ll_net!
@@ -299,13 +360,12 @@ and store it in the file \verb!u.cuf!:
 \begin{verbatim}
 $ cunf -o u.cuf dek02.ll_net
 \end{verbatim}
-By default, \cunf outputs in \verb!CUF03! format
-(described in \cref{s:FIXME}), but it can also output a
-Graphviz script\cite{Graphviz} if called with \verb!-f dot!. 
-A number of statistics concerning the unfolding computation,
+By default \cunf outputs in \verb!CUF03! format
+(documented in \cref{s:formats}).
+A number of statistics about the computation of the unfolding
 and the size and shape of the output are printed
 just before the tool terminates.
-We can distinguish the following:
+We can distinguish the following lines:
 \begin{verbatim}
 [...]
 hist    12
@@ -322,26 +382,27 @@ cutoffs 6
 [...]
 \end{verbatim}
 The first line above is the number of \emph{histories} generated by \cunf
-(see\cite{BBCKRS12} for the technical details), and gives a rough idea
+(see\cite{BBCKRS12} for a definition), and gives a rough idea
 of the size of the internal object \cunf had to build in order to produce the
 unfolding.
-The unfolding itself has the number of \emph{events} and \emph{conditions}
+The unfolding itself has the number of \emph{events} (transitions)
+and \emph{conditions} (places)
 reported in the next two lines.
 
 \cunf's unfolding algorithm builds and maintains a \emph{concurrency relation}
-that the algorithm internally needs for constructing the unfolding.
+that the tool internally needs for constructing the unfolding.
 Explaining the purpose of this relation is out
 of the scope of this manual (see\cite{BBCKRS12}).
 It is, however, important to say that computation of this relation often takes
-most of the time consumed by the tool.  The line
+most of the time consumed by the tool.  In the line
 \begin{verbatim}
 co(r)   5.25
 \end{verbatim}
-reports that every element over which the relation is
+\cunf reports that every element over which the relation is
 defined was related to an average of 5.25 other elements.
 In general, the higher this number is, the slower \cunf's unfolding
 algorithm proceeds.
-More details in \cite{BBCKRS12}.
+More details in \cite[section 7]{BBCKRS12}.
 
 Next in the list is the average number of conditions in the 
 preset, context, and postset of every event.  The last line reports
@@ -349,11 +410,11 @@ the number of cut-off (enriched) events present in the internal object
 constructed by \cunf.
 
 %}}}
-\subsection{Deadlock and Coverability Analysis with \cna}%{{{
+\subsection{Deadlock and Coverability Analysis with Cna}%{{{
 \label{s:deadlock}
 
 After the construction of the unfolding, we can proceed to its analysis.
-We can now use \cna{} to ask, for instance, about the presence of deadlocks:
+We use now \cna{} to ask, for instance, about the presence of deadlocks:
 \begin{verbatim}
 $ cna -d u.cuf
 answer          : NO , the net is deadlock-free
@@ -373,7 +434,7 @@ Option \verb!-c! checks for coverability, in this case, of places
 \verb!p3/1! and \verb!p3/0!:
 \begin{verbatim}
 $ cna u.cuf -c 'p3/1' 'p3/0'
-answer          : NO , no rechable marking covers 'p3/0' 'p3/1'
+answer       : NO , no rechable marking covers 'p3/0' 'p3/1'
 [...]
 \end{verbatim}
 Observe that \verb!p3/i! is marked iff process \verb!i! is in the critical
@@ -394,7 +455,7 @@ variables       : 22
 The \verb!trace! indicates the firing sequence of the c-net (or the unfolding)
 that makes possible to cover the requested places.
 The lines labelled by \verb!clauses! and \verb!variables! inform about the
-size of the SAT encoding fed to \minisat.
+size of the SAT formula fed to \minisat.
 
 Notice that in this example, the construction of the \verb!CUF03! file
 is necessary only once, while \cna can be applied many times. For most
@@ -408,17 +469,18 @@ a (intentionally inserted) transition is coverable.
 
 Notice the line starting with \verb!reductions!.
 \cna applies several optimizations to the SAT encoding it produces.
-The text \verb!bin! means that it is using the \emph{binary rankings} to
+The word \verb!bin! means that it is using \emph{binary rankings} to
 encode certain acyclicity constraint;
 \verb!4-tree! says that \cna used
 \textit{4-trees} to encode the absence of symmetric conflicts
 (technical details in\cite{RS12,RS12rr}).
 Run the tool without arguments to obtain a full list of all the
 optimizations available, and information about them.
+This information is available in \cref{s:cna}.
 The effect of almost all them is described in\cite{RS12rr}.
 
 %}}}
-\subsection{Unfolding Dekker's Algorithm}%{{{
+\subsection{More on Dekker's Algorithm}%{{{
 \label{s:dekker}
 
 How the unfolding grows as we add more processes to our model of the
@@ -426,7 +488,7 @@ Dekker's algorithm?
 
 First, observe that when the 2-process example in \cref{f:dekker} is
 generalized to $n$ processes, $\bigo{2^n}$ markings are
-reachable in these c-nets (for a net of size $\bigo{n^2}$).
+reachable in these c-nets --- for a net of size $\bigo{n^2}$.
 Several instances of the protocol are distributed in the folder
 \verb!examples/dekker/!.  We can easily run \cunf on some of them and retain
 the unfolding size:
@@ -448,25 +510,27 @@ processes involved, \ie, linear on the number of transitions of the c-net.
 %the Place-Replication encodings\cite{BBC+12} are of size $\bigo{n^3}$.
 
 %}}}
-\subsection{\textit{Seeing} C-nets and Unfoldings}%{{{
+\subsection{Producing Graphics of C-nets and Unfoldings}%{{{
 \label{s:seeing}
 
-The source code of the \cunft is distributed with a number of scripts capable
-of producing \textit{pdf} files depicting a net contained
-in a \verb!ll_net! or \verb!cuf! file.
+The \cunft{} is distributed with a number of scripts capable
+of producing images depicting a c-net or an unfolding.
+These scripts actually rely on the tool \verb!dot! from the Graphviz
+project\cite{Graphviz} to actually produce the image.
 
 Say that we want to \textit{see} the c-net \verb!dek02.ll_net! which we
 unfolded in the previous sections.
 We first generate a \textit{dot} script out of the net, using the tool
-\verb!pep2dot!, included in the \verb!src/! directory of the source code:
+\verb!pep2dot!, included in the \verb!src/! directory of the source code
+(and also in the precompiled distribution):
 \begin{verbatim}
 $ src/pep2dot dek02.ll_net > dek02.dot
 \end{verbatim}
-Then use \verb!dot! tool from the Graphviz projet\cite{Graphviz}, like this:
+Then use \verb!dot! tool, like this:
 \begin{verbatim}
 $ dot -T pdf < dek02.dot > dek02.pdf
 \end{verbatim}
-The file \verb!dek02.pdf! is the desired \textit{pdf}.
+The file \verb!dek02.pdf! depicts the c-net.
 Similarly, if we wish to see the unfolding, we could type:
 \begin{verbatim}
 $ tools/cuf2pep.py < u.cuf > u.ll_net
@@ -475,10 +539,12 @@ $ dot -T pdf < u.dot > u.pdf
 \end{verbatim}
 The first command has converted the \verb!cuf! file in to a
 \verb!ll_net! file, and subsequent commands are like before.
-The resulting \textit{pdf} is shown in \cref{f:dek02unf}.
-Regular arrows are black, and read arcs are depicted in red.
-The initially marked conditions are the top ones, and cut-off events have
-an asterisk in the name.
+The \verb!cuf2pep.py! script is also included in the precompiled
+distribution.
+The resulting PDF is shown in \cref{f:dek02unf}.
+Regular arrows are in black, and read arcs are depicted in red.
+The initially marked conditions are the four top ones,
+and cut-off events have an asterisk in the name.
 
 \begin{figure}[bth]
 \centering
@@ -488,11 +554,11 @@ an asterisk in the name.
 \end{figure}
 
 Actually, the \verb!make! machinery included in the source code already
-knows how to produce \textit{pdf} or even \textit{jpg} images of the c-nets
+knows how to produce PDF or even JPEG images of the c-nets
 or unfoldings --- pretty much in the same way it knows how produce an
 object file out of a C source file.
 You just need to type \verb!make! followed from the desired file.
-For instance, we can obtain a \textit{jpg} image of the c-net with:
+For instance, we can obtain a JPEG image of the c-net with:
 \begin{verbatim}
 $ make dek02.jpg
 P2D dek02.ll_net
@@ -501,7 +567,7 @@ rm dek02.dot
 \end{verbatim}
 The tool \verb!make! reports that it first converts
 the PEP \verb!ll_net! file into a \verb!dot! script (\verb!P2D!),
-and then converts the \verb!dot! script into \textit{pdf} (\verb!DOT!).
+and then converts the \verb!dot! script into PDF (\verb!DOT!).
 This will produce the file \verb!dek02.jpg!.
 
 The same is true for building unfoldings.  To build the unfolding of a net
@@ -516,7 +582,7 @@ mem     2
 [...]
 \end{verbatim}
 Of course, more complex transformations can be achieved.  For instance, we
-could generate a \textit{pdf} depicting the unfolding of a c-net without
+could generate a PDF depicting the unfolding of a c-net without
 explicitly generating the \verb!cuf! file:
 \begin{verbatim}
 saiph:cunf$ make dist/examples/dijkstra/dij02.unf.pdf
@@ -536,7 +602,7 @@ intermediate files it has generated --- because you did not ask for any of
 them.  The file generated by the previous command is shown in
 \cref{f:dij02unf}.
 
-\begin{figure}[h]
+\begin{figure}[tb]
 \centering
 \includegraphics[scale=0.11]{fig/dij02-unf.pdf}
 \caption{The unfolding of 
@@ -560,12 +626,12 @@ the source code:
   This folder contains c-nets modelling Dijkstra's mutual exclusion
   algorithm\cite{Dij65} for 2 up to 6 processes.
   They have been generated with the script \verb!tools/mkdijkstra.py!,
-  included in the source code (but not the boundle with precompiled binaries).
+  included in the source code (but not the bundle of precompiled binaries).
 
 \item[\cod{examples/corbett/}]
   This is a superset of the of the popular benchmarks compiled by
   Corbett\cite{Cor96}.
-  An short description of them can be found in\cite[\pp 29--31]{Kho:phd}
+  An short description of them can be found in\cite[\pp 29--31]{Kho03}
   
   The nets are distributed in four sub-folders.
   The folder \verb!cont/! contains contextual nets,
@@ -684,7 +750,8 @@ can also be requested to stop when the \textit{depth} of the history (see
 than a certain value, provided by the option \cod{-d}.
 
 \fi%}}}
-\section{\cunf{} Command-line Syntax}%{{{
+\section{Command-line Syntax}%{{{
+\subsection{Cunf}%{{{
 
 \cunf expects an optional list of command-line options followed by the
 name of the input file to be provided as command-line arguments:
@@ -703,7 +770,7 @@ They are the next:
   and it will be a \emph{marking-complete}, \cf \cite{BBCKRS12}.
 
 \item[\cod{-d DEPTH}]
-  Optional, \verb!DEPTH! is a natural number.
+  Optional. \verb!DEPTH! is a natural number.
   Don't include in the unfolding prefix enriched events whose
   history has a depth greater or equal than \verb!DEPTH!.  The depth of a
   history $H$ is the maximum natural $n$ for which there exist events
@@ -719,7 +786,7 @@ They are the next:
   \verb!INPUT! file and will concatenate the string \verb!unf.dot!.
 
 \item[\cod{-f FORMAT}]
-  Optional, \verb!FORMAT! shall be one of
+  Optional. \verb!FORMAT! shall be one of
   \verb!cuf!,
   \verb!dot!, or
   \verb!fancy!.
@@ -727,10 +794,11 @@ They are the next:
 \end{description}
 
 %}}}
-\section{\cna{} Command-line Syntax}%{{{
+\subsection{Cna{}}%{{{
+\label{s:cna}
 
 Run \cna without arguments to obtain help about its command-line syntax.
-The tool expects a mandatory \verb!CUF! file, an optional
+The tool expects a mandatory \verb!CUF! file and an optional
 \verb!OUTFILE! where it will write its textual output (standard output if
 not given):
 
@@ -757,7 +825,8 @@ Here is the list of \verb!OPTIONS! it accepts:
 
 \item[\cod{-r REDUC [REDUC ...]}, \cod{--reduce REDUC [REDUC ...]}]
   Default: \cod{4-tree bin}.
-  Use \verb!REDUC!tions of the encoding to improve running time of the SAT
+  Use \verb!REDUC!tions of the propositional formula generated by the tool
+  that improve running time of the SAT
   solver.  The following options are available:
   \begin{description}
   \item[\cod{k-tree}]
@@ -781,8 +850,8 @@ Here is the list of \verb!OPTIONS! it accepts:
     Do not produce constraints to check for cycles in the asymmetric
     conflict relation.
   \item[\cod{bin}]
-    Generate acyclicity constraints using ranks with binary encoding.
-    See\cite{Codish09}. 
+    Generate acyclicity constraints using ranks with binary encoding,
+    see\cite{CGS09}. 
     If none of the options `\cod{nocy}', `\cod{trans}', or `\cod{unary}' is
     present, `\cod{bin}' will be used.
   \item[\cod{unary}]
@@ -801,7 +870,7 @@ Here is the list of \verb!OPTIONS! it accepts:
 %  Causes the tool to print debugging messages.  Not implemented.
 \end{description}
 
-%}}}
+%}}}%}}}
 \section{File Formats}%{{{
 \label{s:formats}
 
@@ -810,8 +879,7 @@ Here is the list of \verb!OPTIONS! it accepts:
 
 \cunf accepts a c-net as input, represented in a slightly modified version
 of the PEP's low-level format.  We describe here this modification.  We
-assume the reader is familiar with the PEP's low-level format
-(see\cite{PEP,B98}).
+assume the reader is familiar with the PEP's low-level format\cite{PEP,B98}.
 
 The input file should be formated in the low-level net syntax extended with
 one additional section, which specifies the context relation.  The new
@@ -879,9 +947,9 @@ other formats can be selected with the option \verb!-f!:
 \begin{description}
 \item[\cod{dot}]
   For historical reasons, \cunf is able to write \verb!dot!  scripts,
-  suitable to be fed to the \verb!dot! tool of the Graphviz projet.
-  Recall that the source code distribution also contains scripts to
-  produce \verb!dot! scripts out any \verb!cuf! file.
+  suitable for the \verb!dot! tool.
+  Scripts to produce \verb!dot! input out any \verb!cuf! or file are
+  included in the source and precompiled distributions.
 
 \item[\cod{fancy}]
   This also produces a \verb!dot! file, but every event in the resulting
@@ -897,37 +965,37 @@ other formats can be selected with the option \verb!-f!:
  files is available in the repository.
  
  The standard reference defining the \verb!CUF03! format is the comment in
- the source file
- \begin{verbatim}
- src/output.c
- \end{verbatim}
- line 263, just before the function \verb!write_cuf!.  All technical
+ the the line 263 of the file
+\begin{verbatim}
+src/output.c,
+\end{verbatim}
+ just before the function \verb!write_cuf!.  All technical
  details of the file format are explained there.
 \end{description}
 
 %}}}%}}}
-\section{Producing Input for \cunf}%{{{
+\section{Producing Input for Cunf}%{{{
 \label{s:producing}
 
-Most of the c-nets on which the \cunft has been used has been
-programmatically generated.  It is the case, for instance, of the
+Most of the c-nets on which the \cunft{} has been used has been
+generated programmatically.  It is the case, for instance, of the
 \verb!dekNN.ll_net! nets in \cref{s:getting}.
 
-It is, however, interesting sometimes to draw a c-net and perform some
+Sometimes it is interesting, however, to draw a c-net and perform some
 analysis on it.
-There is currently no graphical user interface in the \cunft, and there is
+There is currently no graphical user interface in the \cunft{}, and there is
 no plan for it to be available in the future.
-The \cunft is however integrated in the \cosyverif\cite{cosyverif} tool,
+The \cunft{} is however integrated in the \cosyverif\cite{Cosyverif} tool,
 which includes a graphical interface and which will internally invoke the
-\cunft by means of several mouse clicks.
-There is also plans to include the \cunft as a verification engine
-of \tapaal\cite{tapaal}.
+\cunft{} in several mouse clicks.
+There is also plans to include the \cunft{} as a verification engine
+of \tapaal\cite{DJJJMS12}.
 
 \subsection{Graphically}%{{{
 \label{s:graphically}
 
-A simple way of producing c-nets in the format that \cunf understands is
-using the \coloane graphical editor\cite{coloane}.  This is the same editor
+A simple way of producing c-nets for \cunf is
+using the \coloane graphical editor\cite{Coloane}.  This is the same editor
 used in the Cosyverify tool, but can be installed as an stand-alone
 program.  Once you have edited your c-net in \coloane, see \cref{f:coloane}
 (observe that you can also introduce read arcs), right-click on the model
@@ -938,15 +1006,15 @@ could incorrectly display GML, instead of GRML.}
 \begin{figure}[bth]
 \hspace{-4em}
 \includegraphics[scale=0.4]{fig/coloane.png}
-\caption{The \coloane graphical editor can export c-nets for the \cunft.}
+\caption{The \coloane graphical editor can export c-nets for the \cunft{}.}
 \label{f:coloane}
 \end{figure}
 
 Once your file, say \verb!net.grml! (the extension is important),
 is in GRML format, use the script
-\verb!tools/grml2pep.py!, included in the sources to convert the file into
+\verb!grml2pep.py! to convert the file into
 \verb!ll_net! format.  If you read \cref{s:seeing}, you will be unsurprised
-to know that the \verb!make! machinery of the \cunft sources
+to know that the \verb!make! machinery of the \cunft{} sources
 also knows about GRML files.  You can, alternatively, type:
 \begin{verbatim}
 $ make net.ll_net
@@ -961,10 +1029,10 @@ $ make net.unf.cuf
 \label{s:program}
 
 A Python module for reading and writing a number of c-net and Petri net
-formats is distributed with the \cunft.
+formats is distributed with the \cunft{}.
 \cna actually uses it to read \verb!cuf! files and many scripts in the
-\verb!tools/! folder of the sources use it to make format conversions,
-notably the \verb!tools/mk*! scripts, \cf \cref{s:finding}.
+\verb!tools/! folder of the sources use it to carry out various operations.
+All \verb!tools/mk*! scripts use this module, \cf \cref{s:finding}.
 
 We briefly illustrate its use with a simple example.  The following code
 produces the c-net in \cref{f:ptnet}
@@ -1013,3 +1081,4 @@ module.}
 
 \end{document}
 
+% vim: set efm=%f\:%l%.%m,%f\:%m:
