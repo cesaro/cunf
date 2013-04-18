@@ -20,15 +20,16 @@ CFLAGS:=-Wall -Wextra -O3
 #CFLAGS:=-Wall -Wextra
 #CFLAGS:=-Wall -Wextra -g
 CPPFLAGS:=-I include/
-LDFLAGS:=
+LDFLAGS:=-dead_strip
+#LDFLAGS:=
 
 # object file targets
-SRCS:=$(wildcard src/*/*.c)
-SRCS+=$(filter-out %/main.c, $(wildcard src/*.c))
+SRCS:=$(wildcard src/*.c src/*/*.c)
+SRCS:=$(filter-out %/main.c, $(SRCS))
+SRCS:=$(filter-out %/pep2dot.c, $(SRCS))
 
 # object files containing a main() function
-MSRCS:=$(wildcard src/main.c)
-MSRCS+=$(wildcard test/*.c)
+MSRCS:=$(wildcard src/main.c src/pep2dot.c)
 
 # compilation targets
 OBJS:=$(patsubst %.c,%.o,$(SRCS))
@@ -73,7 +74,7 @@ CPP:=$(CROSS)cpp
 
 %.dot : %.ll_net
 	@echo "P2D $<"
-	@test/net2dot $< > $@
+	@src/pep2dot $< > $@
 	@#tools/pep2dot.py < $< > $@
 
 %.ll_net : %.cuf
@@ -122,9 +123,6 @@ CPP:=$(CROSS)cpp
 
 %.dl.mcm.tr : %.unf.mci.tr
 	tools/trt.py timeout=600 t=dl.mcm mci=$(<:%.tr=%) > $@
-
-%.info : %.ll_net
-	@test/info $< | tools/distrib.py
 
 %.ll_net : %.xml
 	@echo "P2P $<"

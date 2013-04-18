@@ -15,23 +15,16 @@
 
 include defs.mk
 
-.PHONY: fake all g test clean distclean prof
+.PHONY: fake all g test clean distclean prof dist
 
-all: $(TARGETS)
-	@cp src/main cunf
-
-fake :
-	@echo $(CC)
-	@echo $(SRCS)
-	@echo $(MSRCS)
-	@echo $(TEST_NETS)
-	@echo $(TIME_NETS)
-	@echo $(DEAD_NETS)
-	@echo $(DEPS)
+all: $(TARGETS) minisat/core/minisat
 
 $(TARGETS) : % : %.o $(OBJS)
 	@echo "LD  $@"
 	@$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $^ $(LDFLAGS) 
+
+minisat/core/minisat :
+	cd minisat; export MROOT=`pwd`; cd core; make
 
 prof : $(TARGETS)
 	rm gmon.out.*
@@ -39,6 +32,15 @@ prof : $(TARGETS)
 
 g : $(TARGETS)
 	gdb ./src/main
+
+vars :
+	@echo $(CC)
+	@echo $(SRCS)
+	@echo $(MSRCS)
+	@echo $(TEST_NETS)
+	@echo $(TIME_NETS)
+	@echo $(DEAD_NETS)
+	@echo $(DEPS)
 
 test tests : $(TEST_NETS:%.ll_net=%.r) $(TEST_NETS:%.ll_net=%.unf.r)
 	@echo " DIF ..."
@@ -87,16 +89,41 @@ clean :
 
 distclean : clean
 	@rm -f $(DEPS)
-	@find test/nets/ -name '*.cnf' -exec rm '{}' ';'
-	@find test/nets/ -name '*.mci' -exec rm '{}' ';'
-	@find test/nets/ -name '*.bc' -exec rm '{}' ';'
-	@find test/nets/ -name '*.r' -exec rm '{}' ';'
-	@find test/nets/ -name '*.cuf' -exec rm '{}' ';'
-	@find test/nets/ -name '*.dot' -exec rm '{}' ';'
-	@find test/nets/ -name '*.pdf' -exec rm '{}' ';'
-	@find test/nets/ -name '*.tr' -exec rm '{}' ';'
+	@rm -Rf dist/
+	@find examples/ -name '*.cnf' -exec rm '{}' ';'
+	@find examples/ -name '*.mci' -exec rm '{}' ';'
+	@find examples/ -name '*.bc' -exec rm '{}' ';'
+	@find examples/ -name '*.r' -exec rm '{}' ';'
+	@find examples/ -name '*.cuf' -exec rm '{}' ';'
+	@find examples/ -name '*.dot' -exec rm '{}' ';'
+	@find examples/ -name '*.pdf' -exec rm '{}' ';'
+	@find examples/ -name '*.tr' -exec rm '{}' ';'
 	@#rm -f test/nets/{plain,cont,pr}/{small,med,large,huge}/*.{cnf,mci,bc,r,cuf,dot,pdf}
+	@cd minisat; export MROOT=`pwd`; cd core; make clean
 	@echo Mr. Proper done.
+
+dist : all
+	rm -Rf dist/
+	mkdir dist/
+	mkdir dist/bin
+	mkdir dist/lib
+	mkdir dist/examples
+	mkdir dist/examples/corbett
+	mkdir dist/examples/dekker
+	mkdir dist/examples/dijkstra
+	cp src/main dist/bin/cunf
+	cp src/pep2dot dist/bin
+	cp tools/cna dist/bin
+	cp tools/grml2pep.py dist/bin
+	cp tools/cuf2pep.py dist/bin
+	cp minisat/core/minisat dist/bin
+	cp -R tools/ptnet dist/lib
+	cp -R examples/cont dist/examples/corbett/
+	cp -R examples/other dist/examples/corbett/
+	cp -R examples/plain dist/examples/corbett/
+	cp -R examples/pr dist/examples/corbett/
+	for i in 02 04 05 08 10 20 30 40 50; do ./tools/mkdekker.py $$i > dist/examples/dekker/dek$$i.ll_net; done
+	for i in 02 03 04 05 06 07; do ./tools/mkdijkstra.py $$i > dist/examples/dijkstra/dij$$i.ll_net; done
 
 -include $(DEPS)
 

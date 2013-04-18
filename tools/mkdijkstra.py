@@ -31,7 +31,7 @@ def mkdijkstra (n) :
     for i in range (n) :
         mkdijproc (net, i, n, b, c, k)
 
-    net.cont2plain ()
+    #net.cont2plain ()
     net.write (sys.stdout, 'pep')
 
 def mkdijproc (net, i, n, b, c, k) :

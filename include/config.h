@@ -28,5 +28,6 @@
 /* see src/nodelist.c */
 #define CONFIG_NODELIST_STEP 1024
 
-#undef PMASK
+/* experimental */
+#undef CONFIG_PMASK
 

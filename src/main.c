@@ -64,7 +64,7 @@ void usage (void)
 "              'dot', 'fancy'.  Default is 'cuf'.\n"
 "\n"
 "For more information, see http://www.lsv.ens-cachan.fr/Software/cunf/\n"
-"Branch eager v1.5, compiled %s\n", __DATE__);
+"Branch eager v1.6, compiled %s\n", __DATE__);
 
 	exit (EXIT_FAILURE);
 }

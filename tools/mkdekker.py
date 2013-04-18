@@ -83,6 +83,7 @@ def mkdekker (n) :
 
     for i in xrange (n) :
         mkproc (i, net, n, flag)
+    #net.cont2plain ()
     net.write (sys.stdout, 'pep')
     # additionally you can activate PNML output at stderr
     # net.write (sys.stderr, 'pnml')

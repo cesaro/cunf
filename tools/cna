@@ -72,19 +72,30 @@ try :
     import sys
     import time
     import math
-    import ptnet
     import argparse
     import networkx
     import tempfile
     import subprocess
 except Exception, e:
-    print 'Error!  It seems that your python installation is missing some package.'
+    print 'ERROR!'
+    print 'It seems that your python installation is missing some package.'
     print 'This tool requires, among others, argparse, networkx, tempfile, and subprocess'
     print 'The runtime reported the following error:\n\n', str (e)
     sys.exit (1)
 finally :
     if sys.version_info < (2, 6, 1) :
         print '\n\nWARNING: This tool requires Python v.2.6.1 at least!!\n'
+    sys.path.append (os.path.dirname (sys.argv[0]) + '/../lib/')
+
+try :
+    import ptnet
+except Exception, e:
+    print 'ERROR!'
+    print 'This tool needs the "ptnet" module to be available in the $PYTHONPATH.'
+    print 'The "ptnet" module is distributed with this program.'
+    print 'You should set the variable PYTHONPATH in environment to the directory'
+    print 'that contains the "ptnet" directory.'
+    sys.exit (1)
 
 def sgl (s) :
     return (list (s))[0]
@@ -772,7 +783,7 @@ class Cna :
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     preexec_fn=os.setsid, shell=sh)
         except Exception :
-            raise Exception, "Unable to execute the command `minisat2', is minisat installed?"
+            raise Exception, "Unable to execute the command `minisat', is minisat installed?"
 
     #    db ('pid', p.pid)
         try :
@@ -817,7 +828,7 @@ class Cna :
             self.phi.write (fin)
             fin.close ()
             # call the solver
-            s, out = self.__runit (['minisat2', pathin, pathout])
+            s, out = self.__runit (['minisat', pathin, pathout])
             # load minisat's results
             out = fout.readlines ()
             fout.close ()

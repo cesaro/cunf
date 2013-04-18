@@ -473,7 +473,7 @@ void __attribute__ ((noinline)) _ec_conc_add (struct ec *r, struct ec *rp,
 		return;
 	}
 
-#ifdef PMASK
+#ifdef CONFIG_PMASK
 	if (! ec_pmask_tst (r->c->fp, rp->c->fp)) return;
 #endif
 

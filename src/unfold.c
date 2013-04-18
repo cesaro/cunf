@@ -229,7 +229,7 @@ void unfold (void)
 #endif
 #endif
 
-#ifdef PMASK
+#ifdef CONFIG_PMASK
 	ec_pmask_init ();
 #endif
 	nc_create_unfolding ();
