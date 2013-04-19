@@ -2,7 +2,7 @@
 The Cunf Tool v.1.6
 ===================
 
-The Cunf Tool is actually a set of tools for carrying out unfolding-based
+The Cunf Tool is a set of programs for carrying out unfolding-based
 verification of Petri nets extended with read arcs, also called contextual
 nets, or c-nets.  The package specifically contains the tools:
 
