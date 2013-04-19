@@ -3,8 +3,8 @@ The Cunf Tool v.1.6
 ===================
 
 The Cunf Tool is actually a set of tools for carrying out unfolding-based
-verification of Petri nets extended with read arcs, a.k.a. contextual nets,
-or c-nets.  The package specifically contains the tools:
+verification of Petri nets extended with read arcs, also called contextual
+nets, or c-nets.  The package specifically contains the tools:
 
  - cunf: constructs the unfolding of a c-net;
  - cna: performs reachability and deadlock analysis using unfoldings
@@ -16,7 +16,7 @@ Cunf is written in C, the sources are in src/ and /include. Cna is
 written in python, and depends on the "ptnet" module; both are located
 in the tools/ folder.
 
-Cna requires the Minisat SAT solver to be in the $PATH.  For your
+Cna requires the Minisat solver to be in the $PATH.  For your
 convenience, the source code of Minisat v.2.2.0 is present in the
 minisat/ folder, and the main Makefile will compile it for you.
 

@@ -13,3 +13,5 @@
 tags
 src/main
 src/pep2dot
+minisat/core/minisat
+minisat/core/depend.mk

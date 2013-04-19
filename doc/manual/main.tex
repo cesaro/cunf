@@ -144,7 +144,7 @@ Together, unfolding construction and unfolding analysis is
 almost always faster than verification based on the reachability graph.
 Also notice that we can check many properties once the unfolding is built.
 
-The \cunft{} implements the c-net unfolding procedure proposed by Baldan et
+\cunf implements the c-net unfolding procedure proposed by Baldan et
 \al in\cite{BCKS08}.  The algorithms and data structures actually
 implemented have been partially described in\cite{RSB11,BBCKRS12}.  While
 the theoretical results of\cite{BCKS08,RSB11,BBCKRS12} allow for unfolding
@@ -153,6 +153,13 @@ reachable marking puts more than one token on every place), and for the
 time being the tool will blindly assume the input is 1-safe ---
 the unfolding could be wrong if this is not fulfilled.
 In\cite{Rod10}, and old and inefficient version of the tool is described.
+
+\cna, whose name stands for \emph{Contextual Net Analyzer},
+checks for place coverability or deadlock-freedom of a c-net by examining
+its unfolding.  The tool reduces these problems to the satisfiability of a
+propositional formula that it generates out of the unfolding, and uses
+\minisat\cite{ES03} as a back-end to solve the formula.
+The algorithms used by \cna has been described in\cite{RS12}.
 
 %}}}
 \section{Author and Contact}%{{{
@@ -546,7 +553,7 @@ Regular arrows are in black, and read arcs are depicted in red.
 The initially marked conditions are the four top ones,
 and cut-off events have an asterisk in the name.
 
-\begin{figure}[bth]
+\begin{figure}[bt]
 \centering
 \includegraphics[scale=0.25]{fig/dek02-unf.pdf}
 \caption{The unfolding of \cref{f:dekker}.}

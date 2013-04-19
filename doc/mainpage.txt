@@ -1,0 +1,124 @@
+= Overview =
+
+The Cunf Tool is actually a set of tools for carrying out unfolding-based
+verification of Petri nets extended with read arcs, also called contextual nets,
+or c-nets.  The package specifically contains the tools:
+
+ * cunf: constructs the unfolding of a c-net;
+ * cna: performs reachability and deadlock analysis using unfoldings constructed by cunf;
+ * Scripts such as pep2dot or grml2pep to do format conversion between various Petri net formats, unfolding formats, etc.
+
+Cunf is written in C and comprises around 4000 lines of code. Cna is
+written in Python, and depends on the "ptnet" module; both are located
+in the `tools/` folder of the repository.  Cna requires the
+[http://minisat.se/ Minisat solver] to be in the `$PATH`.
+For your convenience, a copy of Minisat is distributed both in the bundles
+of precompiled binaries and with the sources.
+
+= Petri Nets and Unfoldings =
+
+[http://en.wikipedia.org/wiki/Petri_net Petri nets] are a modelling language for concurrent systems.
+The reader unfamiliar to the topic could perhaps start with (Mur89).
+
+Contextual nets are Petri nets where, in addition to the ordinary
+_arrows_ between places and transitions, one may find
+_read arcs_.
+These allow transitions to verify that
+tokens exist in a place before firing, but don't consume them
+when firing.
+Transitions can then be thought of reading a
+_context_ required to fire, hence the name.
+
+The unfolding of a c-net is another well-defined c-net of
+acyclic structure that fully represents the _behaviour_ (reachable
+markings) of the first.
+A c-net unfolding is at most as big as the reachablity graph of the
+c-net.
+Because unfoldings represent behaviour by partial orders rathen than by
+interleavings,
+for highly concurrent c-nets, unfoldings are often much
+(exponentially) smaller, which makes for natural interest in them
+for the verification of concurrent systems.
+
+Got interested?
+Why you don't continue reading the introduction of the
+[http://cunf.googlecode.com/files/user-manual-v1.6.pdf Cunf Tool user's manual]?
+
+= Verification Algorithms =
+
+The Cunf Tool implements the c-net unfolding procedure proposed by Baldan et
+al. in (BCKS08).  The algorithms and data structures actually
+implemented have been partially described in (RSB11,BBCKRS12).
+Cunf can only unfold 1-safe c-nets (i.e., no reachable marking puts more
+than one token on every place), and for the
+time being the tool will blindly assume the input is 1-safe.
+
+Cna, whose name stands for _Contextual Net Analyzer_,
+checks for place coverability or deadlock-freedom of a c-net by examining
+its unfolding.  The tool reduces these problems to the satisfiability of a
+propositional formula that it generates out of the unfolding, and uses
+[http://minisat.se/ Minisat]
+as a back-end to solve the formula.
+The algorithms used by Cna has been described in (RS12).
+
+= File Formats =
+
+Cunf accepts as input a c-net represented in a modified version of the PEP's
+low level (ll_net) format --- see section 6 of the
+[http://cunf.googlecode.com/files/user-manual-v1.6.pdf user manual]
+for details on the modification.
+The output is a file in CUF format (also described there)
+storing the contextual unfolding of the net.
+Some scripts are provided to generate PDF or JPEG images out of c-nets and
+unfoldings, see section 7 of the
+[http://cunf.googlecode.com/files/user-manual-v1.6.pdf manual].
+
+= Documentation =
+
+ * The [http://cunf.googlecode.com/files/user-manual-v1.6.pdf Cunf Tool v1.6 User's Manual].
+
+= Downloads and Installing =
+
+Section 3 of the [http://cunf.googlecode.com/files/user-manual-v1.6.pdf manual] tells how to install the Cunf Tool on your machine.
+For the impatient ones, the
+[https://code.google.com/p/cunf/source/browse/README.rst README] included in
+the sources contains quick instructions for installation
+
+== Precompiled Binaries (include examples) ==
+
+ * Precompiled binaries of [https://cunf.googlecode.com/files/cunf-v1.6_macos_x86-64.zip the Cunf Tool v1.6 for Mac OSX x86-64 (64 bit)].
+ * Precompiled binaries of [https://cunf.googlecode.com/files/cunf-v1.6_linux_x86-64.zip the Cunf Tool v1.6 for Linux x86-64 (64 bit)].
+ * Precompiled binaries of [https://cunf.googlecode.com/files/cunf-v1.6_linux_i386.zip the Cunf Tool v1.6 for Linux i386 (32 bit)].
+
+== Bundle with Source code ==
+
+ * [https://cunf.googlecode.com/files/cunf-v1.6_src.zip Source code of the Cunf Tool v1.6].
+
+== Development ==
+
+You can additionally
+[https://code.google.com/p/cunf/source/browse/ browse the latest source code]
+online. Or get a copy of it and start hacking, type in your terminal:
+
+{{{
+git clone https://code.google.com/p/cunf/
+}}}
+
+= See also =
+
+ * Stefan Schwoon's [http://www.lsv.ens-cachan.fr/~schwoon/tools/mole/ Mole] unfolder.
+ * Victor Khomenko's [http://homepages.cs.ncl.ac.uk/victor.khomenko/tools/tools.html Punf] unfolder.
+ * The [http://theoretica.informatik.uni-oldenburg.de/~pep/ PEP] homepage.
+
+= References =
+
+ * (BBCKRS12) Paolo Baldan, Alessandro Bruni, Andrea Corradini, Barbara König, César Rodríguez, and Stefan Schwoon.  [http://www.lsv.ens-cachan.fr/Publis/PAPERS/PDF/bbckrs-tcs12.pdf Efficient Unfolding of Contextual Petri Nets]. Theoretical Computer Science 449, 2 – 22 (2012)
+
+ * (BCKS08) Paolo Baldan, Andrea Corradini, Barbara König, and Stefan Schwoon.  [http://dx.doi.org/10.1007/978-3-540-89287-8_12 McMillan's Complete Prefix for Contextual Nets].  In Transactions on Petri Nets and Other Models of Concurrency I, pages 199-220, 2008.  Springer-Verlag.
+
+ * (RSB11) César Rodríguez, Stefan Schwoon, and Paolo Baldan.  [http://www.lsv.ens-cachan.fr/Publis/PAPERS/PDF/RSB-concur11.pdf Efficient contextual unfolding].  In Proc. of CONCUR'11, volume 6901 of LNCS.  Springer, 2011.
+
+ * (RS12) César Rodríguez and Stefan Schwoon. [http://www.lsv.ens-cachan.fr/~rodriguez/tools/cunf/rs12.pdf Verification of Petri Nets with Read Arcs]. In Proc. of CONCUR'12, vol. 7454 of LNCS, pages 471–485, September 2012.
+
+ * (Mur89) Tadao Murata.  Petri Nets: Properties, Analysis and Applications. In Proc. of the IEEE, vol. 77, no. 4, April 1989
+
