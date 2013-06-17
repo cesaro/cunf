@@ -85,6 +85,7 @@ Transitions can then be thought of reading a
 \emph{context} required to fire, hence the name.
 See Section~2 of\cite{BBCKRS12} for a brief formalization
 and\cite{MR95} for more details.
+% FIXME example before saying formalization
 
 Observe that every Petri net is a contextual net (without read arcs).
 Also notice that for every c-net we obtain an equivalent Petri net after
@@ -227,7 +228,7 @@ Then follow the next steps:
     \cod{echo 'import sys; print sys.path' | python}.}
   \item
     \textbf{or} any folder pointed by (one of the paths in) the
-    environment variable \verb!PYTHONPATH!,
+    environment variable \verb!$PYTHONPATH!,
   \item
     \textbf{or} the same folder where you copied \cna and the other Python
     scripts, as Python will first search for modules in that folder.
@@ -352,10 +353,9 @@ in a simple modification of the PEP's \emph{low-level} Petri net
 format, which will be described in \cref{s:formats}.
 For historical reasons, this is the only input format of the \cunft{}.
 The toolset comes, however, with
-scripts to translate the GRML output format of \coloane\cite{Coloane}
-and the XML format of PIPE2~v2.5\cite{BPK07} graphical editors.
-In \cref{s:producing} we discuss how edit c-nets with these tools,
-or produce them programmatically.
+scripts to translate the output format of some graphical editors, like
+\coloane\cite{Coloane} or PIPE2~v2.5\cite{BPK07}, see
+\cref{s:producing} for more details.
 
 \subsection{Constructing Unfoldings with Cunf}%{{{
 \label{s:constructing}
@@ -728,8 +728,9 @@ order $\prec_F$, see\cite{ERV02}.
 
 
 as input, and produces as output
-a complete (contextual) unfolding prefix of the input net.  The prefix is
-computed as follows.  First, the input net is loaded and represented in
+a complete (contextual) unfolding prefix of the input net.
+The prefix is computed as follows.
+First, the input net is loaded and represented in
 memory by means of a graph-like data structure, in which, places and
 transitions play the role of graph nodes and net arcs and read arcs play
 the role of graph edges.  It subsequently searches for transitions with an

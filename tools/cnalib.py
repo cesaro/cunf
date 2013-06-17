@@ -308,7 +308,7 @@ class Cna :
         self.pred = {}
 
         # load the model
-        #db ('load cuf')
+        db ('load cuf')
         try :
             self.u.read (opt.infile, fmt='cuf')
             if opt.infile != sys.stdin : opt.infile.close ()
@@ -337,20 +337,20 @@ class Cna :
             return self.phi
 
         # causal closure
-        #db ('causal')
+        db ('causal')
         self.__causal ()
         self.result['event variables'] = len (self.phi.varmap)
 
         # symmetric conflicts
-        #db ('sym')
+        db ('sym')
         self.__sym ()
 
         # asymmetric conflicts
-        #db ('asym')
+        db ('asym')
         self.__asym ()
 
         # marking and disabled
-        #db ('dis')
+        db ('dis')
         self.__dis ()
 
         self.result['variables'] = len (self.phi.varmap)
@@ -788,7 +788,8 @@ class Cna :
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     preexec_fn=os.setsid, shell=sh)
         except Exception :
-            raise Exception, "Unable to execute the command `minisat', is minisat installed?"
+            raise
+            #raise Exception, "Unable to execute the command `minisat', is minisat installed?"
 
     #    db ('pid', p.pid)
         try :
@@ -830,11 +831,11 @@ class Cna :
             # write the formula in dimacs format
             fin = os.fdopen (fdin, 'w')
             fout = os.fdopen (fdout, 'r')
-            #db ('write cnf')
+            db ('write cnf')
             self.phi.write (fin)
             fin.close ()
             # call the solver
-            #db ('solve')
+            db ('solve')
             s, out = self.__runit (['minisat', pathin, pathout])
             # load minisat's results
             out = fout.readlines ()
@@ -846,7 +847,7 @@ class Cna :
 
         places = ' '.join (["'%s'" % p.name for p in self.opt['places']])
 
-        #db ('parse result')
+        db ('parse result')
         # unsatisfiable
         if s == 20 :
             r = 'NO '
@@ -967,7 +968,7 @@ def main () :
     l = list (cna.result)
     l.sort ()
     for k in l : output (args.outfile, k, cna.result[k], n)
-    #db ('exit')
+    db ('exit')
 
 if __name__ == '__main__' :
     try :

@@ -55,8 +55,8 @@ int ec_conc_tst (struct ec *r, struct ec *rp);
 #define EC_ISCOMP(r)	((r)->h == 0)
 
 void ec_pmask_init ();
-#define ec_pmask_tst(p1,p2) \
-			bv_get (&u.pmask, (p1)->id * u.net.numpl + (p2)->id)
+#define ec_pmask_tst(p1,gr1,p2,gr2) \
+			bv_get (&u.pmask, u.net.numpl * 2 * (2 * (p1)->id + (gr1)) + 2 * (p2)->id + (gr2))
 
 #endif
 

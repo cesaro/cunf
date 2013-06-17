@@ -175,6 +175,25 @@ class Net :
     def cont2pr (self) :
         pass
 
+    def make_unsafe (self, places) :
+        t1 = self.trans_add ('uns_t1')
+        t2a = self.trans_add ('uns_t2a')
+        t2b = self.trans_add ('uns_t2b')
+        p2a = self.place_add ('uns_p2a')
+        p2b = self.place_add ('uns_p2b')
+        p3 = self.place_add ('uns_p3')
+        t3 = self.trans_add ('uns_t3')
+
+        for p in places :
+            t1.pre_add (p)
+        t1.post_add (p2a)
+        t1.post_add (p2b)
+        p2a.post_add (t2a)
+        p2b.post_add (t2b)
+        t2a.post_add (p3)
+        t2b.post_add (p3)
+        p3.post_add (t3)
+
     def write (self, f, fmt='pep', m=0) :
         if fmt == 'pep' : return self.__write_pep (f, m)
         if fmt == 'dot' : return self.__write_dot (f, m)
@@ -413,6 +432,7 @@ class Net :
     def read (self, f, fmt='pep') :
         if fmt == 'pep' : return self.__read_pep (f)
         if fmt == 'grml' : return self.__read_grml (f)
+        if fmt == 'pnml' : return self.__read_pnml (f)
         if fmt == 'stg' : return self.__read_stg (f)
         raise Exception, "'%s': unknown input format" % fmt
 
@@ -557,6 +577,86 @@ class Net :
     def __grml_data (self, data):
         # print "DATA", repr (data)
         if len (self.__grmlq) : self.__grmlq[-1]['__data'] = data
+
+    def __read_pnml (self, f) :
+        par = xml.parsers.expat.ParserCreate ()
+        par.StartElementHandler = self.__pnml_start
+        par.EndElementHandler = self.__pnml_end
+        par.CharacterDataHandler = self.__pnml_data
+
+        self.__pnmlitm = {}
+        self.__pnmlq = []
+        par.ParseFile (f)
+        if len (self.__pnmlitm) == 0 :
+            raise Exception, 'missplaced "%s" entity' % tag
+        self.__pnmlq.append (self.__pnmlitm)
+
+        idx = {}
+        for d in self.__pnmlq :
+            if 'id' not in d : d['id'] = 'xxx'
+            if 'name' not in d : d['name'] = d['id']
+            if d['type'] == 'place' :
+                if 'm0' not in d : d['m0'] = 0
+                idx[d['id']] = self.place_add (d['name'], int (d['m0']))
+            elif d['type'] == 'transition' :
+                idx[d['id']] = self.trans_add (d['name'])
+            elif d['type'] == 'net' :
+                self.title = d['name']
+        for d in self.__pnmlq :
+            if d['type'] != 'arc' : continue
+            if d['source'] not in idx or d['target'] not in idx :
+                raise Exception, 'arc with unknown source or target'
+            idx[d['source']].post_add (idx[d['target']])
+
+        del self.__pnmlitm
+        del self.__pnmlq
+
+    def __pnml_start (self, tag, attr):
+        #print "START", repr (tag), attr
+
+        if tag == 'net' :
+            if len (self.__pnmlitm) != 0 :
+                raise Exception, 'missplaced "net" entity'
+            self.__pnmlitm = {}
+            self.__pnmlitm['type'] = 'net'
+
+        elif tag in ['place', 'transition', 'arc'] :
+            if len (self.__pnmlitm) == 0 :
+                raise Exception, 'missplaced "%s" entity' % tag
+            #print 'new! ', repr (self.__pnmlitm)
+            self.__pnmlq.append (self.__pnmlitm)
+            self.__pnmlitm = {}
+            self.__pnmlitm['type'] = tag
+            self.__pnmlitm['id'] = attr['id']
+            for k in ['source', 'target'] :
+                if k in attr :
+                    self.__pnmlitm[k] = attr[k]
+
+        elif tag == 'name' :
+            self.__pnmlitm['data'] = 'name'
+        elif tag == 'initialMarking' :
+            self.__pnmlitm['data'] = 'm0'
+
+        elif tag in ['page', 'pnml', 'graphics', 'text', 'offset', 'text'] :
+            return
+        elif tag in ['position', 'inscription', 'dimension', 'fill', 'line'] :
+            return
+        else :
+            # this else clause is just to be on the safe side
+            raise Exception, 'unknown entity "%s"' % tag
+
+
+    def __pnml_end (self, tag):
+        #print "END  ", repr (tag)
+        pass
+
+    def __pnml_data (self, data):
+        data = data.strip(' \n\t')
+        if len (data) == 0 : return
+
+        #print "DATA ", repr (data)
+        if 'data' not in self.__pnmlitm : return
+        self.__pnmlitm[self.__pnmlitm['data']] = data
 
 def test1 () :
     n = Net (True)

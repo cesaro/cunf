@@ -125,8 +125,12 @@ CPP:=$(CROSS)cpp
 	tools/trt.py timeout=600 t=dl.mcm mci=$(<:%.tr=%) > $@
 
 %.ll_net : %.xml
+	@echo "X2P $<"
+	@tools/xml2pep.pl < $< > $@
+
+%.ll_net : %.pnml
 	@echo "P2P $<"
-	@tools/pnml2pep.pl < $< > $@
+	@tools/pnml2pep.py < $< > $@
 
 %.ll_net : %.grml
 	@echo "G2P $<"

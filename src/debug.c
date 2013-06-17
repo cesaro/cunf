@@ -325,6 +325,8 @@ void db_mem (void)
 	char buff[4096];
 	int fd, ret;
 
+	return;
+
 	fd = open ("/proc/self/status", O_RDONLY);
 	if (fd < 0) {
 		gl_warn ("'/proc/self/status': %s", strerror (errno));

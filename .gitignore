@@ -10,6 +10,8 @@
 *.d
 *.o
 *.pyc
+*.pdftex
+*.pdftex_t
 tags
 src/main
 src/pep2dot

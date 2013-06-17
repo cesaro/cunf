@@ -29,5 +29,5 @@
 #define CONFIG_NODELIST_STEP 1024
 
 /* experimental */
-#undef CONFIG_PMASK
+#define CONFIG_PMASK
 

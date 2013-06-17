@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+
+import sys
+import cnalib
+
+if __name__ == '__main__' :
+    try :
+        cnalib.main ()
+    except KeyboardInterrupt :
+        sys.stderr.write ('cna: interrupted\n')
+        sys.exit (1)
+    except Exception as e :
+        sys.stderr ('cna: error: %s\n' % str (e))
+        sys.exit (1)
+    sys.exit (0)
+
+# vi:ts=4:sw=4:et:

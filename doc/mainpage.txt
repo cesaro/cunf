@@ -10,15 +10,15 @@ The package specifically contains the tools:
  * cna: performs reachability and deadlock analysis using unfoldings constructed by cunf;
  * Scripts such as pep2dot or grml2pep to do format conversion between various Petri net formats, unfolding formats, etc.
 
-Cunf is written in C and comprises around 4000 lines of code. Cna is
+Cunf is written in C. Cna is
 written in Python, and depends on the
-[http://code.google.com/p/cunf/source/browse/tools/ptnet ptnet] module; both are located
-in the [http://code.google.com/p/cunf/source/browse/tools/ tools/] folder of the repository.
+[http://code.google.com/p/cunf/source/browse/tools/ptnet ptnet] module;
 Cna requires the
 [http://minisat.se/ Minisat solver] to be in the `$PATH`.
 For your convenience, a copy of Minisat is distributed both in the bundles
 of precompiled binaries and with the sources.
 
+----
 = Petri Nets and Unfoldings =
 
 [http://en.wikipedia.org/wiki/Petri_net Petri nets] are a modelling language for concurrent systems.
@@ -48,7 +48,8 @@ Got interested?
 Why you don't continue reading the introduction of the
 [http://cunf.googlecode.com/files/user-manual-v1.6.pdf Cunf Tool user's manual]?
 
-= Verification Algorithms =
+----
+= Algorithms =
 
 The Cunf Tool implements the c-net unfolding procedure proposed by Baldan et
 al. in (BCKS08).  The algorithms and data structures actually
@@ -65,28 +66,15 @@ propositional formula that it generates out of the unfolding, and uses
 as a back-end to solve the formula.
 The algorithms used by Cna has been described in (RS12).
 
-= File Formats =
+----
+= Download and Install =
 
-Cunf accepts as input a c-net represented in a modified version of the PEP's
-low level (ll_net) format --- see section 6 of the
-[http://cunf.googlecode.com/files/user-manual-v1.6.pdf user manual]
-for details on the modification.
-The output is a file in CUF format (also described there)
-storing the contextual unfolding of the net.
-Some scripts are provided to generate PDF or JPEG images out of c-nets and
-unfoldings, see section 7 of the
-[http://cunf.googlecode.com/files/user-manual-v1.6.pdf manual].
-
-= Documentation =
-
- * The [http://cunf.googlecode.com/files/user-manual-v1.6.pdf Cunf Tool v1.6 User's Manual].
-
-= Downloads and Installing =
-
-Section 3 of the [http://cunf.googlecode.com/files/user-manual-v1.6.pdf manual] tells how to install the Cunf Tool on your machine.
-For the impatient ones, the
-[https://code.google.com/p/cunf/source/browse/README.rst README] included in
-the sources contains quick instructions for installation.
+Section 3 of the [http://cunf.googlecode.com/files/user-manual-v1.6.pdf
+manual] explains in detail how to install the Cunf Tool on your machine.
+For the hurried user, the
+[https://code.google.com/p/cunf/source/browse/README.rst README] file included in
+the sources contains some quick instructions for installation that may be
+enough for you.
 
 == Precompiled Binaries (include examples) ==
 
@@ -102,18 +90,31 @@ the sources contains quick instructions for installation.
 
 You can additionally
 [https://code.google.com/p/cunf/source/browse/ browse the latest source code]
-online. Or get a copy of it and start hacking, type in your terminal:
+online; or get a copy of it and start hacking, type in your terminal:
 
 {{{
 git clone https://code.google.com/p/cunf/
 }}}
 
+----
+= Documentation =
+
+ * The [http://cunf.googlecode.com/files/user-manual-v1.6.pdf Cunf Tool v1.6 User's Manual].
+
+----
+= Author and Contact =
+
+The Cunf Tool is developed and maintained by
+[http://www.lsv.ens-cachan.fr/~rodriguez/ César Rodríguez].
+
+----
 = See also =
 
  * Stefan Schwoon's [http://www.lsv.ens-cachan.fr/~schwoon/tools/mole/ Mole] unfolder.
  * Victor Khomenko's [http://homepages.cs.ncl.ac.uk/victor.khomenko/tools/tools.html Punf] unfolder.
  * The [http://theoretica.informatik.uni-oldenburg.de/~pep/ PEP] homepage.
 
+----
 = References =
 
  * (BBCKRS12) Paolo Baldan, Alessandro Bruni, Andrea Corradini, Barbara König, César Rodríguez, and Stefan Schwoon.  [http://www.lsv.ens-cachan.fr/Publis/PAPERS/PDF/bbckrs-tcs12.pdf Efficient Unfolding of Contextual Petri Nets]. Theoretical Computer Science 449, 2 – 22 (2012)

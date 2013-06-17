@@ -83,6 +83,8 @@ def mkdekker (n) :
 
     for i in xrange (n) :
         mkproc (i, net, n, flag)
+
+    #net.make_unsafe ([flag[0, 1], flag[1, 1]])
     #net.cont2plain ()
     net.write (sys.stdout, 'pep')
     # additionally you can activate PNML output at stderr

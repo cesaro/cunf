@@ -46,11 +46,16 @@ def mk_ce_impl (net, tr, pl, inputs, output) :
 
 def mk_cli_env (net, tr, pl, i, r, g) :
     #print 'cli', r, g
+
     p0 = net.place_add ('p0/%d' % i, 1)
     p1 = net.place_add ('p1/%d' % i, 0)
     p2 = net.place_add ('p2/%d' % i, 0)
     p3 = net.place_add ('p3/%d' % i, 0)
 
+    #p30 = net.place_add ('p30/%d' % i, 1)
+    #p31 = net.place_add ('p31/%d' % i, 0)
+
+    # p0 > ri+ > p1 > gi+ > p2 > ri- > p3, p30 > gi- > p0, p31
     tr[r,'+'].pre_add (p0)
     tr[r,'+'].post_add (p1)
     tr[g,'+'].pre_add (p1)
@@ -59,6 +64,9 @@ def mk_cli_env (net, tr, pl, i, r, g) :
     tr[r,'-'].post_add (p3)
     tr[g,'-'].pre_add (p3)
     tr[g,'-'].post_add (p0)
+
+    #tr[g,'-'].pre_add (p30)
+    #tr[g,'-'].post_add (p31)
 
 def sig (n, i) :
     return n + str (i)
@@ -102,7 +110,7 @@ def mk_arbiter_basic (n) :
     # make the c-elements
     for i in range (n) :
         l = ['me%d,%d' % (i, j) for j in range (n) if j != i]
-        mk_ce_impl (net, tr, pl, l, sig ('g', i))
+        mk_ce_impl (net, tr, pl, l, sig('g', i))
 
     # for request (input) signals, make the most general environment
     for i in range (n) :
