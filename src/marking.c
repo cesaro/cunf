@@ -64,28 +64,6 @@ void marking_init (void)
 	for (i = hash.size - 1; i >= 0; i--) ls_init (hash.tab + i);
 }
 
-int marking_find (const struct h *h)
-{
-	struct hash_entry *he;
-	struct ls *n;
-	int ret;
-
-	/* if the marking h->marking is in the hash table, it is somewere in
-	 * the list h.tab[hash(h->marking)]; return the logical condition of
-	 * h->marking to be in the table
-	 */
-
-	ASSERT (marking_hash (h->marking) == h->hash);
-	n = hash.tab + h->hash;
-	for (n = n->next; n; n = n->next) {
-		he = ls_i (struct hash_entry, n, nod);
-		ret = nl_compare (he->h->marking, h->marking);
-		if (ret == 0) return 1;
-	}
-
-	return 0;
-}
-
 void marking_add (struct h *h)
 {
 	struct hash_entry *he, *nhe;
@@ -101,8 +79,8 @@ void marking_add (struct h *h)
 
 	/* add the marking h->marking to the hash table if there is no
 	 * other history h' such that h->marking = h'->marking; if such h'
-	 * exists, then h is a cutoff; the function returns 1 iff h is a cutoff
-	 */
+	 * exists, then h is a cutoff; the function returns 1 iff h is a
+	 * cutoff */
 
 	/* determine if the marking h->marking is in the hash table */
 	ASSERT (marking_hash (h->marking) == h->hash);

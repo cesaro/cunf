@@ -21,8 +21,8 @@
 
 /* unfold order */
 #undef CONFIG_MCMILLAN
-#define CONFIG_ERV
-#undef CONFIG_ERV_MOLE
+#undef CONFIG_ERV
+#define CONFIG_ERV_MOLE
 #undef CONFIG_SIZELEX
 
 /* see src/nodelist.c */

@@ -242,7 +242,7 @@ static struct event * _pe_comb_new_event (void)
 	DPRINT ("}\n");
 #endif
 
-	/* therefore, at this the moment the event has no postset */
+	/* so at this point the event has no postset */
 	return e;
 }
 

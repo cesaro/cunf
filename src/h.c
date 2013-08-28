@@ -438,6 +438,17 @@ void h_marking (struct h *h)
 	ASSERT (m > 0);
 	ASSERT (m2 > 0);
 
+	/* first, compute the parikh vector of transitions executed in the
+	 * history (needed for <_F), mark all events and all conditions
+	 * they consume with m. Variables fst and lst are pointers to the
+	 * first and last elements of the dynamic array hda, which is the
+	 * working list to explore backwards the history, and which stores
+	 * poitners to all the histories found. Dynamic array tda
+	 * stores pointers to all transitions found in events in hda, and
+	 * the field parikhcnt1 within the transition stores the count (see
+	 * _h_parikh_add).  The number of items in tda is stored in
+	 * h->parikh.size (!!). _h_parikh_trans2vector copies the
+	 * transitions from tda to h->parikh.tab */
 	fst = lst = 0;
 	h->e->m = m;
 	da_push (&hda, lst, h, struct h *);
@@ -462,9 +473,12 @@ void h_marking (struct h *h)
 	}
 	_h_parikh_trans2vector (h);
 
+	/* if the net is an ordinary Petri net */
 	l = 0;
 	fst = 0;
 	if (u.net.isplain) {
+		/* build the nodelist l with the marking of the history,
+		 * reusing the histories in hda */
 		while (fst < lst) {
 			e = da_i (&hda, fst++, struct h *)->e;
 			for (i = e->post.deg - 1; i >= 0; i--) {
@@ -475,7 +489,11 @@ void h_marking (struct h *h)
 				}
 			}
 		}
+	/* if it is a contextual net */
 	} else {
+		/* build the nodelist l with the marking of the history,
+		 * reusing the histories in hda; additionally mark with m2
+		 * all conditions in the cut */
 		while (fst < lst) {
 			e = da_i (&hda, fst++, struct h *)->e;
 			for (i = e->post.deg - 1; i >= 0; i--) {
@@ -486,6 +504,9 @@ void h_marking (struct h *h)
 				u.unf.nummrk++;
 			}
 		}
+
+		/* build the set h->rd, reusing the marks from m2 written
+		 * by the previous loop */
 		fst = 0;
 		while (fst < lst) {
 			e = da_i (&hda, fst++, struct h *)->e;
@@ -502,6 +523,9 @@ void h_marking (struct h *h)
 		}
 	}
 
+	/* this function is called from _pe_comb_new_hist, and the postset
+	 * of the event is not yet there, so we need to go 'through the
+	 * net' */
 	if (h->e->post.deg == 0) {
 		for (i = h->e->ft->post.deg - 1; i >= 0; i--) {
 			nl_insert (&l, h->e->ft->post.adj[i]);
@@ -509,6 +533,7 @@ void h_marking (struct h *h)
 		u.unf.nummrk += h->e->ft->post.deg;
 	}
 
+	/* compute the set h->sd, if the net is contextual */
 	if (! u.net.isplain) {
 		for (i = h->e->pre.deg - 1; i >= 0; i--) {
 			c = (struct cond *) h->e->pre.adj[i];
@@ -519,12 +544,16 @@ void h_marking (struct h *h)
 		}
 	}
 
+	/* h->marking stores the history's marking, h->size is the number
+	 * of events in the history, h->hash hashes the marking and stores
+	 * the integer in h->hash, it will be used in src/marking.c */
 	ASSERT (s >= 1);
 	ASSERT (s >= 2 || h->id == 0);
 	h->size = s;
 	h->marking = l;
 	h->hash = marking_hash (l);
 
+	/* statistics */
 	u.unf.numr += h->rd.deg;
 	u.unf.nums += h->sd.deg;
 
