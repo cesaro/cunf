@@ -23,7 +23,7 @@
 #undef CONFIG_MCMILLAN
 #undef CONFIG_ERV
 #define CONFIG_ERV_MOLE
-#undef CONFIG_SIZELEX
+#undef CONFIG_PARIKH
 
 /* see src/nodelist.c */
 #define CONFIG_NODELIST_STEP 1024
