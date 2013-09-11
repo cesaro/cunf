@@ -281,15 +281,20 @@ information during the unfolding computation.  Switching on the option will
 considerably increase \cunf's running times.
 
 \item[\cod{CONFIG\_MCMILLAN}]  Define this macro to use McMillan's adequate
-order\cite{MM95} when \cunf picks possible extensions to append to the
+order\cite{MM95} when \cunf picks possible extensions to extend the
 unfolding prefix.  One and only one of the macros \verb!CONFIG_MCMILLAN!,
-\verb!CONFIG_ERV! or \verb!CONFIG_ERV_MOLE! has to be active.
+\verb!CONFIG_PARIKH!, \verb!CONFIG_ERV! or \verb!CONFIG_ERV_MOLE!
+can be active.  Recall that this is not a total order.
 
-\item[\cod{CONFIG\_ERV}]  Selects the $\prec_F$ complete adequate order
+\item[\cod{CONFIG\_ERV}]  Selects the $\prec_F$ total adequate order
 of\cite{ERV02}.
 
-\item[\cod{CONFIG\_SIZELEX}]  Selects the \emph{size-lexicographic} order
-of\cite[definition 4.51]{EH08}.
+\item[\cod{CONFIG\_PARIKH}]  Selects the \emph{Parikh} order
+of\cite[definition 4.46]{EH08}.
+Although this this is an adequate order, it is \emph{not} total, and may
+produce prefixes larger than any of the other available total orders.
+However, it always produces prefixes smaller than when using
+\verb!CONFIG_MCMILLAN!.
 
 \item[\cod{CONFIG\_ERV\_MOLE}]  Selects the adequate order used in the Mole
 unfolder\cite{Mole}.  This is a minor, non-documented modification of
