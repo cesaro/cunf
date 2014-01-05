@@ -20,6 +20,10 @@ examples/cont/large/elevator_4.ll_net
 /tmp/dij06.ll_net
 "
 
+#NETS="
+#examples/cont/large/byzagr4_1b.ll_net
+#"
+
 for i in 02 04 06; do ./tools/mkdijkstra.py $i > /tmp/dij$i.ll_net; done
 
 echo > TABLE

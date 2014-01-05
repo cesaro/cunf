@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+extern "C" {
 #include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -31,9 +32,14 @@
 #include "netconv.h"
 #include "readpep.h"
 #include "unfold.h"
+}
 
+#include "net/net.hh"
+
+extern "C" {
 /* all gloabal data is stored in this structure */
 struct u u;
+}
 
 /*****************************************************************************/
 
@@ -97,13 +103,13 @@ void rusage (void)
 
 char * peakmem (void)
 {
-	static char b[16];
+	static char b[16] = "?";
 	char buff[4096];
 	char *s;
 	int fd, ret;
 
 	fd = open ("/proc/self/status", O_RDONLY);
-	if (fd < 0) return "?";
+	if (fd < 0) return b;
 
 	ret = read (fd, buff, 4096);
 	close (fd);
@@ -113,7 +119,7 @@ char * peakmem (void)
 	}
 	buff[ret] = 0;
 	s = strstr (buff, "VmPeak:\t");
-	if (! s) return "?";
+	if (! s) return b;
 	s[16] = 0;
 	sprintf (b, "%u", atoi (s + 8));
 	return b;
@@ -123,6 +129,9 @@ int main (int argc, char **argv)
 {
 	int opt, l;
 	char *stoptr, *inpath, *outpath, *outformat;
+
+	/* net_net_test1 ();
+	return 0; */
 
 	/* initialize global parameters */
 	u.mark = 2;
@@ -158,14 +167,14 @@ int main (int argc, char **argv)
 	inpath = argv[argc - 1];
 
 	/* validate the output format string */
-	if (! outformat) outformat = "cuf";
+	if (! outformat) outformat = (char *) "cuf";
 	if (strcmp (outformat, "cuf") && strcmp (outformat, "dot") &&
 			strcmp (outformat, "fancy")) usage ();
 
 	/* set default file name for the output */
 	if (! outpath) {
 		l = strlen (inpath);
-		outpath = gl_malloc (l + 16);
+		outpath = (char *) gl_malloc (l + 16);
 		strcpy (outpath, inpath);
 		strcpy (outpath + (l > 7 ? l - 7 : l), ".unf.");
 		strcpy (outpath + (l > 7 ? l - 2 : l + 5), 
@@ -258,4 +267,3 @@ int main (int argc, char **argv)
 
 	return EXIT_SUCCESS;
 }
-

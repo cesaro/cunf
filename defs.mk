@@ -19,21 +19,25 @@ CFLAGS:=-Wall -Wextra -O3
 #CFLAGS:=-Wall -Wextra -pg
 #CFLAGS:=-Wall -Wextra
 #CFLAGS:=-Wall -Wextra -g
+CXXFLAGS:=-Wall -Wextra -O3 -std=c++0x
+#CXXFLAGS:=-Wall -Wextra -g -std=c++0x
 CPPFLAGS:=-I include/
 LDFLAGS:=-dead_strip
 #LDFLAGS:=
 
 # object file targets
-SRCS:=$(wildcard src/*.c src/*/*.c)
-SRCS:=$(filter-out %/main.c, $(SRCS))
+SRCS:=$(wildcard src/*.c src/*.cc src/*/*.c src/*/*.cc)
+SRCS:=$(filter-out %/main.cc, $(SRCS))
 SRCS:=$(filter-out %/pep2dot.c, $(SRCS))
 
 # object files containing a main() function
-MSRCS:=$(wildcard src/main.c src/pep2dot.c)
+MSRCS:=$(wildcard src/main.cc src/pep2dot.c)
 
 # compilation targets
-OBJS:=$(patsubst %.c,%.o,$(SRCS))
-MOBJS:=$(patsubst %.c,%.o,$(MSRCS))
+OBJS:=$(patsubst %.cc,%.o,$(SRCS))
+OBJS:=$(patsubst %.c,%.o,$(OBJS))
+MOBJS:=$(patsubst %.cc,%.o,$(MSRCS))
+MOBJS:=$(patsubst %.c,%.o,$(MOBJS))
 TARGETS:=$(patsubst %.o,%,$(MOBJS))
 
 # dependency files
@@ -52,7 +56,9 @@ CROSS:=
 
 LD:=$(CROSS)ld
 CC:=$(CROSS)gcc
+#CC:=$(CROSS)gcc-fsf-4.5
 CXX:=$(CROSS)g++
+#CXX:=$(CROSS)g++-fsf-4.5
 CPP:=$(CROSS)cpp
 
 %.d : %.c
@@ -60,9 +66,18 @@ CPP:=$(CROSS)cpp
 	@set -e; $(CC) -MM -MT $*.o $(CPPFLAGS) $< | \
 	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' > $@;
 
+%.d : %.cc
+	@echo "DEP $<"
+	@set -e; $(CXX) -MM -MT $*.o $(CPPFLAGS) $< | \
+	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' > $@;
+
 .c.o:
 	@echo "CC  $<"
 	@$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+.cc.o:
+	@echo "CXX $<"
+	@$(CXX) $(CXXFLAGS) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 %.pdf : %.dot
 	@echo "DOT $<"

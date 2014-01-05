@@ -126,7 +126,7 @@ struct u {
 	struct bv pmask;
 };
 
-struct u u;
+extern struct u u;
 
 #endif
 

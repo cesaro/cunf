@@ -21,7 +21,7 @@ all: $(TARGETS) minisat/core/minisat
 
 $(TARGETS) : % : %.o $(OBJS)
 	@echo "LD  $@"
-	@$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $^ $(LDFLAGS) 
+	@$(CXX) $(CXXFLAGS) $(CFLAGS) -o $@ $^ $(LDFLAGS) 
 
 minisat/core/minisat :
 	cd minisat; export MROOT=`pwd`; cd core; make
@@ -35,11 +35,12 @@ g : $(TARGETS)
 
 vars :
 	@echo $(CC)
+	@echo $(CXX)
 	@echo $(SRCS)
 	@echo $(MSRCS)
-	@echo $(TEST_NETS)
-	@echo $(TIME_NETS)
-	@echo $(DEAD_NETS)
+	@#echo $(TEST_NETS)
+	@#echo $(TIME_NETS)
+	@#echo $(DEAD_NETS)
 	@echo $(DEPS)
 
 test tests : $(TEST_NETS:%.ll_net=%.r) $(TEST_NETS:%.ll_net=%.unf.r)

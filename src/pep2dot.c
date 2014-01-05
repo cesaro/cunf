@@ -30,6 +30,8 @@
 
 #define P printf
 
+struct u u;
+
 static void write_net_dot (void)
 {
 	struct trans *t;
