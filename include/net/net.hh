@@ -11,7 +11,7 @@ class Place;
 class Trans
 {
 public:
-	std::vector<Place *>::size_type id;
+	std::vector<Trans *>::size_type id;
 	std::string name;
 	std::vector<Place *> pre;
 	std::vector<Place *> post;
@@ -19,7 +19,7 @@ public:
 	int m;
 
 	Trans (const std::string & name,
-			std::vector<Place *>::size_type idx=0);
+			std::vector<Trans *>::size_type idx=0);
 	~Trans ();
 
 	void pre_add (Place & p, bool call_oppst=true);
