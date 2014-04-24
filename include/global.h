@@ -118,15 +118,26 @@ struct u {
 	struct unf unf;
 
 	int mark;
+	struct bv pmask;
 
 	struct trans * stoptr;
-	int depth;
-	/* int interactive; */
+};
 
-	struct bv pmask;
+
+#define OPT_DEPTH	0
+#define OPT_MCMILLAN	1
+#define OPT_ERV		2
+
+struct opt {
+	char * net_path;
+	char * spec_path;
+	int cutoffs;
+	long int depth;
+	char * save_path;
 };
 
 extern struct u u;
+extern struct opt opt;
 
 #endif
 

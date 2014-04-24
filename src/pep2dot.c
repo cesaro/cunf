@@ -31,6 +31,7 @@
 #define P printf
 
 struct u u;
+struct opt opt;
 
 static void write_net_dot (void)
 {
@@ -106,7 +107,7 @@ int main (int argc, char ** argv)
 	}
 
 	read_pep_net (argv[1]);
-	nc_static_checks (0);
+	nc_static_checks ();
 	// db_net ();
 	write_net_dot ();
 

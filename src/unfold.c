@@ -126,7 +126,7 @@ static void _unfold_enriched (struct h *h)
 
 	/* if the prefix must not go beyond some depth and h already has that
 	 * depth, then no history generated using h need to be inserted */
-	if (u.depth && h->depth >= u.depth) return;
+	if (opt.depth && h->depth >= opt.depth) return;
 
 	/* append a new enriched condition r for each c in post(e), compute the
 	 * concurrency relation for r and use r to update pe with new possible

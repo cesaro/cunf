@@ -18,9 +18,9 @@ CFLAGS:=-Wall -Wextra -O3
 #CFLAGS:=-Wall -Wextra -O3 -pg
 #CFLAGS:=-Wall -Wextra -pg
 #CFLAGS:=-Wall -Wextra
-#CFLAGS:=-Wall -Wextra -g
-CXXFLAGS:=-Wall -Wextra -O3 -std=c++0x
-#CXXFLAGS:=-Wall -Wextra -g -std=c++0x
+CFLAGS:=-Wall -Wextra -g
+#CXXFLAGS:=-Wall -Wextra -O3 -std=c++0x
+CXXFLAGS:=-Wall -Wextra -g -std=c++0x
 CPPFLAGS:=-I include/
 LDFLAGS:=-dead_strip
 #LDFLAGS:=

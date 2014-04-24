@@ -24,6 +24,7 @@ extern "C" {
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
+#include <getopt.h>
 
 #include "glue.h"
 #include "debug.h"
@@ -39,6 +40,7 @@ extern "C" {
 extern "C" {
 /* all gloabal data is stored in this structure */
 struct u u;
+struct opt opt;
 }
 
 /*****************************************************************************/
@@ -127,22 +129,56 @@ char * peakmem (void)
 
 int main (int argc, char **argv)
 {
-	int opt, l;
-	char *stoptr, *inpath, *outpath, *outformat;
+	int ret;
+	char *endptr;
+	struct option longopts[] = {
+			{"cutoff", required_argument, 0, 'c'},
+			{"save", required_argument, 0, 's'},
+			{0, 0, 0, 0}};
 
-	/* net_net_test1 ();
-	return 0; */
-
-	/* initialize global parameters */
+	/* initialize global parameters and options */
 	u.mark = 2;
+	u.stoptr = 0;
+	opt.cutoffs = OPT_ERV;
+	opt.save_path = 0;
+	opt.depth = 0;
 
 	/* parse command line */
-	stoptr = 0;
-	inpath = 0;
-	outpath = 0;
-	outformat = 0;
-	u.stoptr = 0;
-	u.depth = 0;
+	while (1) {
+		ret = getopt_long (argc, argv, "", longopts, 0);
+		if (ret == -1) break;
+		switch (ret) {
+		case 'c' :
+			if (strcmp (optarg, "mcmillan") == 0) {
+				opt.cutoffs = OPT_MCMILLAN;
+			} else if (strcmp (optarg, "erv") == 0) {
+				opt.cutoffs = OPT_ERV;
+			} else {
+				opt.depth = strtol (optarg, &endptr, 10);
+				if (optarg[0] == 0 || *endptr != 0) {
+					usage ();
+				}
+				opt.cutoffs = OPT_DEPTH;
+			}
+			break;
+		case 's' :
+			opt.save_path = optarg;
+			break;
+		default :
+			usage ();
+		}
+	}
+	if (optind == argc - 2) {
+		opt.net_path = argv[optind];
+		opt.spec_path = argv[optind + 1];
+	} else if (optind == argc - 1) {
+		opt.net_path = argv[optind];
+		opt.spec_path = 0;
+	} else {
+		usage ();
+	}
+
+#if 0
 	while (1) {
 		opt = getopt (argc, argv, "o:t:d:f:");
 		if (opt == -1) break;
@@ -181,27 +217,21 @@ int main (int argc, char **argv)
 				! strcmp (outformat, "fancy") ? "dot" :
 				outformat);
 	}
+#endif
 
 	/* load the input net */
-	DPRINT ("  Reading net from '%s'\n", inpath);
-	read_pep_net (inpath);
+	DPRINT ("  Reading net from '%s'\n", opt.net_path);
+	read_pep_net (opt.net_path);
 	DPRINT ("  It is a %s net\n", u.net.isplain ? "plain" : "contextual");
-	nc_static_checks (stoptr);
-
+	nc_static_checks ();
 
 	/* unfold */
 	unfold ();
 
 	/* write the output net */
-	DPRINT ("  Writing unfolding to '%s'\n", outpath);
-	if (! strcmp (outformat, "cuf")) {
-		write_cuf (outpath);
-	} else if (! strcmp (outformat, "dot")) {
-		PRINT ("warn\tsome statics are not well reported under the selected output format\n");
-		write_dot (outpath);
-	} else {
-		PRINT ("warn\tsome statics are not well reported under the selected output format\n");
-		write_dot_fancy (outpath);
+	if (opt.save_path) {
+		DPRINT ("  Writing unfolding to '%s'\n", opt.save_path);
+		write_cuf (opt.save_path);
 	}
 
 #ifdef CONFIG_DEBUG
@@ -263,7 +293,7 @@ int main (int argc, char **argv)
 		u.unf.numewhite,
 		u.unf.numegray,
 		u.unf.numeblack,
-		inpath);
+		opt.net_path);
 
 	return EXIT_SUCCESS;
 }

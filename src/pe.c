@@ -88,9 +88,9 @@ static void _pe_q_insert (struct h * h)
 {
 	int idx;
 
-	/* if we reached the maximum depth (-d option) or we already found the
-	 * stop transition (-T option), skip the insertion */
-	if (u.depth && h->depth > u.depth) return;
+	/* if we reached the maximum depth (-d option), or we have found
+	 * the stop transition, skip the insertion */
+	if (opt.depth && h->depth > opt.depth) return;
 	if (pe.q.skip) return;
 	
 	/* make room for a new item and proceed with the insertion */

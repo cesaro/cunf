@@ -112,24 +112,16 @@ int nc_create_arc (struct al * src_post, struct al * dst_pre,
 }
 
 /*****************************************************************************/
-void nc_static_checks (const char * stoptr)
+void nc_static_checks (void)
 {
 	struct trans *t;
 	struct ls *n;
 
-	ASSERT (u.stoptr == 0);
 	for (n = u.net.trans.next; n; n = n->next) {
 		t = ls_i (struct trans, n, nod);
 		if (t->pre.deg == 0 && t != u.net.t0 && t->post.deg != 0) {
 			gl_warn ("%s is not restricted", t->name);
 		}
-		if (stoptr && !strcmp (t->name, stoptr)) {
-			u.stoptr = t;
-		}
-	}
-
-	if (stoptr && u.stoptr == 0) {
-		gl_err ("Transition '%s' not found", stoptr);
 	}
 
 	ASSERT (u.net.t0);
