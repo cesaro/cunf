@@ -3,15 +3,15 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <err.h>
-#include "spec_lexer.h"
 
-void yyerror (const char * fmt, ...);
-int yycol = 1;
-static void yyc (void);
+#include "debug.h"
+#include "spec_intrnl.hh"
+#include "spec_parser.h"
 
-#define yyterminate() return LEND;
+static int __cna_column = 1;
+static void __c (void);
 
-// variable yyval
+#define yyterminate() { __c (); return 0; }
 
 %}
 
@@ -19,41 +19,63 @@ static void yyc (void);
 %option noyywrap 
 %option nounput
 %option yylineno
+%option prefix="__cna_"
+
+COMMENT		#.*$
+ID		[^!()"&| \t\n]+
+QID		\"[^"\n]*\"
 
 %%
 
-#.*$			{ printf ("COMMENT '%s'\n", yytext); }
-\"[^"\n]*\"		{ yyc (); printf ("ID '%s'\n", yytext); return LID; }
-[^!()"&| \t\n]+		{ yyc (); printf ("ID '%s'\n", yytext); return LID; }
-!			{ yyc (); printf ("NOT '%s'\n", yytext); return LNOT; }
-\(			{ yyc (); printf ("OPEN '%s'\n", yytext); return LOPEN; }
-\)			{ yyc (); printf ("CLOSE '%s'\n", yytext); return LCLOSE; }
-\|\|			{ yyc (); printf ("OR '%s'\n", yytext); return LOR; }
-&&			{ yyc (); printf ("AND '%s'\n", yytext); return LAND; }
-[ \t]			{ yyc (); printf ("SPACE\n"); }
-\n			{ yyc (); yycol = 0; printf ("NL\n"); }
+{COMMENT}	{ }
+{QID}		{
+		__c ();
+		__cna_text[__cna_leng-1] = 0;
+		__cna_lval.id = new std::string (__cna_text + 1);
+		return ID;
+		}
+{ID}		{
+		__c ();
+		__cna_lval.id = new std::string (__cna_text);
+		return ID;
+		}
+!		{ __c (); return NOT; }
+\(		{ __c (); return OPEN; }
+\)		{ __c (); return CLOSE; }
+\|\|		{ __c (); return OR; }
+&&		{ __c (); return AND; }
+[ \t]		{ __c (); }
+\n		{ __c (); __cna_column = 0; }
 
-\"[^"\n]*$		{ yyc (); yyerror ("missing terminating \" character"); }
-.			{ yyc (); yyerror ("'%s': unexpected character", yytext); }
+\"[^"\n]*$	{ __c (); __cna_errorv ("missing terminating \" character"); }
+.		{ __c (); __cna_errorv ("'%s': unexpected character", yytext); }
 
 %%
 
+static void __c (void) {
+	static int lastlen = 0;
 
-void yyerror (const char * fmt, ...) {
+	__cna_column += lastlen;
+	lastlen = __cna_leng;
+}
+
+void
+__cna_errorv (const char * fmt, ...)
+{
 	va_list args;
 
 	va_start (args, fmt);
 	fprintf (stderr, "%s:%d:%d: ",
-			spec_filename.c_str (), yylineno, yycol);
+			__cna_filename.c_str (), __cna_lineno,
+			__cna_column);
 	vfprintf (stderr, fmt, args);
 	fprintf (stderr, "\n");
 	exit (EXIT_FAILURE);
 }
 
-// FIXME -- test that this works!
-static void yyc (void) {
-	static int lastlen = 0;
-
-	yycol += lastlen;
-	lastlen = yyleng;
+void
+__cna_error (const char * s)
+{
+	__cna_errorv ("%s", s);
 }
+

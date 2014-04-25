@@ -3,17 +3,20 @@
 #include <string>
 #include <cstring>
 #include <cassert>
+#include <memory>
+#include <stdarg.h>
 
-#include "spec_lexer.h"
+#include "spec.hh"
+#include "spec_intrnl.hh"
 
-std::string spec_filename ("input");
+using namespace cna;
+
+/* for communication between spec_parse and the parser */
+std::string __cna_filename;
+Spec * __cna_ast = 0;
 
 
-
-#include <stdarg.h>  // for va_start, etc
-#include <memory>    // for std::unique_ptr
-
-std::string fmt (const std::string fmt_str, ...) {
+std::string cna::fmt (const std::string fmt_str, ...) {
 	/* reserve 2 times as much as the length of the fmt_str */
 	int n = fmt_str.size() * 2;
 	int final_n;
@@ -36,26 +39,9 @@ std::string fmt (const std::string fmt_str, ...) {
 }
 
 
-class Spec
-{
-public:
-	typedef enum {LEAVE, OR, AND, NOT} type_t;
-
-	type_t type;
-	Spec * l;
-	Spec * r;
-	int trans;
-	int place;
-
-	Spec (int pl);
-	Spec (type_t t, Spec * left, Spec * right);
-	void str (std::string &s);
-	~Spec (void);
-};
-
 Spec::Spec (int pl)
 {
-	type = LEAVE;
+	type = PLACE;
 	place = trans = pl;
 	l = r = 0;
 }
@@ -89,7 +75,9 @@ Spec::~Spec (void)
 void Spec::str (std::string &s)
 {
 	switch (type) {
-	case LEAVE :
+	case PLACE :
+	case TRANS :
+	case DEADLOCK :
 		s += fmt ("\"%d\"", place);
 		break;
 	case OR :
@@ -109,28 +97,14 @@ void Spec::str (std::string &s)
 	}
 }
 
-int
-main (const int argc, const char ** argv)
+Spec *
+cna::spec_parse (FILE * f, const std::string & filename)
 {
+	__cna_filename = filename;
+	__cna_in = f;
+	__cna_restart (f);
+	__cna_parse ();
 
-	int ret;
-	Spec::type_t x;
-
-	x = Spec::OR;
-
-	printf ("%d\n", x);
-
-	while (1) {
-		ret = yylex ();
-		if (ret == LEND) break;
-		// printf ("ret is %d\n", ret);
-	}
-
-	std::string s;
-	Spec * a = new Spec (Spec::NOT, new Spec (10), 0);
-	Spec * b = new Spec (Spec::AND, a, new Spec (20));
-	b->str (s);
-	std::cout << s << std::endl;
-	delete b;
+	return __cna_ast;
 }
 

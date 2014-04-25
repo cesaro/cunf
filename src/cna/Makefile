@@ -1,24 +1,30 @@
 
+CC:=g++
 CXX:=g++
-CC:=$(CXX)
 LEX:=flex
+YACC:=bison
 
-CDEBUG = -g -Wall
-CFLAGS = -Wall -g -std=c99
-CXXFLAGS = -Wall -g -std=c++11
+CXXFLAGS:=-Wall -g -std=c++11 -DCONFIG_DEBUG
+#CFLAGS:=-Wall -g -std=c99
+CFLAGS:=$(CXXFLAGS)
 
 .PHONY: all
 all: test
-	./test < input
+	./test
 
-test : test.o spec_lexer.o
+test : test.o spec_lexer.o spec_parser.o spec.o
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-spec_lexer.o : spec_lexer.cc
+spec_lexer.o : spec_lexer.cc spec_parser.o
+spec_parser.o : spec_parser.c
 
 .PHONY: clean
 clean:
-	rm -rf *.o spec_lexer.cc test
+	rm -rf *.o spec_lexer.cc spec_parser.h spec_parser.c test
+
 
 .l.cc:
-	$(LEX) -o $@ $^
+	flex -o $@ $^
+
+.y.c:
+	bison -o $@ $^
