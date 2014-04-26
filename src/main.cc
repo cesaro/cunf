@@ -127,6 +127,34 @@ char * peakmem (void)
 	return b;
 }
 
+
+#include "sat/cnf_minisat.hh"
+
+void test (void)
+{
+	sat::Msat s;
+	sat::Lit p, q, r;
+	std::vector<sat::Lit> c(2);
+
+	p = s.new_var ();
+	q = s.new_var ();
+	r = s.new_var ();
+
+	c[0] = ~p;
+	c[1] = ~q;
+	s.add_clause (c);
+
+	auto ret = s.solve ();
+	if (ret == sat::Cnf::SAT) {
+		DEBUG ("SAT");
+	} else if (ret == sat::Cnf::UNSAT) {
+		DEBUG ("UNSAT");
+	} else {
+		DEBUG ("UNKNOWN");
+	}
+}
+
+
 int main (int argc, char **argv)
 {
 	int ret;
@@ -142,6 +170,9 @@ int main (int argc, char **argv)
 	opt.cutoffs = OPT_ERV;
 	opt.save_path = 0;
 	opt.depth = 0;
+
+	test ();
+	return 0;
 
 	/* parse command line */
 	while (1) {

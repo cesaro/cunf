@@ -18,10 +18,10 @@ CFLAGS:=-Wall -Wextra -O3
 #CFLAGS:=-Wall -Wextra -O3 -pg
 #CFLAGS:=-Wall -Wextra -pg
 #CFLAGS:=-Wall -Wextra
-CFLAGS:=-Wall -Wextra -g
+CFLAGS:=-Wall -Wextra -g -std=c99
 #CXXFLAGS:=-Wall -Wextra -O3 -std=c++0x
-CXXFLAGS:=-Wall -Wextra -g -std=c++0x
-CPPFLAGS:=-I include/
+CXXFLAGS:=-Wall -Wextra -g -std=c++11
+CPPFLAGS:=-I include/ -I src/ -I ../minisat/
 LDFLAGS:=-dead_strip
 #LDFLAGS:=
 
@@ -68,7 +68,7 @@ CPP:=$(CROSS)cpp
 
 %.d : %.cc
 	@echo "DEP $<"
-	@set -e; $(CXX) -MM -MT $*.o $(CPPFLAGS) $< | \
+	@set -e; $(CXX) -MM -MT $*.o $(CXXFLAGS) $(CPPFLAGS) $< | \
 	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' > $@;
 
 .c.o:
@@ -77,7 +77,7 @@ CPP:=$(CROSS)cpp
 
 .cc.o:
 	@echo "CXX $<"
-	@$(CXX) $(CXXFLAGS) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 %.pdf : %.dot
 	@echo "DOT $<"
