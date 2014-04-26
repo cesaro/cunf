@@ -4,8 +4,8 @@
 
 #include "sat/cnf.hh"
 
-#define __STDC_LIMIT_MACROS // for the minisat source tree
-#define __STDC_FORMAT_MACROS
+//#define __STDC_LIMIT_MACROS // for the minisat source tree
+//#define __STDC_FORMAT_MACROS
 #include "minisat/core/Solver.h"
 
 namespace sat {

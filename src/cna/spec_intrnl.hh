@@ -1,10 +1,10 @@
 
-#ifndef _SPEC_INTERNL_HH_
-#define _SPEC_INTERNL_HH_
+#ifndef _CNA_SPEC_INTERNL_HH_
+#define _CNA_SPEC_INTERNL_HH_
 
 #include <string>
 #include <stdio.h>
-#include "spec.hh"
+#include "cna/spec.hh"
 
 /* in spec_lexer.l */
 int __cna_lex (void);

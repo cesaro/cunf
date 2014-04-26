@@ -1,12 +1,12 @@
 
 %require  "2.5"
-%defines "spec_parser.h"
+%defines "src/cna/spec_parser.h"
 %name-prefix "__cna_"
 
 %{
 #include <string>
-#include "spec_intrnl.hh"
-#include "spec.hh"
+#include "cna/spec_intrnl.hh"
+#include "cna/spec.hh"
 
 static inline cna::Spec * __lookup_id (std::string * s);
 %}

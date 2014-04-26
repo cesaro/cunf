@@ -21,12 +21,12 @@
 #include <string.h>
 #include <err.h>
 
-#include "glue.h"
-#include "debug.h"
-#include "global.h"
-#include "netconv.h"
-#include "readpep.h"
-#include "unfold.h"
+#include "util/glue.h"
+#include "util/debug.h"
+#include "cunf/global.h"
+#include "cunf/netconv.h"
+#include "cunf/readpep.h"
+#include "cunf/unfold.h"
 
 #define P printf
 

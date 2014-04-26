@@ -6,8 +6,8 @@
 #include <algorithm>
 #include <iostream>
 
-#include "config.h"
-#include "debug.h"
+#include "util/config.h"
+#include "util/debug.h"
 #include "net/net.hh"
 
 std::ostream & operator<< (std::ostream & os, const Trans & t)

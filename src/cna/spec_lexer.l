@@ -1,12 +1,13 @@
 %{
 
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <err.h>
 
-#include "debug.h"
-#include "spec_intrnl.hh"
-#include "spec_parser.h"
+#include "util/debug.h"
+#include "cna/spec_intrnl.hh"
+#include "cna/spec_parser.h"
 
 static int __cna_column = 1;
 static void __c (void);

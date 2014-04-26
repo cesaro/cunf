@@ -17,14 +17,14 @@ include defs.mk
 
 .PHONY: fake all g test clean distclean prof dist
 
-all: $(TARGETS) minisat/core/minisat
+all: $(TARGETS)
 
 $(TARGETS) : % : %.o $(OBJS)
 	@echo "LD  $@"
-	@$(CXX) $(CXXFLAGS) $(CFLAGS) -o $@ $^ $(LDFLAGS) 
+	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) 
 
-minisat/core/minisat :
-	cd minisat; export MROOT=`pwd`; cd core; make
+#$(MINISAT)/build/release/lib/libminisat.a :
+#	cd $(MINISAT); make lr
 
 prof : $(TARGETS)
 	rm gmon.out.*
@@ -34,14 +34,14 @@ g : $(TARGETS)
 	gdb ./src/main
 
 vars :
-	@echo $(CC)
-	@echo $(CXX)
-	@echo $(SRCS)
-	@echo $(MSRCS)
-	@#echo $(TEST_NETS)
-	@#echo $(TIME_NETS)
-	@#echo $(DEAD_NETS)
-	@echo $(DEPS)
+	@echo CC $(CC)
+	@echo CXX $(CXX)
+	@echo SRCS $(SRCS)
+	@echo MSRCS $(MSRCS)
+	@echo OBJS $(OBJS)
+	@echo MOBJS $(MOBJS)
+	@echo TARGETS $(TARGETS)
+	@echo DEPS $(DEPS)
 
 test tests : $(TEST_NETS:%.ll_net=%.r) $(TEST_NETS:%.ll_net=%.unf.r)
 	@echo " DIF ..."
@@ -86,6 +86,7 @@ dl.mcm.tr : $(DEAD_NETS:%.ll_net=%.dl.mcm.tr)
 
 clean :
 	@rm -f $(TARGETS) $(MOBJS) $(OBJS)
+	@rm -f src/cna/spec_lexer.cc src/cna/spec_parser.cc src/cna/spec_parser.h
 	@echo Cleaning done.
 
 distclean : clean
@@ -100,7 +101,6 @@ distclean : clean
 	@find examples/ -name '*.pdf' -exec rm '{}' ';'
 	@find examples/ -name '*.tr' -exec rm '{}' ';'
 	@#rm -f test/nets/{plain,cont,pr}/{small,med,large,huge}/*.{cnf,mci,bc,r,cuf,dot,pdf}
-	@cd minisat; export MROOT=`pwd`; cd core; make clean
 	@echo Mr. Proper done.
 
 dist : all

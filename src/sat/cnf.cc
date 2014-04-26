@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "config.h"
-#include "debug.h"
+#include "util/config.h"
+#include "util/debug.h"
 #include "sat/cnf.hh"
 
 namespace sat {

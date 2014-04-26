@@ -6,8 +6,8 @@
 #include <memory>
 #include <stdarg.h>
 
-#include "spec.hh"
-#include "spec_intrnl.hh"
+#include "cna/spec.hh"
+#include "cna/spec_intrnl.hh"
 
 using namespace cna;
 
