@@ -150,11 +150,17 @@ void Solver::releaseVar(Lit l)
     }
 }
 
+#include "util/debug.h"
 
 bool Solver::addClause_(vec<Lit>& ps)
 {
     assert(decisionLevel() == 0);
     if (!ok) return false;
+    
+    TRACE (ps.size() , "d");
+    for (int i = 0; i < ps.size (); ++i) {
+	    TRACE (ps[i].x, "d");
+    }
 
     // Check if clause is satisfied and remove false/duplicate literals:
     sort(ps);

@@ -26,6 +26,8 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "util/config.h"
+
 #define PRINT(args...) fprintf (stdout, ##args)
 /* #define PRINT printf */
 

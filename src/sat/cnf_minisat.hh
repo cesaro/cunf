@@ -3,9 +3,8 @@
 #define _SAT_CNF_MINISAT_HH_
 
 #include "sat/cnf.hh"
+#include "util/debug.h"
 
-//#define __STDC_LIMIT_MACROS // for the minisat source tree
-//#define __STDC_FORMAT_MACROS
 #include "minisat/core/Solver.h"
 
 namespace sat {
@@ -14,32 +13,54 @@ class Msat;
 
 class MsatModel : public CnfModel
 {
-public :
+public:
+	bool operator[] (Lit p) const;
+	bool operator[] (Var v) const;
+
+protected:
 	MsatModel (const Msat & _f) : f(_f) {}
-
-	virtual bool
-	operator[] (Lit p) const
-	{
-		// f.s.
-		return p.sign ();
-	}
-
-private :
 	const Msat & f;
+
+	friend class Msat;
 };
+
 
 class Msat : public Cnf
 {
-public :
-	Lit new_var (void);
+public:
+	Msat () : m (*this) {};
+	Var no_vars ();
+	Lit new_var ();
 	void add_clause (std::vector<Lit> & clause);
-	result_t solve (void);
-	const CnfModel & get_model (void);
+	result_t solve ();
+	CnfModel & get_model ();
 
-private :
-	int a;
+protected:
 	Minisat::Solver s;
+	MsatModel m;
+
+	friend class MsatModel;
 };
+
+
+inline Var Msat::no_vars () { return s.nVars (); }
+inline Lit Msat::new_var () { return Lit (s.newVar ()); }
+inline CnfModel & Msat::get_model () { return m; }
+
+
+inline bool MsatModel::operator[] (Lit p) const
+{
+	return operator[] (p.var ());
+}
+inline bool MsatModel::operator[] (Var v) const
+{
+	ASSERT (v >= 0);
+	ASSERT (v < f.s.nVars ());
+	if (f.s.model[v] != Minisat::l_True && f.s.model[v] != Minisat::l_False)
+		DEBUG ("v %d is UNDEF", v);
+
+	return f.s.model[v] == Minisat::l_True;
+}
 
 } // namespace sat
 

@@ -3,15 +3,7 @@
 
 namespace sat {
 
-
-Lit
-Msat::new_var (void)
-{
-	return Lit (s.newVar ());
-}
-
-void
-Msat::add_clause (std::vector<Lit> & c)
+void Msat::add_clause (std::vector<Lit> & c)
 {
 	Minisat::vec<Minisat::Lit> mc;
 
@@ -22,8 +14,7 @@ Msat::add_clause (std::vector<Lit> & c)
 	s.addClause_ (mc);
 }
 
-Msat::result_t
-Msat::solve (void)
+Msat::result_t Msat::solve ()
 {
 	Minisat::lbool ret;
 	Minisat::vec<Minisat::Lit> dummy;
@@ -35,13 +26,6 @@ Msat::solve (void)
 	if (ret == Minisat::l_False) return UNSAT;
 	return UNK;
 }
-
-const CnfModel &
-Msat::get_model (void)
-{
-	return MsatModel (*this);
-}
-
 
 } // namespace sat
 

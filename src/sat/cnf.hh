@@ -12,7 +12,7 @@ typedef int Var;
 
 class Lit
 {
-public :
+public:
 	Lit () : v(0) {} // do not use this !
 	Lit (Var x, bool sign = false) : v((x << 1) + (int) sign) {}
 
@@ -20,7 +20,7 @@ public :
 	Var var (void) { return v >> 1; }
 	Lit operator~ () { return Lit (v ^ 1); }
 
-private :
+private:
 	Lit (unsigned _v) : v(_v) {};
 	unsigned v;
 };
@@ -28,6 +28,7 @@ private :
 
 class CnfModel
 {
+public:
 	virtual bool operator[] (Lit p) const =0;
 	// iterator
 };
@@ -35,13 +36,14 @@ class CnfModel
 
 class Cnf
 {
-public :
+public:
 	typedef enum {SAT, UNSAT, UNK} result_t;
 
+	virtual Var no_vars (void) =0;
 	virtual Lit new_var (void) =0;
 	virtual void add_clause (std::vector<Lit> & clause) =0;
 	virtual result_t solve (void) = 0;
-	virtual const CnfModel & get_model (void) =0;
+	virtual CnfModel & get_model (void) =0;
 
 	void amo_2tree (std::vector<Lit> & lits);
 };
@@ -51,10 +53,7 @@ public :
 template<class T, class Hash = std::hash<T>>
 class VarMap
 {
-	VarMap (Cnf & _f) :
-		map(),
-		f(_f)
-	{};
+	VarMap (Cnf & _f) : map(), f(_f) {};
 
 	Lit
 	operator[] (const T & k)
@@ -65,7 +64,7 @@ class VarMap
 		return map[k] = p;
 	}
 
-private :
+private:
 	std::unordered_map<T,Lit,Hash> map;
 	Cnf & f;
 };

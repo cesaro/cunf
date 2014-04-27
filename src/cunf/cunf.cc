@@ -134,19 +134,25 @@ void test (void)
 {
 	sat::Msat s;
 	sat::Lit p, q, r;
-	std::vector<sat::Lit> c(2);
+	std::vector<sat::Lit> c(1);
 
 	p = s.new_var ();
 	q = s.new_var ();
 	r = s.new_var ();
 
 	c[0] = ~p;
-	c[1] = ~q;
+	s.add_clause (c);
+	c[0] = ~p;
 	s.add_clause (c);
 
 	auto ret = s.solve ();
 	if (ret == sat::Cnf::SAT) {
 		DEBUG ("SAT");
+		sat::CnfModel & m = s.get_model ();
+		for (sat::Var v = 0; v < s.no_vars (); ++v)
+		{
+			DEBUG ("var %d is %s", v, m[v] ? "T" : "F");
+		}
 	} else if (ret == sat::Cnf::UNSAT) {
 		DEBUG ("UNSAT");
 	} else {
