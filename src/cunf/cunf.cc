@@ -146,7 +146,7 @@ void test (void)
 	amo[2] = r;
 	s.amo_2tree (amo);
 
-	c[0] = ~p;
+	c[0] = p;
 	s.add_clause (c);
 	c[0] = q;
 	s.add_clause (c);

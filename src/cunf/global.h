@@ -74,7 +74,7 @@ struct event {
 	struct al ac;		/* asymmetric conflict rel. node */
 	struct al hist;		/* histories associated to the event */
 	struct trans *ft;	/* associated transition */
-	struct ls tnod;		/* events associated to same place */
+	struct ls tnod;		/* events associated to same transition */
 	int id;			/* event identifier */
 	int iscutoff;		/* true if all histories are cutoffs */
 	int m;			/* general purpose mark */

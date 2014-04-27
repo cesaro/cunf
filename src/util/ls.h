@@ -42,7 +42,7 @@ void ls_push (struct ls * l, struct ls *n);
 struct ls * ls_pop (struct ls * l);
 
 #define ls_item(type,nod,field) \
-		((type *) ((void *) (nod) - (void *) &((type *) 0)->field))
+		((type *) ((char *) (nod) - (char *) &((type *) 0)->field))
 
 #define ls_i ls_item
 

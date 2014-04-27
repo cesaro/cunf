@@ -58,15 +58,14 @@ public:
 template<class T, class Hash = std::hash<T>>
 class VarMap
 {
+public:
 	VarMap (Cnf & _f) : map(), f(_f) {};
 
-	Lit
-	operator[] (const T & k)
+	Lit operator[] (const T & k)
 	{
 		auto it = map.find (k);
-		if (it != map.end()) return *it;
-		Lit p = f.new_var ();
-		return map[k] = p;
+		if (it != map.end()) return it->second;
+		return map[k] = f.new_var ();
 	}
 
 private:
