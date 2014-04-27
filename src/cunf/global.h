@@ -23,6 +23,10 @@
 #include "util/al.h"
 #include "util/bv.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct place {
 	struct ls nod;	/* node for the list of places */
 	char *name;	/* place name, from the ll_net format */
@@ -138,6 +142,10 @@ struct opt {
 
 extern struct u u;
 extern struct opt opt;
+
+#ifdef __cplusplus // extern C
+}
+#endif
 
 #endif
 

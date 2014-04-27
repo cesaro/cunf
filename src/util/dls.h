@@ -21,6 +21,10 @@
 #ifndef _UTIL_DLS_H_
 #define _UTIL_DLS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct dls {
 	struct dls * prev;
 	struct dls * next;
@@ -41,6 +45,10 @@ struct dls * dls_pop (struct dls * l);
 		((type *) ((void *) (nod) - (void *) &((type *) 0)->field))
 
 #define dls_i dls_item
+
+#ifdef __cplusplus // extern C
+}
+#endif
 
 #endif
 

@@ -21,6 +21,10 @@
 #ifndef _UTIL_LST_H_
 #define _UTIL_LST_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct lst {
 	struct lstn * head;
 	struct lstn * tail;
@@ -45,6 +49,10 @@ struct lstn * lst_pop (struct lst * l);
 		((type *) ((void *) (nod) - (void *) &((type *) 0)->field))
 
 #define lst_i lst_item
+
+#ifdef __cplusplus // extern C
+}
+#endif
 
 #endif
 

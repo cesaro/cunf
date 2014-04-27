@@ -22,6 +22,10 @@
 #include "util/config.h"
 #include "util/debug.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void gl_free (void * ptr);
 void * gl_malloc (int size);
 void * gl_realloc (void * ptr, int size);
@@ -29,6 +33,10 @@ char * gl_strdup (char * str);
 
 void gl_err (const char * fmt, ...);
 void gl_warn (const char * fmt, ...);
+
+#ifdef __cplusplus // extern C
+}
+#endif
 
 #endif
 

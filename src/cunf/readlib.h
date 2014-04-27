@@ -8,7 +8,9 @@
 #ifndef _CUNF_READLIB_H__
 #define _CUNF_READLIB_H__
 
-/*****************************************************************************/
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern char *HLinput_file;	/* Name of file currently being processed. */
 extern int   HLinput_line;	/* Number of current input line in file.   */
@@ -17,7 +19,6 @@ extern char *sbuf;	/* Some functions (ReadCmdToken, ReadEnclString)     */
 extern int  sballoc;	/* store strings in this buffer. Memory is allocated */
 			/* (and enlarged) automatically.		     */
 
-/*****************************************************************************/
 
 extern char ReadCharComment(FILE *file);
 extern void ReadCmdToken(FILE *file);
@@ -26,5 +27,9 @@ extern char ReadWhiteSpace(FILE *file);
 extern void ReadNumber(FILE *file, int *x);
 extern void ReadEnclString(FILE *file);
 extern void ReadCoordinates(FILE *file, int *x, int *y);
+
+#ifdef __cplusplus // extern C
+}
+#endif
 
 #endif

@@ -24,6 +24,10 @@
 #include <string.h>
 #include "util/glue.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct bv {
 	int len;
 	unsigned char * tab;
@@ -49,5 +53,9 @@ struct bv {
 		(b)->tab[(i) >> 3] = \
 			((b)->tab[(i) >> 3] & ~(1 << ((i) & 7))) | \
 			(((v) & 1) << ((i) & 7))
+
+#ifdef __cplusplus // extern C
+}
+#endif
 
 #endif

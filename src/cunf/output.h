@@ -19,9 +19,17 @@
 #ifndef _CUNF_OUTPUT_H_
 #define _CUNF_OUTPUT_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void write_dot (const char * filename);
 void write_dot_fancy (const char * filename);
 void write_cuf (const char * filename);
+
+#ifdef __cplusplus // extern C
+}
+#endif
 
 #endif
 

@@ -24,6 +24,10 @@
 #include "util/ls.h"
 #include "util/al.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct ec {
 	struct ls nod;		/* node for the list of ec. associated to c */
 	struct cond * c;	/* condition */
@@ -57,6 +61,10 @@ int ec_conc_tst (struct ec *r, struct ec *rp);
 void ec_pmask_init ();
 #define ec_pmask_tst(p1,gr1,p2,gr2) \
 			bv_get (&u.pmask, u.net.numpl * 2 * (2 * (p1)->id + (gr1)) + 2 * (p2)->id + (gr2))
+
+#ifdef __cplusplus // extern C
+}
+#endif
 
 #endif
 

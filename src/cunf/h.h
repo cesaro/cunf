@@ -25,6 +25,10 @@
 #include "util/al.h"
 #include "util/config.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct parikh {
 	struct trans *t;
 	int count;
@@ -66,6 +70,10 @@ void h_add (struct h * h, struct h * hp);
 void h_marking (struct h *h);
 void h_list (struct dls *l, struct h *h);
 int h_cmp (struct h *h1, struct h *h2);
+
+#ifdef __cplusplus // extern C
+}
+#endif
 
 #endif
 

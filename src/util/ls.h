@@ -21,6 +21,10 @@
 #ifndef _UTIL_LS_H_
 #define _UTIL_LS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct ls {
 	struct ls * next;
 };
@@ -41,6 +45,10 @@ struct ls * ls_pop (struct ls * l);
 		((type *) ((void *) (nod) - (void *) &((type *) 0)->field))
 
 #define ls_i ls_item
+
+#ifdef __cplusplus // extern C
+}
+#endif
 
 #endif
 

@@ -22,11 +22,19 @@
 #include "cunf/h.h"
 #include "util/nodelist.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void marking_init (void);
 int marking_hash (const struct nl *l);
 int marking_find (const struct h *h);
 void marking_add (struct h *h);
 void marking_print (const struct h *h);
+
+#ifdef __cplusplus // extern C
+}
+#endif
 
 #endif
 

@@ -19,7 +19,15 @@
 #ifndef _CUNF_UNFOLD_H_
 #define _CUNF_UNFOLD_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void unfold (void);
+
+#ifdef __cplusplus // extern C
+}
+#endif
 
 #endif
 

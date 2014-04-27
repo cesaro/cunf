@@ -22,6 +22,10 @@
 #include "cunf/ec.h"
 #include "cunf/h.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void pe_init (void);
 void pe_term (void);
 
@@ -29,6 +33,10 @@ void pe_update_gen (struct ec * r);
 void pe_update_read (struct ec * r);
 struct h * pe_pop (void);
 void pe_skip (void);
+
+#ifdef __cplusplus // extern C
+}
+#endif
 
 #endif
 
