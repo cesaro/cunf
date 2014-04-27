@@ -157,10 +157,10 @@ bool Solver::addClause_(vec<Lit>& ps)
     assert(decisionLevel() == 0);
     if (!ok) return false;
     
-    TRACE (ps.size() , "d");
-    for (int i = 0; i < ps.size (); ++i) {
-	    TRACE (ps[i].x, "d");
-    }
+	TRACE (ps.size() , "d");
+	for (int i = 0; i < ps.size (); ++i) {
+		DEBUG ("%s%d", sign(ps[i]) ? "-" : "", var(ps[i]));
+	}
 
     // Check if clause is satisfied and remove false/duplicate literals:
     sort(ps);

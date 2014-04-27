@@ -9,15 +9,22 @@
 
 namespace sat {
 
-
-void
-Cnf::amo_2tree (std::vector<Lit> & l)
+void Cnf::amo_2tree (std::vector<Lit> & l)
 {
 	std::vector<Lit> c(2), laux;
+	std::vector<Lit>::size_type i;
 
 	// while there is at least three, build one 'layer' of the tree
 	while (l.size () >= 3) {
-		for (auto i = l.size () - 1; i >= 2; i -= 2)
+		if (l.size () & 1)
+		{
+			laux.push_back (l[0]);
+			i = 1;
+		} else
+		{
+			i = 0;
+		}
+		for (; i < l.size (); i += 2)
 		{
 			c[0] = ~l[i];
 			c[1] = ~l[i - 1];

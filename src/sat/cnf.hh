@@ -5,6 +5,7 @@
 
 #include <unordered_map>
 #include <vector>
+#include <cstdlib>
 
 namespace sat {
 
@@ -13,22 +14,26 @@ typedef int Var;
 class Lit
 {
 public:
-	Lit () : v(0) {} // do not use this !
-	Lit (Var x, bool sign = false) : v((x << 1) + (int) sign) {}
+	Lit () : x(0) {} // do not use this !
+	Lit (Var v, bool sign = false) : x((v << 1) + (int) sign) {}
 
-	bool sign (void) { return v & 1; }
-	Var var (void) { return v >> 1; }
-	Lit operator~ () { return Lit (v ^ 1); }
+	bool sign (void) { return x & 1; }
+	Var var (void) { return x >> 1; }
+	Lit operator~ () { return Lit (x ^ 1); }
 
+	int to_dimacs () { return (sign () ? -var() - 1 : var () + 1); }
+	void from_dimacs (int i) { x = (i < 0 ? ((-i-1) << 1) + 1 : (i-1) << 1); }
+		
 private:
-	Lit (unsigned _v) : v(_v) {};
-	unsigned v;
+	Lit (unsigned _x) : x(_x) {};
+	unsigned x;
 };
 
 
 class CnfModel
 {
 public:
+	virtual bool operator[] (Var v) const =0;
 	virtual bool operator[] (Lit p) const =0;
 	// iterator
 };

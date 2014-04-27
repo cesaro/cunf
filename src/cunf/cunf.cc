@@ -135,14 +135,20 @@ void test (void)
 	sat::Msat s;
 	sat::Lit p, q, r;
 	std::vector<sat::Lit> c(1);
+	std::vector<sat::Lit> amo(3);
 
 	p = s.new_var ();
 	q = s.new_var ();
 	r = s.new_var ();
 
+	amo[0] = p;
+	amo[1] = q;
+	amo[2] = r;
+	s.amo_2tree (amo);
+
 	c[0] = ~p;
 	s.add_clause (c);
-	c[0] = ~p;
+	c[0] = q;
 	s.add_clause (c);
 
 	auto ret = s.solve ();
