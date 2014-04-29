@@ -17,7 +17,7 @@ extern FILE * __cna_in;
 int __cna_parse (void);
 
 /* in spec.cc, for communication with cna::spec_parse */
-extern std::string __cna_filename;
+extern const std::string * __cna_filename;
 extern cna::Spec * __cna_ast;
 
 #endif

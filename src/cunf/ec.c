@@ -17,12 +17,13 @@
  */
 
 #include "cunf/global.h"
+#include "cunf/debug.h"
 #include "cunf/ec.h"
 #include "cunf/pe.h"
 #include "cunf/h.h"
 #include "util/ls.h"
 #include "util/al.h"
-#include "util/debug.h"
+#include "util/misc.h"
 #include "util/glue.h"
 
 static struct ec * _ec_alloc (struct cond * c)
@@ -351,12 +352,12 @@ void _ec_conc_intersec_sort (struct ec *r, int mblack)
 		A (j + 1) = e;
 	}
 
-	//PRINT ("c%d h%d: x%dx %d", r->c->id, r->h->id, r->h->ecl.deg, K (A (0)));
+	//DEBUG ("c%d h%d: x%dx %d", r->c->id, r->h->id, r->h->ecl.deg, K (A (0)));
 	for (i = 1; i < r->h->ecl.deg; i++) {
 		ASSERT (K (A (i - 1)) >= K (A (i)));
-		//PRINT (" %d", K (A (i)));
+		//DEBUG (" %d", K (A (i)));
 	}
-	//PRINT ("\n");
+	//DEBUG ("\n");
 #undef K
 #undef A
 }
@@ -481,32 +482,32 @@ void __attribute__ ((noinline)) _ec_conc_add (struct ec *r, struct ec *rp,
 	if (EC_ISGEN (r)) {
 		if (EC_ISGEN (rp)) {
 			if (! ec_pmask_tst (r->c->fp, 0, rp->c->fp, 0)) {
-				TRACE (ec_pmask_tst (r->c->fp, 0, rp->c->fp, 0), "d");
-				TRACE (r->c->fp->name, "s");
-				TRACE (rp->c->fp->name, "s");
+				PRINT (ec_pmask_tst (r->c->fp, 0, rp->c->fp, 0), "d");
+				PRINT (r->c->fp->name, "s");
+				PRINT (rp->c->fp->name, "s");
 				return;
 			}
 		} else {
 			if (! ec_pmask_tst (r->c->fp, 0, rp->c->fp, 1)) {
-				TRACE (ec_pmask_tst (r->c->fp, 0, rp->c->fp, 1), "d");
-				TRACE (r->c->fp->name, "s");
-				TRACE (rp->c->fp->name, "s");
+				PRINT (ec_pmask_tst (r->c->fp, 0, rp->c->fp, 1), "d");
+				PRINT (r->c->fp->name, "s");
+				PRINT (rp->c->fp->name, "s");
 				return;
 			}
 		}
 	} else {
 		if (EC_ISGEN (rp)) {
 			if (! ec_pmask_tst (r->c->fp, 1, rp->c->fp, 0)) {
-				TRACE (ec_pmask_tst (r->c->fp, 1, rp->c->fp, 0), "d");
-				TRACE (r->c->fp->name, "s");
-				TRACE (rp->c->fp->name, "s");
+				PRINT (ec_pmask_tst (r->c->fp, 1, rp->c->fp, 0), "d");
+				PRINT (r->c->fp->name, "s");
+				PRINT (rp->c->fp->name, "s");
 				return;
 			}
 		} else {
 			if (! ec_pmask_tst (r->c->fp, 1, rp->c->fp, 1)) {
-				TRACE (ec_pmask_tst (r->c->fp, 1, rp->c->fp, 1), "d");
-				TRACE (r->c->fp->name, "s");
-				TRACE (rp->c->fp->name, "s");
+				PRINT (ec_pmask_tst (r->c->fp, 1, rp->c->fp, 1), "d");
+				PRINT (r->c->fp->name, "s");
+				PRINT (rp->c->fp->name, "s");
 				return;
 			}
 		}
@@ -773,7 +774,7 @@ int ec_conc_tst (register struct ec *r, register struct ec *rp)
 		ASSERT ((gr2) >= 0); \
 		ASSERT ((gr1) <= 1); \
 		ASSERT ((gr2) <= 1); \
-		PRINT ("SET %d %d  %d %d\n", (p1)->id, (p2)->id, (gr1), (gr2)); \
+		DEBUG ("SET %d %d  %d %d\n", (p1)->id, (p2)->id, (gr1), (gr2)); \
 		bv_set (&u.pmask, u.net.numpl * (2 * (p1)->id + (gr1)) + 2 * (p2)->id + (gr2)); \
 	} while (0)
 #endif
@@ -781,7 +782,7 @@ int ec_conc_tst (register struct ec *r, register struct ec *rp)
 
 static int _PM_GET (struct place *p1,char gr1, struct place *p2, char gr2) {
 	int i = u.net.numpl * 2 * (2 * (p1)->id + (gr1)) + 2 * (p2)->id + (gr2);
-	// PRINT ("_PM_GET: %d %d (%d %d) i=%d v=%d\n", (p1)->id, (p2)->id, (gr1), (gr2), i, bv_get (&u.pmask, i));
+	// DEBUG ("_PM_GET: %d %d (%d %d) i=%d v=%d\n", (p1)->id, (p2)->id, (gr1), (gr2), i, bv_get (&u.pmask, i));
 	return bv_get (&u.pmask, i);
 }
 
@@ -795,7 +796,7 @@ static void  _PM_SET(struct place *p1,char gr1,struct place * p2,char gr2) {
 		ASSERT ((gr1) <= 1); 
 		ASSERT ((gr2) <= 1); 
 		int i = u.net.numpl * 2 * (2 * (p1)->id + (gr1)) + 2 * (p2)->id + (gr2);
-		PRINT ("_PM_SET: %d %d (%s %s -- %d %d) i=%d\n", (p1)->id, (p2)->id, (p1)->name, (p2)->name, (gr1), (gr2), i); 
+		DEBUG ("_PM_SET: %d %d (%s %s -- %d %d) i=%d\n", (p1)->id, (p2)->id, (p1)->name, (p2)->name, (gr1), (gr2), i); 
 		bv_set (&u.pmask, i);
 }
 
@@ -886,7 +887,7 @@ void ec_pmask_init ()
 	 * ctx(t) such that p != p' */
 	for (n = u.net.trans.next; n; n = n->next) {
 		t = ls_i (struct trans, n, nod);
-		//TRACE (t->name, "s");
+		//PRINT (t->name, "s");
 		for (i = t->pre.deg - 1; i >= 0; i--) {
 			p1 = (struct place *) t->pre.adj[i];
 			for (j = t->pre.deg - 1; j >= 0; j--) {
@@ -936,8 +937,8 @@ void ec_pmask_init ()
 			p2 = ls_i (struct place, n1, nod);
 			if (p2 == p1) continue;
 
-			TRACE (_PM_GET (p1, 1, p2, 0), "d");
-			TRACE (_PM_GET (p2, 0, p1, 1), "d");
+			PRINT (_PM_GET (p1, 1, p2, 0), "d");
+			PRINT (_PM_GET (p2, 0, p1, 1), "d");
 
 			ASSERT (_PM_GET (p1, 0, p2, 0) == 0 || _PM_GET (p1, 0, p2, 0) == 1);
 			ASSERT (_PM_GET (p1, 0, p2, 1) == 0 || _PM_GET (p1, 0, p2, 1) == 1);
@@ -963,10 +964,10 @@ void ec_pmask_init ()
 	/*
 	if (bv_get (&u.pmask, i * u.net.numpl + j) !=
 		bv_get (&u.pmask, j * u.net.numpl + i)) {
-		TRACE (i, "d");
-		TRACE (j, "d");
-		TRACE (bv_get (&u.pmask, i * u.net.numpl + j), "d");
-		TRACE (bv_get (&u.pmask, j * u.net.numpl + i), "d");
+		PRINT (i, "d");
+		PRINT (j, "d");
+		PRINT (bv_get (&u.pmask, i * u.net.numpl + j), "d");
+		PRINT (bv_get (&u.pmask, j * u.net.numpl + i), "d");
 
 		ASSERT (0);
 	}

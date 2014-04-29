@@ -7,7 +7,7 @@
 #include <string.h>
 
 #include "util/nodelist.h"
-#include "util/debug.h"
+#include "util/misc.h"
 #include "util/glue.h"
 #include "util/ls.h"
 #include "cunf/unfold.h"

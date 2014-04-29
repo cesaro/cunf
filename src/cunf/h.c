@@ -21,10 +21,11 @@
 #include "util/dls.h"
 #include "util/al.h"
 #include "util/da.h"
-#include "util/debug.h"
+#include "util/misc.h"
 #include "util/glue.h"
 #include "cunf/marking.h"
 #include "cunf/global.h"
+#include "cunf/debug.h"
 #include "cunf/pe.h"
 #include "cunf/h.h"
 
@@ -102,30 +103,30 @@ static void _h_lists (struct h * h1, struct h * h2, struct dls * l1,
 	}
 
 #ifdef CONFIG_DEBUG
-	/* DPRINT ("H1 : "); db_h (h1);
-	DPRINT ("H2 : "); db_h (h2);
-	DPRINT ("l1 : "); */
+	/* DEBUG ("H1 : "); db_h (h1);
+	DEBUG ("H2 : "); db_h (h2);
+	DEBUG ("l1 : "); */
 	/* assert that all elements in l1 are marked with m1, that all ... */
 	ASSERT (u.unf.e0->hist.deg == 1);
 	ASSERT (((struct h *) u.unf.e0->hist.adj[0])->m == m12);
 	for (n = l1->next; n; n = n->next) {
 		h = dls_i (struct h, n, auxnod);
 		ASSERT (h->m == m1);
-		// DPRINT ("e%d:%s ", h->e->id, h->e->ft->name);
+		// DEBUG ("e%d:%s ", h->e->id, h->e->ft->name);
 	}
-	// DPRINT ("\nl2 : ");
+	// DEBUG ("\nl2 : ");
 	for (n = l2->next; n; n = n->next) {
 		h = dls_i (struct h, n, auxnod);
 		ASSERT (h->m == m2);
-		// DPRINT ("e%d:%s ", h->e->id, h->e->ft->name);
+		// DEBUG ("e%d:%s ", h->e->id, h->e->ft->name);
 	}
-	// DPRINT ("\nl12 : ");
+	// DEBUG ("\nl12 : ");
 	for (n = l12->next; n; n = n->next) {
 		h = dls_i (struct h, n, auxnod);
 		ASSERT (h->m == m12);
-		// DPRINT ("e%d:%s ", h->e->id, h->e->ft->name);
+		// DEBUG ("e%d:%s ", h->e->id, h->e->ft->name);
 	}
-	// DPRINT ("\n");
+	// DEBUG ("\n");
 #endif
 }
 
@@ -217,7 +218,7 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 				nl_insert2 (&l, t, _h_t_cmp);
 			}
 			t->parikhcnt1++;
-			DPRINT ("  foata depth %d l1 add t %s pkh1 %d pkh2 %d\n",
+			DEBUG ("  foata depth %d l1 add t %s pkh1 %d pkh2 %d\n",
 					depth, t->name, t->parikhcnt1,
 					t->parikhcnt2);
 		}
@@ -232,7 +233,7 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 				nl_insert2 (&l, t, _h_t_cmp);
 			}
 			t->parikhcnt2++;
-			DPRINT ("  foata depth %d l2 add t %s pkh1 %d pkh2 %d\n",
+			DEBUG ("  foata depth %d l2 add t %s pkh1 %d pkh2 %d\n",
 					depth, t->name, t->parikhcnt1,
 					t->parikhcnt2);
 		}
@@ -258,7 +259,7 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 				}
 				t->parikhcnt1++;
 				t->parikhcnt2++;
-				DPRINT ("  foata depth %d l12 add t %s pkh1 %d pkh2 %d\n",
+				DEBUG ("  foata depth %d l12 add t %s pkh1 %d pkh2 %d\n",
 						depth, t->name, t->parikhcnt1,
 						t->parikhcnt2);
 			}
@@ -282,7 +283,7 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 		for (nn = l; nn; nn = nn->next) {
 			t = (struct trans *) nn->node;
 			found = t->parikhcnt1 - t->parikhcnt2;
-			DPRINT ("  foata depth %d t %s pkh1 %d pkh2 %d found %d\n", 
+			DEBUG ("  foata depth %d t %s pkh1 %d pkh2 %d found %d\n", 
 					depth, t->name, t->parikhcnt1,
 					t->parikhcnt2, found);
 			t->parikhcnt1 = 0;
@@ -299,7 +300,7 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 					if (t->parikhcnt2 != 0) found2 = -found;
 				}
 			}
-			DPRINT ("  foata depth %d t %s pkh1 %d pkh2 %d found %d found2 %d\n", 
+			DEBUG ("  foata depth %d t %s pkh1 %d pkh2 %d found %d found2 %d\n", 
 					depth, t->name, t->parikhcnt1,
 					t->parikhcnt2, found, found2);
 			t->parikhcnt1 = 0;
@@ -557,7 +558,7 @@ void h_marking (struct h *h)
 	u.unf.numr += h->rd.deg;
 	u.unf.nums += h->sd.deg;
 
-	DPRINT ("+ History h%d/e%d:%s; size %d; depth %d; readers %d; "
+	TRACE ("+ History h%d/e%d:%s; size %d; depth %d; readers %d; "
 			"ecs %d; marking ",
 			h->id,
 			h->e->id,
@@ -569,7 +570,7 @@ void h_marking (struct h *h)
 #ifdef CONFIG_DEBUG
 	marking_print (h);
 #endif
-	DPRINT ("\n");
+	TRACE ("\n");
 }
 
 int h_cmp (struct h *h1, struct h *h2)
@@ -621,11 +622,11 @@ int h_cmp (struct h *h1, struct h *h2)
 {
 	int ret;
 
-	DPRINT ("  cmp h%d/e%d:%s  h%d/e%d:%s",
+	TRACE ("  cmp h%d/e%d:%s  h%d/e%d:%s",
 			h1->id, h1->e->id, h1->e->ft->name,
 			h2->id, h2->e->id, h2->e->ft->name);
 	ret = _h_cmp (h1, h2);
-	DPRINT (" returns %d\n", ret);
+	TRACE (" returns %d\n", ret);
 	return ret;
 }
 #endif

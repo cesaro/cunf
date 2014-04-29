@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-extern "C" {
 #include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -31,9 +30,9 @@ extern "C" {
 #include "cunf/netconv.h"
 #include "cunf/readpep.h"
 #include "cunf/unfold.h"
+#include "cunf/debug.h"
 #include "util/glue.h"
-#include "util/debug.h"
-}
+#include "util/misc.h"
 
 #include "net/net.hh"
 
@@ -116,7 +115,7 @@ char * peakmem (void)
 	ret = read (fd, buff, 4096);
 	close (fd);
 	if (ret >= 4096) {
-		PRINT ("Bug in peakmem!!\n");
+		FATAL ("Bug in peakmem!!\n");
 		exit (1);
 	}
 	buff[ret] = 0;
@@ -166,6 +165,9 @@ void test (void)
 	}
 }
 
+namespace cna {
+void test ();
+}
 
 int main (int argc, char **argv)
 {
@@ -183,7 +185,7 @@ int main (int argc, char **argv)
 	opt.save_path = 0;
 	opt.depth = 0;
 
-	test ();
+	cna::test ();
 	return 0;
 
 	/* parse command line */
@@ -263,9 +265,9 @@ int main (int argc, char **argv)
 #endif
 
 	/* load the input net */
-	DPRINT ("  Reading net from '%s'\n", opt.net_path);
+	TRACE ("  Reading net from '%s'\n", opt.net_path);
 	read_pep_net (opt.net_path);
-	DPRINT ("  It is a %s net\n", u.net.isplain ? "plain" : "contextual");
+	TRACE ("  It is a %s net\n", u.net.isplain ? "plain" : "contextual");
 	nc_static_checks ();
 
 	/* unfold */
@@ -273,7 +275,7 @@ int main (int argc, char **argv)
 
 	/* write the output net */
 	if (opt.save_path) {
-		DPRINT ("  Writing unfolding to '%s'\n", opt.save_path);
+		TRACE ("  Writing unfolding to '%s'\n", opt.save_path);
 		write_cuf (opt.save_path);
 	}
 
@@ -281,7 +283,7 @@ int main (int argc, char **argv)
 	db_mem ();
 #endif
 	rusage ();
-	PRINT ("time\t%.3f\n"
+	TRACE ("time\t%.3f\n"
 		"mem\t%ld\n"
 
 		"hist\t%d\n"

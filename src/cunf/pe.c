@@ -20,9 +20,10 @@
 
 #include "util/al.h"
 #include "util/ls.h"
-#include "util/debug.h"
+#include "util/misc.h"
 #include "util/glue.h"
 #include "cunf/global.h"
+#include "cunf/debug.h"
 #include "cunf/ec.h"
 #include "cunf/h.h"
 
@@ -230,17 +231,17 @@ static struct event * _pe_comb_new_event (void)
 	ASSERT (e->cont.deg == t->cont.deg);
 
 #ifdef CONFIG_DEBUG
-	DPRINT ("+ Event e%d:%s; pre {", e->id, e->ft->name);
+	TRACE_ ("+ Event e%d:%s; pre {", e->id, e->ft->name);
 	for (i = e->pre.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->pre.adj[i];
-		DPRINT (" c%d:%s", c->id, c->fp->name);
+		TRACE_ (" c%d:%s", c->id, c->fp->name);
 	}
-	DPRINT ("}; cont {");
+	TRACE_ ("}; cont {");
 	for (i = e->cont.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->cont.adj[i];
-		DPRINT (" c%d:%s", c->id, c->fp->name);
+		TRACE_ (" c%d:%s", c->id, c->fp->name);
 	}
-	DPRINT ("}\n");
+	TRACE_ ("}\n");
 #endif
 
 	/* so at this point the event has no postset */
@@ -291,11 +292,11 @@ static void _pe_comb_solution ()
 
 #ifdef CONFIG_DEBUG
 	int i;
-	DPRINT ("  Solution %s, ", pe.comb.t->name);
+	TRACE_ ("  Solution %s, ", pe.comb.t->name);
 	db_r2 (0, pe.comb.r, "");
 	for (i = 0; i < pe.comb.size; i++) db_r2 (" ",
 			pe.comb.tab[i].tab[pe.comb.tab[i].i], "");
-	DPRINT ("\n");
+	TRACE_ ("\n");
 #endif
 
 	e = u.net.isplain ? 0 : _pe_comb_instance_of ();
@@ -351,7 +352,7 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t,
 	struct place *pp;
 	struct ec *rp;
 
-	DPRINT ("  Explore  %s (%s", t->name, p->name);
+	TRACE_ ("  Explore  %s (%s", t->name, p->name);
 
 	ASSERT (pe.comb.tab);
 	ASSERT (r->c->fp == p);
@@ -374,7 +375,7 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t,
 		pe.comb.tab[pe.comb.size].nr = 0;
 		pe.comb.tab[pe.comb.size].ispre = 1;
 		pe.comb.size++;
-		DPRINT (" %s", pp->name);
+		TRACE_ (" %s", pp->name);
 	}
 
 	for (i = t->cont.deg - 1; i >= 0; i--) {
@@ -386,9 +387,9 @@ static void _pe_comb_init (struct ec *r, struct place *p, struct trans *t,
 		pe.comb.tab[pe.comb.size].nr = 0;
 		pe.comb.tab[pe.comb.size].ispre = 0;
 		pe.comb.size++;
-		DPRINT (" %s", pp->name);
+		TRACE_ (" %s", pp->name);
 	}
-	DPRINT (")\n");
+	TRACE_ (")\n");
 
 	for (i = r->co.deg - 1; i >= 0; i--) {
 		rp = (struct ec *) r->co.adj[i];
@@ -543,12 +544,12 @@ static void __pe_debug (struct ec *r)
 	int i;
 
 	db_r2 ("+ Condition ", r, " type ");
-	DPRINT ("%s co: \n", EC_ISCOMP (r) ? "C" :
+	TRACE_ ("%s co: \n", EC_ISCOMP (r) ? "C" :
 			EC_ISREAD (r) ? "R" : "G");
 	
 	for (i = r->co.deg - 1; i >= 0; i--) db_r2 ("   ", r->co.adj[i], 0);
 
-	DPRINT ("  rco:\n");
+	TRACE_ ("  rco:\n");
 	for (i = r->rco.deg - 1; i >= 0; i--) db_r2 ("   ", r->rco.adj[i], 0);
 }
 #else

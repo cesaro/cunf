@@ -30,7 +30,7 @@
 #include "cunf/h.h"
 #include "util/ls.h"
 #include "util/al.h"
-#include "util/debug.h"
+#include "util/misc.h"
 #include "util/glue.h"
 
 void write_dot (const char * filename)

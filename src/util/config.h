@@ -16,6 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* see src/util/misc.h for more info */
+#define CONFIG_MAX_LOG_LEVEL 5
+
 /* test and debug */
 #define CONFIG_DEBUG
 

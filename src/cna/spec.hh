@@ -1,6 +1,6 @@
 
-#ifndef _SPEC_HH_
-#define _SPEC_HH_
+#ifndef _CNA_SPEC_HH_
+#define _CNA_SPEC_HH_
 
 #include <string>
 #include <stdio.h>
@@ -25,7 +25,6 @@ public:
 };
 
 Spec * spec_parse (FILE * f, const std::string & filename);
-std::string fmt (const std::string fmt_str, ...);
 
 }
 

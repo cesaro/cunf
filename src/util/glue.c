@@ -21,7 +21,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "util/debug.h"
+#include "util/misc.h"
 #include "util/glue.h"
 
 void gl_free (void * ptr)

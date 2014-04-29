@@ -1,11 +1,10 @@
 %{
 
-
 #include <stdio.h>
 #include <stdarg.h>
 #include <err.h>
 
-#include "util/debug.h"
+#include "util/misc.h"
 #include "cna/spec_intrnl.hh"
 #include "cna/spec_parser.h"
 
@@ -22,8 +21,8 @@ static void __c (void);
 %option yylineno
 %option prefix="__cna_"
 
-COMMENT		#.*$
-ID		[^!()"&| \t\n]+
+COMMENT	#.*$
+ID			[^!()"&| \t\n]+
 QID		\"[^"\n]*\"
 
 %%
@@ -65,9 +64,10 @@ __cna_errorv (const char * fmt, ...)
 {
 	va_list args;
 
+	// FIXME consider rewriting this in terms of FATAL()
 	va_start (args, fmt);
 	fprintf (stderr, "%s:%d:%d: ",
-			__cna_filename.c_str (), __cna_lineno,
+			__cna_filename->c_str (), __cna_lineno,
 			__cna_column);
 	vfprintf (stderr, fmt, args);
 	fprintf (stderr, "\n");

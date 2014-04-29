@@ -22,6 +22,7 @@
 #include <limits.h>
 #include <stdint.h>
 
+#include "util/misc.h"
 #include "util/glue.h"
 #include "util/al.h"
 

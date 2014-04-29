@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/debug.h"
+#include "util/misc.h"
 #include "util/glue.h"
 #include "util/ls.h"
 #include "util/al.h"
@@ -173,7 +173,7 @@ static void _unfold_init (void)
 	e0->iscutoff = 0;
 	e0->m = 0;
 	ASSERT (e0->id == 0);
-	DPRINT ("+ Event e0 !!\n");
+	TRACE ("+ Event e0 !!");
 
 	/* e0 has only one history h0, consisting only on the event e0 */
 	h0 = h_alloc (e0);
@@ -196,22 +196,22 @@ static void _unfold_progress (struct h *h)
 	static int i = 0;
 	i++;
 
-	DPRINT ("\n- h%d/e%d:%s; size %d; is ",
+	TRACE_ ("\n- h%d/e%d:%s; size %d; is ",
 			h->id,
 			h->e->id,
 			h->e->ft->name,
 			h->size);
 	if (h->corr != 0) {
-		DPRINT ("a cut-off! (corr. h%d/e%d:%s)\n",
+		TRACE ("a cut-off! (corr. h%d/e%d:%s)",
 				h->corr->id,
 				h->corr->e->id,
 				h->corr->e->ft->name);
 	} else {
-		DPRINT ("new!\n");
+		TRACE ("new!");
 	}
 
 	if ((i & 0xfff) == 0) {
-		PRINT ("  At size %6d, %d histories\n", h->size, i);
+		TRACE ("  At size %6d, %d histories", h->size, i);
 	}
 }
 
@@ -220,12 +220,12 @@ void unfold (void)
 	struct h *h;
 
 #ifdef CONFIG_MCMILLAN
-	DPRINT ("  Using McMillan order\n");
+	TRACE ("  Using McMillan order");
 #else
 #ifdef CONFIG_ERV
-	DPRINT ("  Using Esparza-Romer-Vogler order\n");
+	TRACE ("  Using Esparza-Romer-Vogler order");
 #else
-	DPRINT ("  Using Mole ERV order\n");
+	TRACE ("  Using Mole ERV order");
 #endif
 #endif
 

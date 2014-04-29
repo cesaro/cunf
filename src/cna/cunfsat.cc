@@ -1,4 +1,10 @@
 
+#include <cstdio>
+#include <cstring>
+#include <cerrno>
+#include <stdexcept>
+
+#include "util/misc.h"
 #include "cunf/global.h"
 #include "cna/spec.hh"
 #include "sat/cnf.hh"
@@ -7,16 +13,84 @@
 
 namespace cna {
 
-void Cunfsat::encode ()
+Cunfsat::Cunfsat ()
 {
+	__phi_msat = new sat::Msat (); // we chose minisat here
+	phi = __phi_msat;
+	event_var_map = new sat::VarMap<struct event *> (*phi);
+	place_var_map = new sat::VarMap<struct place *> (*phi);
+
+	spec = 0;
 }
 
+Cunfsat::~Cunfsat ()
+{
+	delete event_var_map;
+	delete place_var_map;
+	delete __phi_msat;
+	delete spec;
+}
+
+void Cunfsat::load_spec (const std::string & filename)
+{
+	FILE * f;
+
+	f = fopen (filename.c_str (), "r");
+	if (! f)
+	{
+		std::string s = fmt ("%s: %s", filename.c_str(), strerror (errno));
+		throw std::runtime_error (s);
+	}
+	if (spec) delete spec;
+	spec = spec_parse (f, filename);
+}
+
+void Cunfsat::encode ()
+{
+	ASSERT (spec);
+	// FIXME ensure that we have deadlock...
+	encode_deadlock ();
+}
+
+bool Cunfsat::solve ()
+{
+	sat::Cnf::result_t ret;
+
+	ret = phi->solve ();
+	ASSERT (ret != sat::Cnf::UNK);
+	return ret == sat::Cnf::UNSAT;
+}
+
+std::vector<struct event *> & Cunfsat::counterexample ()
+{
+	sat::CnfModel & model = phi->get_model ();
+	struct event * e;
+	struct ls * n;
+	int m;
+
+	violating_run.clear ();
+	m = ++u.mark;
+	for (n = u.unf.events.next; n; n = n->next)
+	{
+		e = ls_i (struct event, n, nod);
+		if (! model[var (e)]) continue;
+		e->m = m;
+		violating_run.push_back (e);
+	}
+	return violating_run;
+}
 
 void Cunfsat::encode_config ()
 {
 	encode_causality ();
 	encode_sym_conflict ();
 	encode_asym_conflict ();
+}
+
+void Cunfsat::encode_deadlock ()
+{
+	encode_config ();
+	encode_all_disabled ();
 }
 
 void Cunfsat::encode_causality ()
@@ -30,14 +104,14 @@ void Cunfsat::encode_causality ()
 	{
 		e = ls_i (struct event, n, nod);
 		if (e->id == 0 || e->iscutoff) continue;
-		if (options.deadlock && is_stubborn (e)) continue;
+		//if (options.deadlock && is_stubborn (e)) continue;
 		get_imm_pred (e, preds);
 
 		if (preds.size () == 0) continue;
 		clause.push_back (var (e));
 		for (auto it = preds.begin(); it != preds.end(); ++it)
 			clause.push_back (var (*it));
-		phi.add_clause (clause);
+		phi->add_clause (clause);
 		clause.clear ();
 		preds.clear ();
 	}
@@ -76,7 +150,7 @@ void Cunfsat::encode_sym_conflict ()
 			conflict.push_back (var (e));
 		}
 		ASSERT (conflict.size () >= 2);
-		phi.amo_2tree (conflict);
+		phi->amo_2tree (conflict);
 		conflict.clear ();
 	}
 }
@@ -115,7 +189,7 @@ void Cunfsat::encode_all_disabled ()
 			clause.push_back (~ var (c->fp));
 			c->fp->m = m;
 		}
-		phi.add_clause (clause);
+		phi->add_clause (clause);
 		clause.clear ();
 	}
 
@@ -123,7 +197,7 @@ void Cunfsat::encode_all_disabled ()
 	for (n = u.unf.conds.next; n; n = n->next)
 	{
 		c = ls_i (struct cond, n, nod);
-		if (c->fp->m == m) encoding_mrk_cond (c);
+		if (c->fp->m == m) encode_mrk_cond (c);
 	}
 }
 
@@ -160,7 +234,7 @@ Cunfsat::get_imm_pred (struct event * e, std::vector<struct event *> & l)
 	}
 }
 
-void Cunfsat::encoding_mrk_cond (struct cond * c)
+void Cunfsat::encode_mrk_cond (struct cond * c)
 {
 	/*
 	 * c <=> e * ~e1 * ... * ~en
@@ -190,7 +264,7 @@ void Cunfsat::encoding_mrk_cond (struct cond * c)
 		e = (struct event *) c->post.adj[i];
 		if (! e->iscutoff) clause.push_back (var (e));
 	}
-	phi.add_clause (clause);
+	phi->add_clause (clause);
 }
 
 } // namespace cna

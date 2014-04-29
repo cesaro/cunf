@@ -3,7 +3,7 @@
 #define _SAT_CNF_MINISAT_HH_
 
 #include "sat/cnf.hh"
-#include "util/debug.h"
+#include "util/misc.h"
 
 #include "minisat/core/Solver.h"
 
@@ -29,6 +29,7 @@ class Msat : public Cnf
 {
 public:
 	Msat () : m (*this) {};
+	~Msat () {};
 	Var no_vars ();
 	Lit new_var ();
 	void add_clause (std::vector<Lit> & clause);

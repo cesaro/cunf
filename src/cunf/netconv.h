@@ -1,6 +1,6 @@
 
-#ifndef _UTIL_NETCONV_H_
-#define _UTIL_NETCONV_H_
+#ifndef _CUNF_NETCONV_H_
+#define _CUNF_NETCONV_H_
 
 #include "cunf/global.h"
 #include "util/al.h"

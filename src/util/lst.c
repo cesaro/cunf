@@ -160,13 +160,13 @@ void lst_print (struct lst * l, const char * heading)
 
 	ASSERT (l);
 
-	PRINT ("List %08lx ", (unsigned long) l);
-	if (heading) { PRINT (" \"%s\"", heading); }
+	TRACE ("List %08lx ", (unsigned long) l);
+	if (heading) { TRACE (" \"%s\"", heading); }
 
 	for (n = l->head, i = 0; n; n = n->next, i++) {
-		if (i % 4 == 0) { PRINT ("\n"); }
-		PRINT (" %04x %08lx;  ", i, (unsigned long) n);
+		if (i % 4 == 0) { TRACE ("\n"); }
+		TRACE (" %04x %08lx;  ", i, (unsigned long) n);
 	}
-	PRINT ("\n");
+	TRACE ("\n");
 }
 

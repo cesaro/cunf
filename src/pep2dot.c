@@ -22,7 +22,7 @@
 #include <err.h>
 
 #include "util/glue.h"
-#include "util/debug.h"
+#include "util/misc.h"
 #include "cunf/global.h"
 #include "cunf/netconv.h"
 #include "cunf/readpep.h"

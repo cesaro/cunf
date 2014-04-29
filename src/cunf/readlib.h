@@ -5,8 +5,8 @@
 /*				    Stefan Schwoon, April 1997		     */
 /*****************************************************************************/
 
-#ifndef _CUNF_READLIB_H__
-#define _CUNF_READLIB_H__
+#ifndef _CUNF_READLIB_H_
+#define _CUNF_READLIB_H_
 
 #ifdef __cplusplus
 extern "C" {

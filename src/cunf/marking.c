@@ -17,7 +17,7 @@
  */
 
 #include "util/nodelist.h"
-#include "util/debug.h"
+#include "util/misc.h"
 #include "util/glue.h"
 #include "util/ls.h"
 #include "cunf/marking.h"
@@ -127,7 +127,7 @@ static void _marking_print (const struct nl *l)
 	if (! l) return;
 	_marking_print (l->next);
 
-	PRINT (" %s", ((const struct place*) (l->node))->name);
+	TRACE (" %s", ((const struct place*) (l->node))->name);
 }
 
 void marking_print (const struct h *h)
@@ -146,7 +146,7 @@ void __debug (void)
 		for (n = hash.tab[i].next; n; n = n->next) {
 			he = ls_i (struct hash_entry, n, nod);
 			marking_print (he->h);
-			PRINT (" h%d/e%d:%s size %d depth %d\n", he->h->id, he->h->e->id,
+			DEBUG (" h%d/e%d:%s size %d depth %d\n", he->h->id, he->h->e->id,
 					he->h->e->ft->name, he->h->size, he->h->depth);
 		}
 	}

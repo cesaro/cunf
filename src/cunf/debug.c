@@ -24,15 +24,11 @@
 #include <errno.h>
 
 #include "util/config.h"
-#include "util/debug.h"
+#include "util/misc.h"
 #include "util/glue.h"
 #include "cunf/global.h"
 #include "cunf/ec.h"
 #include "cunf/h.h"
-
-void breakme (void)
-{
-}
 
 void db_net (void)
 {
@@ -41,57 +37,57 @@ void db_net (void)
 	struct ls * n;
 	int i;
 
-	PRINT ("Net, %d places, %d transitions\n",
+	TRACE ("Net, %d places, %d transitions",
 			u.net.numpl,
 			u.net.numtr);
 
 	for (n = u.net.places.next; n; n = n->next) {
 		p = ls_i (struct place, n, nod);
-		PRINT ("   Place, id %d name '%s' %s\n"
+		TRACE_ ("   Place, id %d name '%s' %s\n"
 				"      pre: { ",
 				p->id,
 				p->name,
 				p->m ? "marked" : "");
 		for (i = 0; i < p->pre.deg; i++) {
 			t = (struct trans *) p->pre.adj[i];
-			PRINT ("%d:%s ", t->id, t->name);
+			TRACE_ ("%d:%s ", t->id, t->name);
 		}
-		PRINT ("}\n      post: { ");
+		TRACE_ ("}\n      post: { ");
 		for (i = 0; i < p->post.deg; i++) {
 			t = (struct trans *) p->post.adj[i];
-			PRINT ("%d:%s ", t->id, t->name);
+			TRACE_ ("%d:%s ", t->id, t->name);
 		}
-		PRINT ("}\n      cont: { ");
+		TRACE ("}\n      cont: { ");
 		for (i = 0; i < p->cont.deg; i++) {
 			t = (struct trans *) p->cont.adj[i];
-			PRINT ("%d:%s ", t->id, t->name);
+			TRACE_ ("%d:%s ", t->id, t->name);
 		}
-		PRINT ("}\n");
+		TRACE_ ("}\n");
 	}
 
-	PRINT ("\n");
+	TRACE_ ("\n");
 	for (n = u.net.trans.next; n; n = n->next) {
 		t = ls_i (struct trans, n, nod);
-		PRINT ("   Trans, id %d name '%s'\n"
+		TRACE_ ("   Trans, id %d name '%s'\n"
 				"      pre: size %d { ",
 				t->id,
 				t->name,
 				t->pre.deg);
 		for (i = 0; i < t->pre.deg; i++) {
 			p = (struct place *) t->pre.adj[i];
-			PRINT ("%d:%s ", p->id, p->name);
+			TRACE_ ("%d:%s ", p->id, p->name);
 		}
-		PRINT ("}\n      post: size %d { ", t->post.deg);
+		TRACE_ ("}\n      post: size %d { ", t->post.deg);
 		for (i = 0; i < t->post.deg; i++) {
 			p = (struct place *) t->post.adj[i];
-			PRINT ("%d:%s ", p->id, p->name);
+			TRACE_ ("%d:%s ", p->id, p->name);
 		}
-		PRINT ("}\n      cont: size %d { ", t->cont.deg);
+		TRACE_ ("}\n      cont: size %d { ", t->cont.deg);
 		for (i = 0; i < t->cont.deg; i++) {
 			p = (struct place *) t->cont.adj[i];
-			PRINT ("%d:%s ", p->id, p->name);
+			TRACE_ ("%d:%s ", p->id, p->name);
 		}
-		PRINT ("}\n");
+		TRACE_ ("}\n");
 	}
 }
 
@@ -128,13 +124,13 @@ void db_h (struct h *h)
 /*
  h12/e34:T123; depth 5; size 7; e123:T12, e3:T12, e0:__t0
 */
-	PRINT ("  h%d/e%d:%s; depth %d; size %d; ",
+	TRACE_ ("  h%d/e%d:%s; depth %d; size %d; ",
 			h->id, h->e->id, h->e->ft->name, h->depth, s);
 	for (n = l.next; n; n = n->next) {
 		hp = dls_i (struct h, n, debugnod);
-		PRINT ("e%d:%s, ", hp->e->id, hp->e->ft->name);
+		TRACE_ ("e%d:%s, ", hp->e->id, hp->e->ft->name);
 	}
-	PRINT ("\n");
+	TRACE_ ("\n");
 }
 
 void db_hgraph (void)
@@ -151,7 +147,7 @@ void db_hgraph (void)
 			db_h (h);
 		}
 	}
-	PRINT ("\n");
+	TRACE_ ("\n");
 }
 #endif
 
@@ -160,7 +156,7 @@ void db_c (struct cond *c)
 	struct event *e;
 	int i;
 
-	PRINT ("  c%d:%s  pre e%d:%s;  post ",
+	TRACE_ ("  c%d:%s  pre e%d:%s;  post ",
 			c->id,
 			c->fp->name,
 			c->pre->id,
@@ -168,15 +164,15 @@ void db_c (struct cond *c)
 
 	for (i = c->post.deg - 1; i >= 0; i--) {
 		e = (struct event *) c->post.adj[i];
-		PRINT ("e%d:%s ", e->id, e->ft->name);
+		TRACE_ ("e%d:%s ", e->id, e->ft->name);
 	}
 
-	PRINT ("\b;  cont ");
+	TRACE_ ("\b;  cont ");
 	for (i = c->cont.deg - 1; i >= 0; i--) {
 		e = (struct event *) c->cont.adj[i];
-		PRINT ("e%d:%s ", e->id, e->ft->name);
+		TRACE_ ("e%d:%s ", e->id, e->ft->name);
 	}
-	PRINT ("\b;\n");
+	TRACE_ ("\b;\n");
 }
 
 void db_e (struct event *e)
@@ -184,27 +180,27 @@ void db_e (struct event *e)
 	struct cond *c;
 	int i;
 
-	PRINT ("  e%d:%s  pre ",
+	TRACE_ ("  e%d:%s  pre ",
 			e->id,
 			e->ft->name);
 
 	for (i = e->pre.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->pre.adj[i];
-		PRINT ("c%d:%s ", c->id, c->fp->name);
+		TRACE_ ("c%d:%s ", c->id, c->fp->name);
 	}
-	PRINT ("\b;  post ");
+	TRACE_ ("\b;  post ");
 
 	for (i = e->post.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->post.adj[i];
-		PRINT ("c%d:%s ", c->id, c->fp->name);
+		TRACE_ ("c%d:%s ", c->id, c->fp->name);
 	}
 
-	PRINT ("\b;  cont ");
+	TRACE_ ("\b;  cont ");
 	for (i = e->cont.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->cont.adj[i];
-		PRINT ("c%d:%s ", c->id, c->fp->name);
+		TRACE_ ("c%d:%s ", c->id, c->fp->name);
 	}
-	PRINT ("\b;\n");
+	TRACE_ ("\b;\n");
 }
 
 static void _db_r (int spc, struct ec *r) {
@@ -223,8 +219,8 @@ static void _db_r (int spc, struct ec *r) {
 	ASSERT (r->c);
 	ASSERT (r->c->fp);
 
-	for (i = 0; i < spc; i++) PRINT (" ");
-	PRINT ("  {c%d:%s, ", r->c->id, r->c->fp->name);
+	for (i = 0; i < spc; i++) TRACE_ (" ");
+	TRACE_ ("  {c%d:%s, ", r->c->id, r->c->fp->name);
 
 	if (EC_ISCOMP (r)) {
 		ASSERT (r->h == 0);
@@ -232,7 +228,7 @@ static void _db_r (int spc, struct ec *r) {
 		ASSERT (r->r2);
 		ASSERT (! EC_ISCOMP (r->r1));
 
-		PRINT ("-} type C\n");
+		TRACE_ ("-} type C\n");
 		_db_r (spc + 2, r->r1);
 		_db_r (spc + 2, r->r2);
 	} else {
@@ -240,7 +236,7 @@ static void _db_r (int spc, struct ec *r) {
 		ASSERT (r->h->e);
 		ASSERT (r->h->e->ft);
 		ASSERT (EC_ISGEN (r) || EC_ISREAD (r));
-		PRINT ("h%d/e%d:%s} type %s\n",
+		TRACE_ ("h%d/e%d:%s} type %s\n",
 			r->h->id,
 			r->h->e->id,
 			r->h->e->ft->name,
@@ -263,19 +259,19 @@ void db_r2 (const char *str1, struct ec *r, const char *str2) {
 	ASSERT (r->c);
 	ASSERT (r->c->fp);
 
-	PRINT ("%s%s{c%d:%s, ", str1 ? str1 : "", bit0 ? "*" : "", r->c->id,
+	TRACE_ ("%s%s{c%d:%s, ", str1 ? str1 : "", bit0 ? "*" : "", r->c->id,
 			r->c->fp->name);
 
 	for (rp = r; rp->h == 0; rp = rp->r2) {
 		ASSERT (rp->r1);
 		ASSERT (EC_ISREAD (rp->r1));
-		PRINT (" h%d/e%d:%s",
+		TRACE_ (" h%d/e%d:%s",
 			rp->r1->h->id,
 			rp->r1->h->e->id,
 			rp->r1->h->e->ft->name);
 	}
 	ASSERT (EC_ISREAD (rp) || EC_ISGEN (rp));
-	PRINT (" h%d/e%d:%s}%s%s",
+	TRACE_ (" h%d/e%d:%s}%s%s",
 		rp->h->id,
 		rp->h->e->id,
 		rp->h->e->ft->name,
@@ -337,9 +333,9 @@ void db_mem (void)
 	ret = read (fd, buff, 4096);
 	close (fd);
 	if (ret >= 4096) {
-		PRINT ("Bug in db_mem !!\n");
+		TRACE_ ("Bug in db_mem !!\n");
 		exit (1);
 	}
 	buff[ret] = 0;
-	PRINT ("%s", buff);
+	TRACE_ ("%s", buff);
 }

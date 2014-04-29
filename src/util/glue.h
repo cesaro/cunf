@@ -20,7 +20,7 @@
 #define _UTIL_GLUE_H_
 
 #include "util/config.h"
-#include "util/debug.h"
+#include "util/misc.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -7,7 +7,7 @@
 #include <iostream>
 
 #include "util/config.h"
-#include "util/debug.h"
+#include "util/misc.h"
 #include "net/net.hh"
 
 std::ostream & operator<< (std::ostream & os, const Trans & t)
@@ -265,8 +265,8 @@ Marking::Marking (const Net & n) :
 	mrk (n.places.size ()),
 	net (&n)
 {
-	TRACE (&n, "p");
-	TRACE (net, "p");
+	PRINT (&n, "p");
+	PRINT (net, "p");
 }
 
 unsigned long Marking::operator[] (const Place & p) const

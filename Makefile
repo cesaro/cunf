@@ -31,6 +31,9 @@ prof : $(TARGETS)
 	rm gmon.out.*
 	src/main /tmp/ele4.ll_net
 
+ctags :
+	ctags -R src tools
+
 g : $(TARGETS)
 	gdb ./src/main
 

@@ -44,6 +44,8 @@ class Cnf
 public:
 	typedef enum {SAT, UNSAT, UNK} result_t;
 
+	virtual ~Cnf () {};
+
 	virtual Var no_vars (void) =0;
 	virtual Lit new_var (void) =0;
 	virtual void add_clause (std::vector<Lit> & clause) =0;

@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 #include "util/config.h"
-#include "util/debug.h"
 #include "sat/cnf.hh"
 
 namespace sat {

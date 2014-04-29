@@ -93,7 +93,7 @@ YACC:=bison
 
 %.o : %.cc
 	@echo "CXX $<"
-	@$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 %.pdf : %.dot
 	@echo "DOT $<"

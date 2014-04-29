@@ -1,42 +1,15 @@
-#include <iostream>
-#include <cstdlib>
-#include <string>
-#include <cstring>
-#include <cassert>
-#include <memory>
-#include <stdarg.h>
+
+#include "cna/spec_intrnl.hh"
+#include "util/misc.h"
 
 #include "cna/spec.hh"
-#include "cna/spec_intrnl.hh"
 
 using namespace cna;
 
 /* for communication between spec_parse and the parser */
-std::string __cna_filename;
+const std::string * __cna_filename = 0;
 Spec * __cna_ast = 0;
 
-
-std::string cna::fmt (const std::string fmt_str, ...) {
-	/* reserve 2 times as much as the length of the fmt_str */
-	int n = fmt_str.size() * 2;
-	int final_n;
-	std::string str;
-	std::unique_ptr<char[]> formatted;
-
-	va_list ap;
-	while(1) {
-		formatted.reset (new char[n]);
-		strcpy (&formatted[0], fmt_str.c_str());
-		va_start(ap, fmt_str);
-		final_n = vsnprintf(&formatted[0], n, fmt_str.c_str(), ap);
-		va_end(ap);
-		if (final_n < 0 || final_n >= n)
-			n += abs(final_n - n + 1);
-		else
-			break;
-	}
-	return std::string(formatted.get());
-}
 
 
 Spec::Spec (int pl)
@@ -48,7 +21,7 @@ Spec::Spec (int pl)
 
 Spec::Spec (type_t t, Spec * left, Spec * right)
 {
-	assert ((t == NOT && left != 0 && right == 0) ||
+	ASSERT ((t == NOT && left != 0 && right == 0) ||
 			((t == OR || t == AND) &&
 			left != 0 && right != 0));
 	type = t;;
@@ -58,7 +31,7 @@ Spec::Spec (type_t t, Spec * left, Spec * right)
 
 Spec::~Spec (void)
 {
-	std::cout << fmt ("destructor this=%p\n", this);
+	//std::cout << fmt ("destructor this=%p\n", this);
 	switch (type) {
 	case NOT :
 		delete l;
@@ -97,10 +70,9 @@ void Spec::str (std::string &s)
 	}
 }
 
-Spec *
-cna::spec_parse (FILE * f, const std::string & filename)
+Spec * cna::spec_parse (FILE * f, const std::string & filename)
 {
-	__cna_filename = filename;
+	__cna_filename = & filename;
 	__cna_in = f;
 	__cna_restart (f);
 	__cna_parse ();
