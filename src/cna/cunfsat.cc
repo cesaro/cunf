@@ -87,7 +87,7 @@ void Cunfsat::encode_asym_conflict ()
 	return;
 }
 
-void Cunfsat::encode_deadlock ()
+void Cunfsat::encode_all_disabled ()
 {
 	struct event * e;
 	struct cond * c;
