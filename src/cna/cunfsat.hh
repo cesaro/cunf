@@ -28,7 +28,7 @@ private:
 	void encode_causality ();
 	void encode_sym_conflict ();
 	void encode_asym_conflict ();
-	void encode_deadlock ();
+	void encode_all_disabled ();
 	void encoding_mrk_cond (struct cond * c);
 
 	void get_imm_pred (struct event * e, std::vector<struct event *> & l);
