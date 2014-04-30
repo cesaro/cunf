@@ -17,7 +17,7 @@
  */
 
 /* see src/util/misc.h for more info */
-#define CONFIG_MAX_LOG_LEVEL 5
+#define CONFIG_MAX_LOG_LEVEL 3
 
 /* test and debug */
 #define CONFIG_DEBUG

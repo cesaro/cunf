@@ -25,7 +25,7 @@ void test1 ()
 	}
 	catch (std::exception & e)
 	{
-		ERROR ("'%s'", e.what ());
+		PRINT ("'%s'", e.what ());
 		throw;
 	}
 }
@@ -40,18 +40,18 @@ void test2 ()
 	a = 1;
 	b = 2;
 
-	PRINT (a, "d");
-	PRINT (b, "d");
+	SHOW (a, "d");
+	SHOW (b, "d");
 	int & r = a;;
 	r = 7;
-	PRINT (a, "d");
-	PRINT (b, "d");
+	SHOW (a, "d");
+	SHOW (b, "d");
 	r = b;
-	PRINT (a, "d");
-	PRINT (b, "d");
+	SHOW (a, "d");
+	SHOW (b, "d");
 	r = 8;
-	PRINT (a, "d");
-	PRINT (b, "d");
+	SHOW (a, "d");
+	SHOW (b, "d");
 }
 
 /*
@@ -66,12 +66,12 @@ void test3 ()
 	struct event e1;
 	struct event e2;
 
-	PRINT (h (0), "lx");
-	PRINT (val = h (&e1), "lx");
-	PRINT (h (&e1), "lx");
-	PRINT (h (&e2), "lx");
-	PRINT (&e1, "p");
-	PRINT (&e2, "p");
+	SHOW (h (0), "lx");
+	SHOW (val = h (&e1), "lx");
+	SHOW (h (&e1), "lx");
+	SHOW (h (&e2), "lx");
+	SHOW (&e1, "p");
+	SHOW (&e2, "p");
 }
 
 void test ()

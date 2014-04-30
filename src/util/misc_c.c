@@ -1,7 +1,7 @@
 
 #include "util/misc.h"
 
-int __log_level = 5;
+int __log_level = 3;
 
 void log_set_level (int i)
 {

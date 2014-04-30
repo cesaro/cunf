@@ -18,7 +18,7 @@ include defs.mk
 .PHONY: fake all g test clean distclean prof dist
 
 all: $(TARGETS)
-	./src/cunf/cunf
+	./src/cunf/cunf examples/tiny/pag9.ll_net  --save out.cuf
 
 $(TARGETS) : % : %.o $(OBJS)
 	@echo "LD  $@"

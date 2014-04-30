@@ -219,16 +219,6 @@ void unfold (void)
 {
 	struct h *h;
 
-#ifdef CONFIG_MCMILLAN
-	TRACE ("  Using McMillan order");
-#else
-#ifdef CONFIG_ERV
-	TRACE ("  Using Esparza-Romer-Vogler order");
-#else
-	TRACE ("  Using Mole ERV order");
-#endif
-#endif
-
 #ifdef CONFIG_PMASK
 	ec_pmask_init ();
 #endif

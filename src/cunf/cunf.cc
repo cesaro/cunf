@@ -54,9 +54,15 @@ void help (void)
 
 void usage (void)
 {
-	FATAL ("Usage: cunf [OPTION]... NET [SPECIFICATION]\n"
+	PRINT ("Usage: cunf [OPTION]... NET [SPECIFICATION]\n"
 			"Try 'cunf --help' for more information.");
 	exit (EXIT_FAILURE);
+}
+
+void version (void)
+{
+	PRINT ("Cunf v.FIXME");
+	exit (EXIT_SUCCESS);
 }
 
 void res_usage (void)
@@ -98,7 +104,7 @@ char * peakmem (void)
 	ret = read (fd, buff, 4096);
 	close (fd);
 	if (ret >= 4096) {
-		FATAL ("Bug in peakmem!!\n");
+		PRINT ("Bug in peakmem!!\n");
 		exit (1);
 	}
 	buff[ret] = 0;
@@ -156,12 +162,16 @@ int main (int argc, char **argv)
 			{"cutoff", required_argument, 0, 'c'},
 			{"save", required_argument, 0, 's'},
 			{"help", no_argument, 0, 'h'},
+			{"verb", optional_argument, 0, 'l'},
+			{"version", no_argument, 0, 'v'},
 			{0, 0, 0, 0}};
 
 	// default options
 	opt.cutoffs = OPT_ERV;
 	opt.save_path = 0;
 	opt.depth = 0;
+
+	log_set_level (2);
 
 	// parse the command line, supress automatic error messages by getopt
 	opterr = 0;
@@ -183,8 +193,13 @@ int main (int argc, char **argv)
 		case 's' :
 			opt.save_path = optarg;
 			break;
+		case 'l' :
+			// FIXME, parse the number for the verbosity
+			break;
 		case 'h' :
 			help ();
+		case 'v' :
+			version ();
 		default :
 			usage ();
 		}
@@ -199,7 +214,7 @@ int main (int argc, char **argv)
 		usage ();
 	}
 
-	INFO ("Net file: '%s'", opt.net_path);
+	INFO ("\nNet file: '%s'", opt.net_path);
 	if (opt.spec_path)
 		INFO ("Specification file: '%s'", opt.spec_path);
 	else
@@ -221,65 +236,22 @@ int main (int argc, char **argv)
 	if (opt.save_path)
 		INFO ("Saving the unfolding: Yes, to '%s'", opt.save_path);
 	else
-		INFO ("Specification file: No");
-
-	return 0;
+		INFO ("Saving the unfolding: No");
 
 	// initialize the unfolding structure
 	u.mark = 2;
 	u.stoptr = 0;
 
-#if 0
-	while (1) {
-		opt = getopt (argc, argv, "o:t:d:f:");
-		if (opt == -1) break;
-		switch (opt) {
-		case 'o' :
-			outpath = optarg;
-			break;
-		case 't' :
-			stoptr = optarg;
-			break;
-		case 'd' :
-			u.depth = atoi (optarg);
-			break;
-		case 'f' :
-			outformat = optarg;
-			break;
-		default :
-			usage ();
-		}
-	}
-	if (optind != argc - 1) usage ();
-	inpath = argv[argc - 1];
-
-	/* validate the output format string */
-	if (! outformat) outformat = (char *) "cuf";
-	if (strcmp (outformat, "cuf") && strcmp (outformat, "dot") &&
-			strcmp (outformat, "fancy")) usage ();
-
-	/* set default file name for the output */
-	if (! outpath) {
-		l = strlen (inpath);
-		outpath = (char *) gl_malloc (l + 16);
-		strcpy (outpath, inpath);
-		strcpy (outpath + (l > 7 ? l - 7 : l), ".unf.");
-		strcpy (outpath + (l > 7 ? l - 2 : l + 5), 
-				! strcmp (outformat, "fancy") ? "dot" :
-				outformat);
-	}
-#endif
-
-	/* load the input net */
-	TRACE ("  Reading net from '%s'\n", opt.net_path);
+	// load the input net
+	TRACE ("");
 	read_pep_net (opt.net_path);
-	TRACE ("  It is a %s net\n", u.net.isplain ? "plain" : "contextual");
+	TRACE ("The net is a _%s_ net\n", u.net.isplain ? "plain" : "contextual");
 	nc_static_checks ();
 
-	/* unfold */
+	// build the unfolding
 	unfold ();
 
-	/* write the output net */
+	// if requested, write the unfolding on disk
 	if (opt.save_path) {
 		TRACE ("  Writing unfolding to '%s'\n", opt.save_path);
 		write_cuf (opt.save_path);
@@ -289,7 +261,7 @@ int main (int argc, char **argv)
 	db_mem ();
 #endif
 	rusage ();
-	TRACE ("time\t%.3f\n"
+	PRINT ("time\t%.3f\n"
 		"mem\t%ld\n"
 
 		"hist\t%d\n"

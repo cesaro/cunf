@@ -265,8 +265,8 @@ Marking::Marking (const Net & n) :
 	mrk (n.places.size ()),
 	net (&n)
 {
-	PRINT (&n, "p");
-	PRINT (net, "p");
+	SHOW (&n, "p");
+	SHOW (net, "p");
 }
 
 unsigned long Marking::operator[] (const Place & p) const

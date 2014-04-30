@@ -230,7 +230,7 @@ static struct event * _pe_comb_new_event (void)
 	ASSERT (e->pre.deg == t->pre.deg);
 	ASSERT (e->cont.deg == t->cont.deg);
 
-#ifdef CONFIG_DEBUG
+#ifdef LOG_LEVEL_TRACE
 	TRACE_ ("+ Event e%d:%s; pre {", e->id, e->ft->name);
 	for (i = e->pre.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->pre.adj[i];
@@ -290,7 +290,7 @@ static void _pe_comb_solution ()
 	struct event *e;
 	struct h *h;
 
-#ifdef CONFIG_DEBUG
+#ifdef LOG_LEVEL_TRACE
 	int i;
 	TRACE_ ("  Solution %s, ", pe.comb.t->name);
 	db_r2 (0, pe.comb.r, "");
@@ -538,7 +538,7 @@ struct h * pe_pop (void)
 	return ret;
 }
 
-#ifdef CONFIG_DEBUG
+#ifdef LOG_LEVEL_TRACE
 static void __pe_debug (struct ec *r)
 {
 	int i;

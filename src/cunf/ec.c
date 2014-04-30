@@ -482,32 +482,32 @@ void __attribute__ ((noinline)) _ec_conc_add (struct ec *r, struct ec *rp,
 	if (EC_ISGEN (r)) {
 		if (EC_ISGEN (rp)) {
 			if (! ec_pmask_tst (r->c->fp, 0, rp->c->fp, 0)) {
-				PRINT (ec_pmask_tst (r->c->fp, 0, rp->c->fp, 0), "d");
-				PRINT (r->c->fp->name, "s");
-				PRINT (rp->c->fp->name, "s");
+				SHOW (ec_pmask_tst (r->c->fp, 0, rp->c->fp, 0), "d");
+				SHOW (r->c->fp->name, "s");
+				SHOW (rp->c->fp->name, "s");
 				return;
 			}
 		} else {
 			if (! ec_pmask_tst (r->c->fp, 0, rp->c->fp, 1)) {
-				PRINT (ec_pmask_tst (r->c->fp, 0, rp->c->fp, 1), "d");
-				PRINT (r->c->fp->name, "s");
-				PRINT (rp->c->fp->name, "s");
+				SHOW (ec_pmask_tst (r->c->fp, 0, rp->c->fp, 1), "d");
+				SHOW (r->c->fp->name, "s");
+				SHOW (rp->c->fp->name, "s");
 				return;
 			}
 		}
 	} else {
 		if (EC_ISGEN (rp)) {
 			if (! ec_pmask_tst (r->c->fp, 1, rp->c->fp, 0)) {
-				PRINT (ec_pmask_tst (r->c->fp, 1, rp->c->fp, 0), "d");
-				PRINT (r->c->fp->name, "s");
-				PRINT (rp->c->fp->name, "s");
+				SHOW (ec_pmask_tst (r->c->fp, 1, rp->c->fp, 0), "d");
+				SHOW (r->c->fp->name, "s");
+				SHOW (rp->c->fp->name, "s");
 				return;
 			}
 		} else {
 			if (! ec_pmask_tst (r->c->fp, 1, rp->c->fp, 1)) {
-				PRINT (ec_pmask_tst (r->c->fp, 1, rp->c->fp, 1), "d");
-				PRINT (r->c->fp->name, "s");
-				PRINT (rp->c->fp->name, "s");
+				SHOW (ec_pmask_tst (r->c->fp, 1, rp->c->fp, 1), "d");
+				SHOW (r->c->fp->name, "s");
+				SHOW (rp->c->fp->name, "s");
 				return;
 			}
 		}
@@ -887,7 +887,7 @@ void ec_pmask_init ()
 	 * ctx(t) such that p != p' */
 	for (n = u.net.trans.next; n; n = n->next) {
 		t = ls_i (struct trans, n, nod);
-		//PRINT (t->name, "s");
+		//SHOW (t->name, "s");
 		for (i = t->pre.deg - 1; i >= 0; i--) {
 			p1 = (struct place *) t->pre.adj[i];
 			for (j = t->pre.deg - 1; j >= 0; j--) {
@@ -937,8 +937,8 @@ void ec_pmask_init ()
 			p2 = ls_i (struct place, n1, nod);
 			if (p2 == p1) continue;
 
-			PRINT (_PM_GET (p1, 1, p2, 0), "d");
-			PRINT (_PM_GET (p2, 0, p1, 1), "d");
+			SHOW (_PM_GET (p1, 1, p2, 0), "d");
+			SHOW (_PM_GET (p2, 0, p1, 1), "d");
 
 			ASSERT (_PM_GET (p1, 0, p2, 0) == 0 || _PM_GET (p1, 0, p2, 0) == 1);
 			ASSERT (_PM_GET (p1, 0, p2, 1) == 0 || _PM_GET (p1, 0, p2, 1) == 1);
@@ -964,10 +964,10 @@ void ec_pmask_init ()
 	/*
 	if (bv_get (&u.pmask, i * u.net.numpl + j) !=
 		bv_get (&u.pmask, j * u.net.numpl + i)) {
-		PRINT (i, "d");
-		PRINT (j, "d");
-		PRINT (bv_get (&u.pmask, i * u.net.numpl + j), "d");
-		PRINT (bv_get (&u.pmask, j * u.net.numpl + i), "d");
+		SHOW (i, "d");
+		SHOW (j, "d");
+		SHOW (bv_get (&u.pmask, i * u.net.numpl + j), "d");
+		SHOW (bv_get (&u.pmask, j * u.net.numpl + i), "d");
 
 		ASSERT (0);
 	}

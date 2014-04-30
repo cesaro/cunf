@@ -218,7 +218,7 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 				nl_insert2 (&l, t, _h_t_cmp);
 			}
 			t->parikhcnt1++;
-			DEBUG ("  foata depth %d l1 add t %s pkh1 %d pkh2 %d\n",
+			DEBUG ("  foata depth %d l1 add t %s pkh1 %d pkh2 %d",
 					depth, t->name, t->parikhcnt1,
 					t->parikhcnt2);
 		}
@@ -233,7 +233,7 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 				nl_insert2 (&l, t, _h_t_cmp);
 			}
 			t->parikhcnt2++;
-			DEBUG ("  foata depth %d l2 add t %s pkh1 %d pkh2 %d\n",
+			DEBUG ("  foata depth %d l2 add t %s pkh1 %d pkh2 %d",
 					depth, t->name, t->parikhcnt1,
 					t->parikhcnt2);
 		}
@@ -243,11 +243,7 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 		 * take into account transitions from l12, so we push also
 		 * transitions from l12 if l is not empty (it is also safe to
 		 * unconditionally append transitions from l12) */
-#ifdef CONFIG_ERV
-		if (l) {
-#else
-		if (1) {
-#endif
+		if (l || opt.cutoffs == OPT_ERV_MOLE) {
 			for (n = l12.next; n; n = n->next) {
 				h = dls_i (struct h, n, auxnod);
 				if (h->depth > depth) continue;
@@ -271,19 +267,21 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 		 * both vectors and clear these two fields */
 		found = 0;
 		found2 = 0;
-#ifdef CONFIG_ERV_MOLE
+
 		/* fix to mimic the unfold order used in mole (which is not
 		 * exactly the ERV order) */
-		for (nn = l; nn; nn = nn->next) {
-			t = (struct trans *) nn->node;
-			if (t->parikhcnt1) found2++;
-			if (t->parikhcnt2) found2--;
+		if (opt.cutoffs == OPT_ERV_MOLE) {
+			for (nn = l; nn; nn = nn->next) {
+				t = (struct trans *) nn->node;
+				if (t->parikhcnt1) found2++;
+				if (t->parikhcnt2) found2--;
+			}
 		}
-#endif
+
 		for (nn = l; nn; nn = nn->next) {
 			t = (struct trans *) nn->node;
 			found = t->parikhcnt1 - t->parikhcnt2;
-			DEBUG ("  foata depth %d t %s pkh1 %d pkh2 %d found %d\n", 
+			DEBUG ("  foata depth %d t %s pkh1 %d pkh2 %d found %d", 
 					depth, t->name, t->parikhcnt1,
 					t->parikhcnt2, found);
 			t->parikhcnt1 = 0;
@@ -300,7 +298,7 @@ static int _h_cmp_foata (struct h *h1, struct h *h2)
 					if (t->parikhcnt2 != 0) found2 = -found;
 				}
 			}
-			DEBUG ("  foata depth %d t %s pkh1 %d pkh2 %d found %d found2 %d\n", 
+			DEBUG ("  foata depth %d t %s pkh1 %d pkh2 %d found %d found2 %d", 
 					depth, t->name, t->parikhcnt1,
 					t->parikhcnt2, found, found2);
 			t->parikhcnt1 = 0;
@@ -558,7 +556,7 @@ void h_marking (struct h *h)
 	u.unf.numr += h->rd.deg;
 	u.unf.nums += h->sd.deg;
 
-	TRACE ("+ History h%d/e%d:%s; size %d; depth %d; readers %d; "
+	TRACE_ ("+ History h%d/e%d:%s; size %d; depth %d; readers %d; "
 			"ecs %d; marking ",
 			h->id,
 			h->e->id,
@@ -567,22 +565,19 @@ void h_marking (struct h *h)
 			h->depth,
 			h->rd.deg,
 			h->ecl.deg);
-#ifdef CONFIG_DEBUG
+#ifdef LOG_LEVEL_TRACE
 	marking_print (h);
 #endif
-	TRACE ("\n");
+	TRACE_ ("\n");
 }
 
 int h_cmp (struct h *h1, struct h *h2)
 {
 	int i, min;
 
-	/* check sizes */
+	/* check McMillan's order */
 	if (h1->size != h2->size) return h1->size - h2->size;
-
-#ifdef CONFIG_MCMILLAN
-	return 0;
-#endif
+	if (opt.cutoffs == OPT_MCMILLAN) return 0;
 
 	/* sizes are equal, check parikh vectors and return the condition of h1
 	 * to be lexicographically smaller to h2 */
@@ -609,9 +604,8 @@ int h_cmp (struct h *h1, struct h *h2)
 		return h1->parikh.size - h2->parikh.size;
 	}
 
-#ifdef CONFIG_PARIKH
-	return 0;
-#endif
+	/* if the Parikh order was requested, stop here */
+	if (opt.cutoffs == OPT_PARIKH) return 0;
 
 	/* sizes and parikh vectors are equal, check foata stuff */
 	return _h_cmp_foata (h1, h2);

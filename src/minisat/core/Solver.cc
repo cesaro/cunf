@@ -157,7 +157,7 @@ bool Solver::addClause_(vec<Lit>& ps)
     assert(decisionLevel() == 0);
     if (!ok) return false;
     
-	PRINT (ps.size() , "d");
+	SHOW (ps.size() , "d");
 	for (int i = 0; i < ps.size (); ++i) {
 		DEBUG ("%s%d", sign(ps[i]) ? "-" : "", var(ps[i]));
 	}

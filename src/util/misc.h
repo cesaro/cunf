@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-// the "verbosity" of the program; by default it is 5, everything is logged
+// the "verbosity" of the program; by default it is 3, everything is logged
 extern int __log_level;
 
 // setting and getting the log level
@@ -19,19 +19,15 @@ void log_set_level (int i);
 int log_get_level ();
 
 // the actual primitives you should use, with and without new line
-#define DEBUG(fmt,args...)		mylog (5, fmt "\n", ##args)
-#define TRACE(fmt,args...)		mylog (4, fmt "\n", ##args)
-#define INFO(fmt,args...)		mylog (3, fmt "\n", ##args)
-#define WARN(fmt,args...)		mylog (2, fmt "\n", ##args)
-#define ERROR(fmt,args...)		mylog (1, fmt "\n", ##args)
-#define FATAL(fmt,args...)		mylog (0, fmt "\n", ##args)
+#define DEBUG(fmt,args...)		mylog (3, fmt "\n", ##args)
+#define TRACE(fmt,args...)		mylog (2, fmt "\n", ##args)
+#define INFO(fmt,args...)		mylog (1, fmt "\n", ##args)
+#define PRINT(fmt,args...)		mylog (0, fmt "\n", ##args)
 
-#define DEBUG_(fmt,args...)	mylog (5, fmt, ##args)
-#define TRACE_(fmt,args...)	mylog (4, fmt, ##args)
-#define INFO_(fmt,args...)		mylog (3, fmt, ##args)
-#define WARN_(fmt,args...)		mylog (2, fmt, ##args)
-#define ERROR_(fmt,args...)	mylog (1, fmt, ##args)
-#define FATAL_(fmt,args...)	mylog (0, fmt, ##args)
+#define DEBUG_(fmt,args...)	mylog (3, fmt, ##args)
+#define TRACE_(fmt,args...)	mylog (2, fmt, ##args)
+#define INFO_(fmt,args...)		mylog (1, fmt, ##args)
+#define PRINT_(fmt,args...)		mylog (0, fmt, ##args)
 
 // the implementation
 inline void mylog (int level, const char * fmt, ...)
@@ -45,15 +41,25 @@ inline void mylog (int level, const char * fmt, ...)
 	va_end (ap);
 }
 
+#if CONFIG_MAX_LOG_LEVEL >= 3
+#define LOG_LEVEL_DEBUG
+#endif
+#if CONFIG_MAX_LOG_LEVEL >= 2
+#define LOG_LEVEL_TRACE
+#endif
+#if CONFIG_MAX_LOG_LEVEL >= 1
+#define LOG_LEVEL_INFO
+#endif
+
 
 // more debugging primitives
 void breakme (void);
 #define BREAK(expr)			if (expr) breakme ()
-#define PRINT(expr,type)	DEBUG (#expr "='%" type "'", expr)
+#define SHOW(expr,type)	DEBUG (#expr "='%" type "'", expr)
 #ifdef CONFIG_DEBUG
 #define ASSERT(expr)    \
 	if (! (expr)) { \
-		FATAL (__FILE__ ":%d: %s: Assertion `" #expr "' failed.\n", \
+		PRINT (__FILE__ ":%d: %s: Assertion `" #expr "' failed.\n", \
 				__LINE__, __func__); \
 		breakme (); \
 		exit (1); \
