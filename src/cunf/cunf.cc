@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdexcept>
+
 #include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -44,39 +46,20 @@ struct opt opt;
 
 /*****************************************************************************/
 
+void help (void)
+{
+	fprintf(stderr, "Branch eager v1.6, compiled %s\n", __DATE__); 
+	exit (EXIT_SUCCESS);
+}
+
 void usage (void)
 {
-	fprintf(stderr,
-"\n"
-"The cunf tool -- a low level contextual Petri net unfolder\n"
-"\n"
-"Copyright (C) 2010-2012  Cesar Rodriguez <cesar.rodriguez@lsv.ens-cachan.fr>\n"
-"Laboratoire de Specification et Verification (LSV), ENS Cachan, France\n"
-"\n"
-"This program comes with ABSOLUTELY NO WARRANTY.  This is free software, and you\n"
-"are welcome to redistribute it under certain conditions.  You should have\n"
-"received a copy of the GNU General Public License along with this program.  If\n"
-"not, see <http://www.gnu.org/licenses/>.\n"
-"\n"
-"\n"
-"Usage: cunf [OPTIONS] NETFILE\n"
-"\n"
-"Argument NETFILE is a path to the .ll_net input file.  Allowed OPTIONS are:\n"
-" -t NAME      Stop when transition NAME is inserted\n"
-" -d DEPTH     Unfold up to given DEPTH\n"
-" -o FILE      Output file to store the unfolding in.  If not provided,\n"
-"              defaults to NETFILE with the last 7 characters removed\n"
-"              (extension '.ll_net') plus a suffix depending option the -O\n"
-" -f FORMAT    Write unfolding in format FORMAT. Available formats: 'cuf',\n"
-"              'dot', 'fancy'.  Default is 'cuf'.\n"
-"\n"
-"For more information, see http://www.lsv.ens-cachan.fr/Software/cunf/\n"
-"Branch eager v1.6, compiled %s\n", __DATE__);
-
+	FATAL ("Usage: cunf [OPTION]... NET [SPECIFICATION]\n"
+			"Try 'cunf --help' for more information.");
 	exit (EXIT_FAILURE);
 }
 
-void rusage (void)
+void res_usage (void)
 {
 	struct rusage r;
 	char buff[128];
@@ -165,10 +148,6 @@ void test (void)
 	}
 }
 
-namespace cna {
-void test ();
-}
-
 int main (int argc, char **argv)
 {
 	int ret;
@@ -176,39 +155,36 @@ int main (int argc, char **argv)
 	struct option longopts[] = {
 			{"cutoff", required_argument, 0, 'c'},
 			{"save", required_argument, 0, 's'},
+			{"help", no_argument, 0, 'h'},
 			{0, 0, 0, 0}};
 
-	/* initialize global parameters and options */
-	u.mark = 2;
-	u.stoptr = 0;
+	// default options
 	opt.cutoffs = OPT_ERV;
 	opt.save_path = 0;
 	opt.depth = 0;
 
-	cna::test ();
-	return 0;
-
-	/* parse command line */
+	// parse the command line, supress automatic error messages by getopt
+	opterr = 0;
 	while (1) {
 		ret = getopt_long (argc, argv, "", longopts, 0);
 		if (ret == -1) break;
 		switch (ret) {
 		case 'c' :
-			if (strcmp (optarg, "mcmillan") == 0) {
+			if (strcmp (optarg, "mcm") == 0) {
 				opt.cutoffs = OPT_MCMILLAN;
 			} else if (strcmp (optarg, "erv") == 0) {
 				opt.cutoffs = OPT_ERV;
 			} else {
 				opt.depth = strtol (optarg, &endptr, 10);
-				if (optarg[0] == 0 || *endptr != 0) {
-					usage ();
-				}
+				if (optarg[0] == 0 || *endptr != 0) usage ();
 				opt.cutoffs = OPT_DEPTH;
 			}
 			break;
 		case 's' :
 			opt.save_path = optarg;
 			break;
+		case 'h' :
+			help ();
 		default :
 			usage ();
 		}
@@ -222,6 +198,36 @@ int main (int argc, char **argv)
 	} else {
 		usage ();
 	}
+
+	INFO ("Net file: '%s'", opt.net_path);
+	if (opt.spec_path)
+		INFO ("Specification file: '%s'", opt.spec_path);
+	else
+		INFO ("Specification file: (none)");
+	switch (opt.cutoffs)
+	{
+	case OPT_ERV :
+		INFO ("Cutoff algorithm: Esparza-Romer-Vogler");
+		break;
+	case OPT_MCMILLAN :
+		INFO ("Cutoff algorithm: McMillan's");
+		break;
+	case OPT_DEPTH :
+		INFO ("Cutoff algorithm: Depth (%d)", opt.depth);
+		break;
+	default :
+		throw std::logic_error ("Error while parsing the arguments");
+	}
+	if (opt.save_path)
+		INFO ("Saving the unfolding: Yes, to '%s'", opt.save_path);
+	else
+		INFO ("Specification file: No");
+
+	return 0;
+
+	// initialize the unfolding structure
+	u.mark = 2;
+	u.stoptr = 0;
 
 #if 0
 	while (1) {

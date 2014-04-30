@@ -1,0 +1,30 @@
+
+The Cunf Toolset - a model checker for Petri nets (with read arcs)
+
+Copyright (C) 2010-2014  Cesar Rodriguez <cesar.rodriguez@cs.ox.ac.uk>
+Department of Computer Science, University of Oxford, UK
+
+Uses code of ...
+FIXME mention Minisat, Boost
+
+This program comes with ABSOLUTELY NO WARRANTY.  This is free software,
+and you are welcome to redistribute it under certain conditions.  You should
+have received a copy of the GNU General Public License along with this program.
+If not, see <http://www.gnu.org/licenses/>.
+
+
+Usage: cunf [OPTION]... NET [SPECIFICATION]
+
+where NET is a path to an .ll_net input file.  Allowed OPTIONS are:
+ --cutoff {erv,mcm,N}  Sets the algorithm used for computing cutoff events:
+                        - erv: Esparza-Romer-Vogler
+                        - mcm: McMillan's algorithm
+                        - N : where N is a non-negative number; every event of
+                              depth N is declared cutoff; with N=0 the cutoff
+                              algorthm is effectively disabled
+ --save FILE           Saves a copy of the unfolding to FILE
+ --help                Shows this message
+ --version             Prints version information
+
+For more information, see https://code.google.com/p/cunf/
+
