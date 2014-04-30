@@ -38,8 +38,16 @@ private:
 
 	bool is_stubborn (struct event * e);
 	void get_imm_pred (struct event * e, std::vector<struct event *> & l);
-	sat::Lit var (struct event * e) { return (*event_var_map)[e]; }
-	sat::Lit var (struct place * p) { return (*place_var_map)[p]; }
+	sat::Lit var (struct event * e) {
+		sat::Lit p = (*event_var_map)[e];
+		DEBUG ("Event e%d:%s is variable %d", e->id, e->ft->name, p.to_dimacs ());
+		return p;
+	}
+	sat::Lit var (struct place * p) {
+		sat::Lit q = (*place_var_map)[p];
+		DEBUG ("Place %s is variable %d", p->name, q.to_dimacs ());
+		return q;
+	}
 
 	const Spec * spec;
 	std::vector<struct event *> violating_run;	

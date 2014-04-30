@@ -36,7 +36,7 @@
 #include "util/glue.h"
 #include "util/misc.h"
 
-#include "net/net.hh"
+#include "cna/cunfsat.hh"
 
 extern "C" {
 /* all gloabal data is stored in this structure */
@@ -156,7 +156,7 @@ void test (void)
 
 int main (int argc, char **argv)
 {
-	int ret;
+	int op;
 	char *endptr;
 	struct option longopts[] = {
 			{"cutoff", required_argument, 0, 'c'},
@@ -171,14 +171,14 @@ int main (int argc, char **argv)
 	opt.save_path = 0;
 	opt.depth = 0;
 
-	log_set_level (2);
+	log_set_level (3);
 
 	// parse the command line, supress automatic error messages by getopt
 	opterr = 0;
 	while (1) {
-		ret = getopt_long (argc, argv, "", longopts, 0);
-		if (ret == -1) break;
-		switch (ret) {
+		op = getopt_long (argc, argv, "", longopts, 0);
+		if (op == -1) break;
+		switch (op) {
 		case 'c' :
 			if (strcmp (optarg, "mcm") == 0) {
 				opt.cutoffs = OPT_MCMILLAN;
@@ -250,18 +250,34 @@ int main (int argc, char **argv)
 
 	// build the unfolding
 	unfold ();
+	
+	log_set_level (3);
+	// do model checking
+	if (opt.spec_path) {
+		cna::Cunfsat v;
+		v.load_spec (std::string (opt.spec_path));
+		v.encode ();
+		bool ret = v.solve ();
+		if (ret) {
+			PRINT ("The net has a deadlock:");
+			std::vector<struct event *> & conf = v.counterexample ();
+			for (auto it = conf.begin (); it != conf.end (); ++it) db_e (*it);
+		} else {
+			PRINT ("The net has no deadlock");
+		}
 
-	// if requested, write the unfolding on disk
-	if (opt.save_path) {
-		TRACE ("  Writing unfolding to '%s'\n", opt.save_path);
-		write_cuf (opt.save_path);
+		// if requested, write the unfolding on disk
+		if (opt.save_path) {
+			TRACE ("Writing unfolding to '%s'\n", opt.save_path);
+			write_cuf (opt.save_path);
+		}
 	}
 
 #ifdef CONFIG_DEBUG
 	db_mem ();
 #endif
 	rusage ();
-	PRINT ("time\t%.3f\n"
+	PRINT ("\ntime\t%.3f\n"
 		"mem\t%ld\n"
 
 		"hist\t%d\n"

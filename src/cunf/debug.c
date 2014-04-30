@@ -180,27 +180,27 @@ void db_e (struct event *e)
 	struct cond *c;
 	int i;
 
-	TRACE_ ("  e%d:%s  pre ",
+	PRINT_ ("  e%d:%s  pre ",
 			e->id,
 			e->ft->name);
 
 	for (i = e->pre.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->pre.adj[i];
-		TRACE_ ("c%d:%s ", c->id, c->fp->name);
+		PRINT_ ("c%d:%s ", c->id, c->fp->name);
 	}
-	TRACE_ ("\b;  post ");
+	PRINT_ ("\b;  post ");
 
 	for (i = e->post.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->post.adj[i];
-		TRACE_ ("c%d:%s ", c->id, c->fp->name);
+		PRINT_ ("c%d:%s ", c->id, c->fp->name);
 	}
 
-	TRACE_ ("\b;  cont ");
+	PRINT_ ("\b;  cont ");
 	for (i = e->cont.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->cont.adj[i];
-		TRACE_ ("c%d:%s ", c->id, c->fp->name);
+		PRINT_ ("c%d:%s ", c->id, c->fp->name);
 	}
-	TRACE_ ("\b;\n");
+	PRINT_ ("\b;\n");
 }
 
 static void _db_r (int spc, struct ec *r) {

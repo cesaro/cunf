@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "util/config.h"
+#include "util/misc.h"
 #include "sat/cnf.hh"
 
 namespace sat {
@@ -26,7 +27,7 @@ void Cnf::amo_2tree (std::vector<Lit> & l)
 		for (; i < l.size (); i += 2)
 		{
 			c[0] = ~l[i];
-			c[1] = ~l[i - 1];
+			c[1] = ~l[i + 1];
 			add_clause (c);
 
 			c[0] = new_var ();

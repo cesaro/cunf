@@ -18,7 +18,7 @@ include defs.mk
 .PHONY: fake all g test clean distclean prof dist
 
 all: $(TARGETS)
-	./src/cunf/cunf examples/tiny/pag9.ll_net  --save out.cuf
+	./src/cunf/cunf examples/tiny/numh.ll_net  --save out.cuf input
 
 $(TARGETS) : % : %.o $(OBJS)
 	@echo "LD  $@"
@@ -35,7 +35,7 @@ ctags :
 	ctags -R src tools
 
 g : $(TARGETS)
-	gdb ./src/main
+	gdb ./src/cunf/cunf
 
 vars :
 	@echo CC $(CC)

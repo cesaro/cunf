@@ -58,7 +58,7 @@ bool Cunfsat::solve ()
 
 	ret = phi->solve ();
 	ASSERT (ret != sat::Cnf::UNK);
-	return ret == sat::Cnf::UNSAT;
+	return ret == sat::Cnf::SAT;
 }
 
 std::vector<struct event *> & Cunfsat::counterexample ()
@@ -73,6 +73,10 @@ std::vector<struct event *> & Cunfsat::counterexample ()
 	for (n = u.unf.events.next; n; n = n->next)
 	{
 		e = ls_i (struct event, n, nod);
+		/* we need to explore here exactly the same events that
+		 * encode_causality has added, otherwise var (e) will add new
+		 * variables */
+		if (e->id == 0 || e->iscutoff) continue;
 		if (! model[var (e)]) continue;
 		e->m = m;
 		violating_run.push_back (e);
@@ -100,6 +104,7 @@ void Cunfsat::encode_causality ()
 	struct event * e;
 	struct ls * n;
 
+	INFO ("Encoding causality");
 	for (n = u.unf.events.next; n; n = n->next)
 	{
 		e = ls_i (struct event, n, nod);
@@ -125,6 +130,7 @@ void Cunfsat::encode_sym_conflict ()
 	struct ls * n;
 	int i, j;
 
+	INFO ("Encoding symmetric conflicts");
 	for (n = u.unf.conds.next; n; n = n->next)
 	{
 		c = ls_i (struct cond, n, nod);
@@ -158,6 +164,7 @@ void Cunfsat::encode_sym_conflict ()
 void Cunfsat::encode_asym_conflict ()
 {
 	// puff ...
+	INFO ("Encoding asymmetric conflicts");
 	return;
 }
 
@@ -169,6 +176,7 @@ void Cunfsat::encode_all_disabled ()
 	int i, m;
 	std::vector<sat::Lit> clause;
 
+	INFO ("Encoding disabledness of all transitions");
 	// at least one place of every transition's preset is false
 	m = ++u.mark;
 	for (n = u.unf.events.next; n; n = n->next)
@@ -194,6 +202,7 @@ void Cunfsat::encode_all_disabled ()
 	}
 
 	// generate the marking of any condition labelled by a place used above
+	INFO ("Encoding marking of every condition");
 	for (n = u.unf.conds.next; n; n = n->next)
 	{
 		c = ls_i (struct cond, n, nod);
@@ -213,7 +222,6 @@ Cunfsat::get_imm_pred (struct event * e, std::vector<struct event *> & l)
 	struct cond * c;
 
 	// we skip the bottom event from the list of predecessors
-
 	m = ++u.mark;
 	for (i = e->pre.deg - 1; i >= 0; --i)
 	{
