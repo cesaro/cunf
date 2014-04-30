@@ -128,11 +128,11 @@ struct u {
 };
 
 
-#define OPT_DEPTH			0
-#define OPT_MCMILLAN		1
-#define OPT_PARIKH		2
-#define OPT_ERV			3
-#define OPT_ERV_MOLE		4
+#define OPT_MCMILLAN		0
+#define OPT_PARIKH		1
+#define OPT_ERV			2
+#define OPT_ERV_MOLE		3
+#define OPT_DEPTH			4
 
 struct opt {
 	char * net_path;

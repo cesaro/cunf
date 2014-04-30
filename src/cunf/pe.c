@@ -230,7 +230,7 @@ static struct event * _pe_comb_new_event (void)
 	ASSERT (e->pre.deg == t->pre.deg);
 	ASSERT (e->cont.deg == t->cont.deg);
 
-#ifdef LOG_LEVEL_TRACE
+#ifdef VERB_LEVEL_TRACE
 	TRACE_ ("+ Event e%d:%s; pre {", e->id, e->ft->name);
 	for (i = e->pre.deg - 1; i >= 0; i--) {
 		c = (struct cond *) e->pre.adj[i];
@@ -290,12 +290,14 @@ static void _pe_comb_solution ()
 	struct event *e;
 	struct h *h;
 
-#ifdef LOG_LEVEL_TRACE
+#ifdef VERB_LEVEL_TRACE
 	int i;
 	TRACE_ ("  Solution %s, ", pe.comb.t->name);
-	db_r2 (0, pe.comb.r, "");
-	for (i = 0; i < pe.comb.size; i++) db_r2 (" ",
-			pe.comb.tab[i].tab[pe.comb.tab[i].i], "");
+	if (verb_trace) {
+		db_r2 (0, pe.comb.r, "");
+		for (i = 0; i < pe.comb.size; i++)
+			db_r2 (" ", pe.comb.tab[i].tab[pe.comb.tab[i].i], "");
+	}
 	TRACE_ ("\n");
 #endif
 
@@ -538,11 +540,12 @@ struct h * pe_pop (void)
 	return ret;
 }
 
-#ifdef LOG_LEVEL_TRACE
+#ifdef VERB_LEVEL_TRACE
 static void __pe_debug (struct ec *r)
 {
 	int i;
 
+	if (! verb_trace) return;
 	db_r2 ("+ Condition ", r, " type ");
 	TRACE_ ("%s co: \n", EC_ISCOMP (r) ? "C" :
 			EC_ISREAD (r) ? "R" : "G");

@@ -565,8 +565,8 @@ void h_marking (struct h *h)
 			h->depth,
 			h->rd.deg,
 			h->ecl.deg);
-#ifdef LOG_LEVEL_TRACE
-	marking_print (h);
+#ifdef VERB_LEVEL_TRACE
+	if (verb_trace) marking_print (h);
 #endif
 	TRACE_ ("\n");
 }

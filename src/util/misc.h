@@ -11,12 +11,23 @@
 extern "C" {
 #endif
 
-// the "verbosity" of the program; by default it is 3, everything is logged
-extern int __log_level;
+// the different levels of verbosity in the program
+#define VERB_DEBUG	3
+#define VERB_TRACE	2
+#define VERB_INFO		1
+#define VERB_PRINT	0
 
-// setting and getting the log level
-void log_set_level (int i);
-int log_get_level ();
+// the "verbosity" of the program; initially set to VERB_DEBUG
+extern int __verb_level;
+
+// these evaluate to true or false depending on the current verbosity level
+extern int verb_debug;
+extern int verb_trace;
+extern int verb_info;
+
+// setting and getting the verbosity level
+void verb_set (int i);
+int verb_get ();
 
 // the actual primitives you should use, with and without new line
 #define DEBUG(fmt,args...)		mylog (3, fmt "\n", ##args)
@@ -27,28 +38,28 @@ int log_get_level ();
 #define DEBUG_(fmt,args...)	mylog (3, fmt, ##args)
 #define TRACE_(fmt,args...)	mylog (2, fmt, ##args)
 #define INFO_(fmt,args...)		mylog (1, fmt, ##args)
-#define PRINT_(fmt,args...)		mylog (0, fmt, ##args)
+#define PRINT_(fmt,args...)	mylog (0, fmt, ##args)
 
 // the implementation
 inline void mylog (int level, const char * fmt, ...)
 {
 	va_list ap;
 
-	if (level > CONFIG_MAX_LOG_LEVEL) return;
-	if (level > __log_level) return;
+	if (level > CONFIG_MAX_VERB_LEVEL) return;
+	if (level > __verb_level) return;
 	va_start (ap, fmt);
 	vprintf (fmt, ap);
 	va_end (ap);
 }
 
-#if CONFIG_MAX_LOG_LEVEL >= 3
-#define LOG_LEVEL_DEBUG
+#if CONFIG_MAX_VERB_LEVEL >= 3
+#define VERB_LEVEL_DEBUG
 #endif
-#if CONFIG_MAX_LOG_LEVEL >= 2
-#define LOG_LEVEL_TRACE
+#if CONFIG_MAX_VERB_LEVEL >= 2
+#define VERB_LEVEL_TRACE
 #endif
-#if CONFIG_MAX_LOG_LEVEL >= 1
-#define LOG_LEVEL_INFO
+#if CONFIG_MAX_VERB_LEVEL >= 1
+#define VERB_LEVEL_INFO
 #endif
 
 

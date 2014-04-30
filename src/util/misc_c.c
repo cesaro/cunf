@@ -1,16 +1,24 @@
 
 #include "util/misc.h"
 
-int __log_level = 3;
+int __verb_level = VERB_DEBUG;
 
-void log_set_level (int i)
+int verb_debug = 1;
+int verb_trace = 1;
+int verb_info = 1;
+
+void verb_set (int i)
 {
-	__log_level = i;
+	__verb_level = i;
+
+	verb_debug = i >= VERB_DEBUG;
+	verb_trace = i >= VERB_TRACE;
+	verb_info = i >= VERB_INFO;
 }
 
-int log_get_level ()
+int verb_get ()
 {
-	return __log_level;
+	return __verb_level;
 }
 
 void breakme (void)

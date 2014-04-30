@@ -31,6 +31,7 @@ public:
 	Msat () : m (*this) {};
 	~Msat () {};
 	Var no_vars ();
+	Var no_clauses ();
 	Lit new_var ();
 	void add_clause (std::vector<Lit> & clause);
 	result_t solve ();
@@ -45,6 +46,7 @@ protected:
 
 
 inline Var Msat::no_vars () { return s.nVars (); }
+inline Var Msat::no_clauses () { return s.nClauses (); }
 inline Lit Msat::new_var () { return Lit (s.newVar ()); }
 inline CnfModel & Msat::get_model () { return m; }
 

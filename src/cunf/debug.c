@@ -37,57 +37,57 @@ void db_net (void)
 	struct ls * n;
 	int i;
 
-	TRACE ("Net, %d places, %d transitions",
+	PRINT ("Net, %d places, %d transitions",
 			u.net.numpl,
 			u.net.numtr);
 
 	for (n = u.net.places.next; n; n = n->next) {
 		p = ls_i (struct place, n, nod);
-		TRACE_ ("   Place, id %d name '%s' %s\n"
+		PRINT_ ("   Place, id %d name '%s' %s\n"
 				"      pre: { ",
 				p->id,
 				p->name,
 				p->m ? "marked" : "");
 		for (i = 0; i < p->pre.deg; i++) {
 			t = (struct trans *) p->pre.adj[i];
-			TRACE_ ("%d:%s ", t->id, t->name);
+			PRINT_ ("%d:%s ", t->id, t->name);
 		}
-		TRACE_ ("}\n      post: { ");
+		PRINT_ ("}\n      post: { ");
 		for (i = 0; i < p->post.deg; i++) {
 			t = (struct trans *) p->post.adj[i];
-			TRACE_ ("%d:%s ", t->id, t->name);
+			PRINT_ ("%d:%s ", t->id, t->name);
 		}
 		TRACE ("}\n      cont: { ");
 		for (i = 0; i < p->cont.deg; i++) {
 			t = (struct trans *) p->cont.adj[i];
-			TRACE_ ("%d:%s ", t->id, t->name);
+			PRINT_ ("%d:%s ", t->id, t->name);
 		}
-		TRACE_ ("}\n");
+		PRINT_ ("}\n");
 	}
 
-	TRACE_ ("\n");
+	PRINT_ ("\n");
 	for (n = u.net.trans.next; n; n = n->next) {
 		t = ls_i (struct trans, n, nod);
-		TRACE_ ("   Trans, id %d name '%s'\n"
+		PRINT_ ("   Trans, id %d name '%s'\n"
 				"      pre: size %d { ",
 				t->id,
 				t->name,
 				t->pre.deg);
 		for (i = 0; i < t->pre.deg; i++) {
 			p = (struct place *) t->pre.adj[i];
-			TRACE_ ("%d:%s ", p->id, p->name);
+			PRINT_ ("%d:%s ", p->id, p->name);
 		}
-		TRACE_ ("}\n      post: size %d { ", t->post.deg);
+		PRINT_ ("}\n      post: size %d { ", t->post.deg);
 		for (i = 0; i < t->post.deg; i++) {
 			p = (struct place *) t->post.adj[i];
-			TRACE_ ("%d:%s ", p->id, p->name);
+			PRINT_ ("%d:%s ", p->id, p->name);
 		}
-		TRACE_ ("}\n      cont: size %d { ", t->cont.deg);
+		PRINT_ ("}\n      cont: size %d { ", t->cont.deg);
 		for (i = 0; i < t->cont.deg; i++) {
 			p = (struct place *) t->cont.adj[i];
-			TRACE_ ("%d:%s ", p->id, p->name);
+			PRINT_ ("%d:%s ", p->id, p->name);
 		}
-		TRACE_ ("}\n");
+		PRINT_ ("}\n");
 	}
 }
 
@@ -124,13 +124,13 @@ void db_h (struct h *h)
 /*
  h12/e34:T123; depth 5; size 7; e123:T12, e3:T12, e0:__t0
 */
-	TRACE_ ("  h%d/e%d:%s; depth %d; size %d; ",
+	PRINT_ ("  h%d/e%d:%s; depth %d; size %d; ",
 			h->id, h->e->id, h->e->ft->name, h->depth, s);
 	for (n = l.next; n; n = n->next) {
 		hp = dls_i (struct h, n, debugnod);
-		TRACE_ ("e%d:%s, ", hp->e->id, hp->e->ft->name);
+		PRINT_ ("e%d:%s, ", hp->e->id, hp->e->ft->name);
 	}
-	TRACE_ ("\n");
+	PRINT_ ("\n");
 }
 
 void db_hgraph (void)
@@ -147,7 +147,7 @@ void db_hgraph (void)
 			db_h (h);
 		}
 	}
-	TRACE_ ("\n");
+	PRINT_ ("\n");
 }
 #endif
 
@@ -156,7 +156,7 @@ void db_c (struct cond *c)
 	struct event *e;
 	int i;
 
-	TRACE_ ("  c%d:%s  pre e%d:%s;  post ",
+	PRINT_ ("  c%d:%s  pre e%d:%s;  post ",
 			c->id,
 			c->fp->name,
 			c->pre->id,
@@ -164,15 +164,15 @@ void db_c (struct cond *c)
 
 	for (i = c->post.deg - 1; i >= 0; i--) {
 		e = (struct event *) c->post.adj[i];
-		TRACE_ ("e%d:%s ", e->id, e->ft->name);
+		PRINT_ ("e%d:%s ", e->id, e->ft->name);
 	}
 
-	TRACE_ ("\b;  cont ");
+	PRINT_ ("\b;  cont ");
 	for (i = c->cont.deg - 1; i >= 0; i--) {
 		e = (struct event *) c->cont.adj[i];
-		TRACE_ ("e%d:%s ", e->id, e->ft->name);
+		PRINT_ ("e%d:%s ", e->id, e->ft->name);
 	}
-	TRACE_ ("\b;\n");
+	PRINT_ ("\b;\n");
 }
 
 void db_e (struct event *e)
@@ -219,8 +219,8 @@ static void _db_r (int spc, struct ec *r) {
 	ASSERT (r->c);
 	ASSERT (r->c->fp);
 
-	for (i = 0; i < spc; i++) TRACE_ (" ");
-	TRACE_ ("  {c%d:%s, ", r->c->id, r->c->fp->name);
+	for (i = 0; i < spc; i++) PRINT_ (" ");
+	PRINT_ ("  {c%d:%s, ", r->c->id, r->c->fp->name);
 
 	if (EC_ISCOMP (r)) {
 		ASSERT (r->h == 0);
@@ -228,7 +228,7 @@ static void _db_r (int spc, struct ec *r) {
 		ASSERT (r->r2);
 		ASSERT (! EC_ISCOMP (r->r1));
 
-		TRACE_ ("-} type C\n");
+		PRINT_ ("-} type C\n");
 		_db_r (spc + 2, r->r1);
 		_db_r (spc + 2, r->r2);
 	} else {
@@ -236,7 +236,7 @@ static void _db_r (int spc, struct ec *r) {
 		ASSERT (r->h->e);
 		ASSERT (r->h->e->ft);
 		ASSERT (EC_ISGEN (r) || EC_ISREAD (r));
-		TRACE_ ("h%d/e%d:%s} type %s\n",
+		PRINT_ ("h%d/e%d:%s} type %s\n",
 			r->h->id,
 			r->h->e->id,
 			r->h->e->ft->name,
@@ -259,19 +259,19 @@ void db_r2 (const char *str1, struct ec *r, const char *str2) {
 	ASSERT (r->c);
 	ASSERT (r->c->fp);
 
-	TRACE_ ("%s%s{c%d:%s, ", str1 ? str1 : "", bit0 ? "*" : "", r->c->id,
+	PRINT_ ("%s%s{c%d:%s, ", str1 ? str1 : "", bit0 ? "*" : "", r->c->id,
 			r->c->fp->name);
 
 	for (rp = r; rp->h == 0; rp = rp->r2) {
 		ASSERT (rp->r1);
 		ASSERT (EC_ISREAD (rp->r1));
-		TRACE_ (" h%d/e%d:%s",
+		PRINT_ (" h%d/e%d:%s",
 			rp->r1->h->id,
 			rp->r1->h->e->id,
 			rp->r1->h->e->ft->name);
 	}
 	ASSERT (EC_ISREAD (rp) || EC_ISGEN (rp));
-	TRACE_ (" h%d/e%d:%s}%s%s",
+	PRINT_ (" h%d/e%d:%s}%s%s",
 		rp->h->id,
 		rp->h->e->id,
 		rp->h->e->ft->name,
@@ -333,9 +333,9 @@ void db_mem (void)
 	ret = read (fd, buff, 4096);
 	close (fd);
 	if (ret >= 4096) {
-		TRACE_ ("Bug in db_mem !!\n");
+		PRINT_ ("Bug in db_mem !!\n");
 		exit (1);
 	}
 	buff[ret] = 0;
-	TRACE_ ("%s", buff);
+	PRINT_ ("%s", buff);
 }

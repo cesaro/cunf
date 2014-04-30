@@ -127,7 +127,7 @@ static void _marking_print (const struct nl *l)
 	if (! l) return;
 	_marking_print (l->next);
 
-	TRACE_ (" %s", ((const struct place*) (l->node))->name);
+	PRINT_ (" %s", ((const struct place*) (l->node))->name);
 }
 
 void marking_print (const struct h *h)

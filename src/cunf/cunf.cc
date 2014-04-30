@@ -48,7 +48,53 @@ struct opt opt;
 
 void help (void)
 {
-	fprintf(stderr, "Branch eager v1.6, compiled %s\n", __DATE__); 
+	const char * s = R"XXX(
+The Cunf Toolset - a model checker for Petri nets (with read arcs)
+
+Copyright (C) 2010-2014  Cesar Rodriguez <cesar.rodriguez@cs.ox.ac.uk>
+Department of Computer Science, University of Oxford, UK
+
+Uses code of ...
+FIXME mention Minisat, Boost
+
+This program comes with ABSOLUTELY NO WARRANTY.  This is free software,
+and you are welcome to redistribute it under certain conditions.  You should
+have received a copy of the GNU General Public License along with this program.
+If not, see <http://www.gnu.org/licenses/>.
+
+
+Usage: cunf [OPTION]... NET [SPECIFICATION]
+
+where NET is a path to an .ll_net input file.  Allowed OPTIONS are:
+
+ --cutoff={mcm,parikh,erv,mole,N}
+      Sets the algorithm used for computing cutoff events:
+       * mcm     McMillan's algorithm
+       * parikh  Parikh vector strategy FIXME
+       * erv     Esparza-Romer-Vogler's total order
+       * mole    The modification of ERV implemented in the unfolder Mole
+       * N       A non-negative number N will instruct Cunf to cut off
+                 events of depth N; with N=0 the cutoff algorthm is
+                 disabled and the unfolder may never stop
+
+ --save-unf=FILE
+      Saves a copy of the unfolding to FILE.
+
+ -v, --verb=N
+      Increments the verbosity level by the optional parameter N, a number
+      between 0 and 3, with 3 being the most verbose level).  If N is not
+      provided it is assumed to be 1.  Multiple occurrences allowed.
+
+ -h, --help
+      Shows this message.
+
+ -V, --version
+      Prints version information.
+
+For more information, see https://code.google.com/p/cunf/
+)XXX";
+
+	printf("%s\nCompiled on %s\n", s, __DATE__);
 	exit (EXIT_SUCCESS);
 }
 
@@ -154,36 +200,39 @@ void test (void)
 	}
 }
 
-int main (int argc, char **argv)
+void parse_options (int argc, char ** argv)
 {
-	int op;
+	long int op, i;
 	char *endptr;
 	struct option longopts[] = {
 			{"cutoff", required_argument, 0, 'c'},
-			{"save", required_argument, 0, 's'},
+			{"save-unf", required_argument, 0, 's'},
 			{"help", no_argument, 0, 'h'},
-			{"verb", optional_argument, 0, 'l'},
-			{"version", no_argument, 0, 'v'},
+			{"verb", optional_argument, 0, 'v'},
+			{"version", no_argument, 0, '9'},
 			{0, 0, 0, 0}};
 
 	// default options
 	opt.cutoffs = OPT_ERV;
 	opt.save_path = 0;
 	opt.depth = 0;
-
-	log_set_level (3);
+	i = VERB_PRINT;
 
 	// parse the command line, supress automatic error messages by getopt
 	opterr = 0;
 	while (1) {
-		op = getopt_long (argc, argv, "", longopts, 0);
+		op = getopt_long (argc, argv, "vhV", longopts, 0);
 		if (op == -1) break;
 		switch (op) {
 		case 'c' :
 			if (strcmp (optarg, "mcm") == 0) {
 				opt.cutoffs = OPT_MCMILLAN;
+			} else if (strcmp (optarg, "parikh") == 0) {
+				opt.cutoffs = OPT_PARIKH;
 			} else if (strcmp (optarg, "erv") == 0) {
 				opt.cutoffs = OPT_ERV;
+			} else if (strcmp (optarg, "mole") == 0) {
+				opt.cutoffs = OPT_ERV_MOLE;
 			} else {
 				opt.depth = strtol (optarg, &endptr, 10);
 				if (optarg[0] == 0 || *endptr != 0) usage ();
@@ -193,17 +242,20 @@ int main (int argc, char **argv)
 		case 's' :
 			opt.save_path = optarg;
 			break;
-		case 'l' :
-			// FIXME, parse the number for the verbosity
+		case 'v' :
+			if (! optarg || optarg[0] == 0) { i++; break; }
+			i += strtol (optarg, &endptr, 10);
+			if (*endptr != 0) usage ();
 			break;
 		case 'h' :
 			help ();
-		case 'v' :
+		case 'V' :
 			version ();
 		default :
 			usage ();
 		}
 	}
+
 	if (optind == argc - 2) {
 		opt.net_path = argv[optind];
 		opt.spec_path = argv[optind + 1];
@@ -214,18 +266,34 @@ int main (int argc, char **argv)
 		usage ();
 	}
 
-	INFO ("\nNet file: '%s'", opt.net_path);
+	if (i < VERB_PRINT || i > VERB_DEBUG) usage ();
+	verb_set (i);
+}
+
+int main_ (int argc, char **argv)
+{
+	// parse commandline options
+	parse_options (argc, argv);
+
+	// welcome
+	INFO ("Net file: '%s'", opt.net_path);
 	if (opt.spec_path)
 		INFO ("Specification file: '%s'", opt.spec_path);
 	else
 		INFO ("Specification file: (none)");
 	switch (opt.cutoffs)
 	{
+	case OPT_MCMILLAN :
+		INFO ("Cutoff algorithm: McMillan's");
+		break;
+	case OPT_PARIKH :
+		INFO ("Cutoff algorithm: Parikh strategy");
+		break;
 	case OPT_ERV :
 		INFO ("Cutoff algorithm: Esparza-Romer-Vogler");
 		break;
-	case OPT_MCMILLAN :
-		INFO ("Cutoff algorithm: McMillan's");
+	case OPT_ERV_MOLE :
+		INFO ("Cutoff algorithm: Mole's strategy");
 		break;
 	case OPT_DEPTH :
 		INFO ("Cutoff algorithm: Depth (%d)", opt.depth);
@@ -237,22 +305,23 @@ int main (int argc, char **argv)
 		INFO ("Saving the unfolding: Yes, to '%s'", opt.save_path);
 	else
 		INFO ("Saving the unfolding: No");
+	INFO ("Verbosity level: %d\n", verb_get ());
 
 	// initialize the unfolding structure
 	u.mark = 2;
 	u.stoptr = 0;
 
 	// load the input net
-	TRACE ("");
 	read_pep_net (opt.net_path);
-	TRACE ("The net is a _%s_ net\n", u.net.isplain ? "plain" : "contextual");
+	TRACE ("It is a *%s* net\n", u.net.isplain ? "plain" : "contextual");
 	nc_static_checks ();
 
 	// build the unfolding
+	INFO ("Unfolding ...");
 	unfold ();
 	
-	log_set_level (3);
 	// do model checking
+	INFO ("Unfolding done. Analyzing ...");
 	if (opt.spec_path) {
 		cna::Cunfsat v;
 		v.load_spec (std::string (opt.spec_path));
@@ -265,12 +334,12 @@ int main (int argc, char **argv)
 		} else {
 			PRINT ("The net has no deadlock");
 		}
+	}
 
-		// if requested, write the unfolding on disk
-		if (opt.save_path) {
-			TRACE ("Writing unfolding to '%s'\n", opt.save_path);
-			write_cuf (opt.save_path);
-		}
+	// if requested, write the unfolding on disk
+	if (opt.save_path) {
+		TRACE ("Writing unfolding to '%s'\n", opt.save_path);
+		write_cuf (opt.save_path);
 	}
 
 #ifdef CONFIG_DEBUG
@@ -334,5 +403,22 @@ int main (int argc, char **argv)
 		u.unf.numeblack,
 		opt.net_path);
 
-	return EXIT_SUCCESS;
+	// return EXIT_SUCCESS;
+	exit (EXIT_SUCCESS);
+}
+
+int main (int argc, char **argv)
+{
+	try 
+	{
+		return main_ (argc, argv);
+	}
+	catch (std::exception & e)
+	{
+		PRINT ("Error: %s. Aborting.", e.what ());
+	}
+	catch (...)
+	{
+		PRINT ("An unknown error ocurred, can't tell more... Aborting.");
+	}
 }

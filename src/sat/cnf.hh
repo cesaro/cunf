@@ -46,7 +46,8 @@ public:
 
 	virtual ~Cnf () {};
 
-	virtual Var no_vars (void) =0;
+	virtual int no_vars (void) =0;
+	virtual int no_clauses (void) =0;
 	virtual Lit new_var (void) =0;
 	virtual void add_clause (std::vector<Lit> & clause) =0;
 	virtual result_t solve (void) = 0;
