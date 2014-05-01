@@ -437,7 +437,7 @@ class Net :
         raise Exception, "'%s': unknown input format" % fmt
 
     def __read_pep (self, f) :
-        raise Exception, 'reading PEP files not yet implemented'
+        raise Exception, 'reading PEP files is not yet implemented'
 
     def __read_grml (self, f) :
         par = xml.parsers.expat.ParserCreate ()
