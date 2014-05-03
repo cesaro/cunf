@@ -7,27 +7,25 @@
 namespace cna {
 
 /*
- * testing exceptions
+ * parsing some file
  */
 void test1 ()
 {
-	{
-		Cunfsat a;
-		std::string s ("input");
-		a.load_spec (s);
-	}
+	DEBUG ("Loading file 'input'");
+	Spec s ("input");
 
-	try
-	{
-		Cunfsat a;
-		std::string s ("inputtt");
-		a.load_spec (s);
-	}
-	catch (std::exception & e)
-	{
-		PRINT ("'%s'", e.what ());
-		throw;
-	}
+	std::string str;
+	s.str (str);
+	DEBUG2 ("Parsed specification: '%s'", str.c_str ());
+	SHOW (s.type, "d");
+
+	s.to_nnf ();
+	str.clear ();
+	s.str (str);
+	DEBUG2 ("Now in in NNF: '%s'", str.c_str ());
+
+	Cunfsat enc (s);
+	enc.encode ();
 }
 
 /*
@@ -76,9 +74,9 @@ void test3 ()
 
 void test ()
 {
-	//test1 ();
+	test1 ();
 	//test2 ();
-	test3 ();
+	//test3 ();
 }
 
 } // namespace cna

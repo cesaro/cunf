@@ -28,27 +28,27 @@ QID		\"[^"\n]*\"
 %%
 
 {COMMENT}	{ }
-{QID}		{
-		__c ();
-		__cna_text[__cna_leng-1] = 0;
-		__cna_lval.id = new std::string (__cna_text + 1);
-		return ID;
-		}
-{ID}		{
-		__c ();
-		__cna_lval.id = new std::string (__cna_text);
-		return ID;
-		}
-!		{ __c (); return NOT; }
-\(		{ __c (); return OPEN; }
-\)		{ __c (); return CLOSE; }
-\|\|		{ __c (); return OR; }
-&&		{ __c (); return AND; }
-[ \t]		{ __c (); }
-\n		{ __c (); __cna_column = 0; }
+{QID}			{
+					__c ();
+					__cna_text[__cna_leng-1] = 0;
+					__cna_lval.id = __cna_text + 1;
+					return ID;
+				}
+{ID}			{
+					__c ();
+					__cna_lval.id = __cna_text;
+					return ID;
+				}
+!				{ __c (); return NOT; }
+\(				{ __c (); return OPEN; }
+\)				{ __c (); return CLOSE; }
+\|\|			{ __c (); return OR; }
+&&				{ __c (); return AND; }
+[ \t]			{ __c (); }
+\n				{ __c (); __cna_column = 0; }
 
 \"[^"\n]*$	{ __c (); __cna_errorv ("missing terminating \" character"); }
-.		{ __c (); __cna_errorv ("'%s': unexpected character", yytext); }
+.				{ __c (); __cna_errorv ("'%s': unexpected character", yytext); }
 
 %%
 
@@ -64,11 +64,9 @@ __cna_errorv (const char * fmt, ...)
 {
 	va_list args;
 
-	// FIXME consider rewriting this in terms of FATAL()
+	// FIXME consider rewriting this in terms of PRINT
 	va_start (args, fmt);
-	fprintf (stderr, "%s:%d:%d: ",
-			__cna_filename->c_str (), __cna_lineno,
-			__cna_column);
+	fprintf (stderr, "%s:%d:%d: ", __cna_filename, __cna_lineno, __cna_column);
 	vfprintf (stderr, fmt, args);
 	fprintf (stderr, "\n");
 	exit (EXIT_FAILURE);

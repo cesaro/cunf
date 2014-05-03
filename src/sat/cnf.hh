@@ -71,11 +71,16 @@ public:
 		return map[k] = f.new_var ();
 	}
 
+	typedef typename std::unordered_map<T,Lit,Hash>::iterator iterator;
+
+	inline iterator begin () { return map.begin (); }
+	inline iterator end () { return map.end (); }
+
 private:
 	std::unordered_map<T,Lit,Hash> map;
 	Cnf & f;
 };
 
-}
+} // namespace sat
 
 #endif

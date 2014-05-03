@@ -65,10 +65,9 @@ inline void mylog (int level, const char * fmt, ...)
 
 // more debugging primitives
 void breakme (void);
-#define BREAK(expr)			if (expr) breakme ()
-#define SHOW(expr,type)	DEBUG (#expr "='%" type "'", expr)
+#define BREAK(expr) if (expr) breakme ()
 #ifdef CONFIG_DEBUG
-#define ASSERT(expr)    \
+#define ASSERT(expr) \
 	if (! (expr)) { \
 		PRINT (__FILE__ ":%d: %s: Assertion `" #expr "' failed.\n", \
 				__LINE__, __func__); \
@@ -76,6 +75,9 @@ void breakme (void);
 		exit (1); \
 	}
 #endif
+#define DEBUG2(fmt,args...) \
+	DEBUG (__FILE__ ":%d: %s: " fmt, __LINE__, __func__, ##args)
+#define SHOW(expr,type)	DEBUG2 (#expr "='%" type "'", expr)
 
 
 // additional stuff for C++

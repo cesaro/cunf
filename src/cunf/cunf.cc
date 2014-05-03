@@ -320,6 +320,8 @@ int main_ (int argc, char **argv)
 	INFO ("Unfolding ...");
 	unfold ();
 	
+	cna::test ();
+#if 0
 	// do model checking
 	INFO ("Unfolding done. Analyzing ...");
 	if (opt.spec_path) {
@@ -335,6 +337,7 @@ int main_ (int argc, char **argv)
 			PRINT ("The net has no deadlock");
 		}
 	}
+#endif
 
 	// if requested, write the unfolding on disk
 	if (opt.save_path) {

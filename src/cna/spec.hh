@@ -5,27 +5,46 @@
 #include <string>
 #include <stdio.h>
 
+#include "cunf/global.h"
+
 namespace cna {
 
 class Spec
 {
-public:
+public :
 	typedef enum {PLACE, TRANS, DEADLOCK, OR, AND, NOT} type_t;
 
+	// type of the node and pointers to the leaves or children nodes
 	type_t type;
-	Spec * l;
-	Spec * r;
-	int trans;
-	int place;
+	struct place * place;
+	struct trans * trans;
+	class Spec * left;
+	class Spec * right;
 
-	Spec (int pl);
-	Spec (type_t t, Spec * left, Spec * right);
-	void str (std::string &s);
+	// constructors
+	Spec (const std::string & filename, FILE * f = 0) : Spec (filename.c_str (), f) {}
+	Spec (const char * filename, FILE * f = 0);
+	Spec (); // deadlock
+	Spec (struct place * p);
+	Spec (struct trans * t);
+	Spec (type_t t, Spec * l, Spec * r = 0);
+
+	// destructor
 	~Spec (void);
+
+	// other methods
+	Spec & operator= (const Spec & rhs);
+	void str (std::string &s);
+	void to_nnf ();
+
+private :
+	void copy_from (const Spec & from);
+	void push_negations (Spec & s);
 };
 
-Spec * spec_parse (FILE * f, const std::string & filename);
 
-}
+inline void Spec::to_nnf () { push_negations (*this); }
+
+} // namespace cna
 
 #endif

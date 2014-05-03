@@ -17,9 +17,9 @@ include defs.mk
 
 .PHONY: fake all g test clean distclean prof dist
 
-all: $(TARGETS)
+all: $(TARGETS) tags
 	#./src/cunf/cunf examples/tiny/numh.ll_net  --save out.cuf input
-	./src/cunf/cunf examples/tiny/pag9.ll_net  --save out.cuf input
+	./src/cunf/cunf -vvv examples/tiny/pag9.ll_net  --save out.cuf input
 
 $(TARGETS) : % : %.o $(OBJS)
 	@echo "LD  $@"
@@ -32,7 +32,7 @@ prof : $(TARGETS)
 	rm gmon.out.*
 	src/main /tmp/ele4.ll_net
 
-ctags :
+tags : $(SRCS)
 	ctags -R src tools
 
 g : $(TARGETS)
