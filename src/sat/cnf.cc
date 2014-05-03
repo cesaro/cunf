@@ -51,5 +51,27 @@ void Cnf::amo_2tree (std::vector<Lit> & l)
 	add_clause (c);
 }
 
+void Cnf::add_clause (Lit p)
+{
+	std::vector<Lit> c (1, p);
+	add_clause (c);
+}
+
+void Cnf::add_clause (Lit p, Lit q)
+{
+	std::vector<Lit> c (1, p);
+	c.push_back (q);
+	add_clause (c);
+}
+
+void Cnf::add_clause (Lit p, Lit q, Lit r)
+{
+	std::vector<Lit> c (1, p);
+	c.push_back (q);
+	c.push_back (r);
+	add_clause (c);
+}
+
+
 } // namespace sat
 

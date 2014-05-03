@@ -22,19 +22,10 @@ public:
 	bool solve ();
 	std::vector<struct event *> & counterexample ();
 
-#if 0
-	struct {
-		bool deadlock : 1;
-	} options;
-#endif
-
 private:
 	// encoding for CONTEXTUAL nets
 	void encode_ctx ();
-	void encode_ctx_config ();
 	void encode_ctx_deadlock ();
-	void encode_ctx_causality ();
-	void encode_ctx_sym_conflict ();
 	void encode_ctx_asym_conflict ();
 	void encode_ctx_all_disabled ();
 	void encode_ctx_mrk_cond (struct cond * c);
@@ -44,9 +35,11 @@ private:
 	void encode_plain_trans_enabled ();
 	void encode_plain_event_enabled ();
 	void encode_plain_deadlock ();
-	void encode_plain_causality ();
-	void encode_plain_sym_conflict ();
-	void encode_plain_spec ();
+
+	// fragments of the encoding common to both
+	void encode_causality ();
+	void encode_sym_conflict ();
+	sat::Lit encode_spec (Spec & s);
 
 	// auxiliar methods
 	bool is_stubborn (struct event * e);

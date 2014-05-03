@@ -72,9 +72,9 @@
  * 		parts A<=, B<=
  * 	- for transitions happening with both signs: both half-parts
  *
- * 	- for deadlock happening only as a positive atom:
+ * 	- for deadlock happening as a positive atom, we need
  * 		parts C=>, B<=
- * 	- as only a negative atom
+ * 	- as a negative atom, we need
  * 		parts C<=, B=>
  * 	- both half-parts if it hapens with both signs
  * 	
@@ -104,6 +104,9 @@ Cunfsat::~Cunfsat ()
 
 void Cunfsat::encode ()
 {
+	if (! u.net.isplain)
+		throw std::runtime_error ("Input has read arcs, the current SAT " \
+				"encoding does not support them");
 	encode_plain ();
 	INFO ("SAT encoding: %d variables, %d clauses, using Minisat",
 			phi->no_vars (), phi->no_clauses ());
@@ -145,20 +148,15 @@ std::vector<struct event *> & Cunfsat::counterexample ()
 	return violating_run;
 }
 
-void Cunfsat::encode_ctx_config ()
-{
-	encode_ctx_causality ();
-	encode_ctx_sym_conflict ();
-	encode_ctx_asym_conflict ();
-}
-
 void Cunfsat::encode_ctx_deadlock ()
 {
-	encode_ctx_config ();
+	encode_causality ();
+	encode_sym_conflict ();
+	encode_ctx_asym_conflict ();
 	encode_ctx_all_disabled ();
 }
 
-void Cunfsat::encode_ctx_causality ()
+void Cunfsat::encode_causality ()
 {
 	std::vector<struct event *> preds;
 	std::vector<sat::Lit> clause (2);
@@ -183,7 +181,7 @@ void Cunfsat::encode_ctx_causality ()
 	}
 }
 
-void Cunfsat::encode_ctx_sym_conflict ()
+void Cunfsat::encode_sym_conflict ()
 {
 	std::vector<sat::Lit> conflict;
 	struct event * e;
@@ -227,6 +225,7 @@ void Cunfsat::encode_ctx_asym_conflict ()
 {
 	// puff ...
 	INFO ("Encoding asymmetric conflicts");
+	ASSERT (false);
 	return;
 }
 
@@ -274,6 +273,7 @@ void Cunfsat::encode_ctx_all_disabled ()
 
 bool Cunfsat::is_stubborn (struct event * e)
 {
+	ASSERT (false);
 	return e != e;
 }
 
@@ -528,20 +528,28 @@ void Cunfsat::encode_plain ()
 	// transform the specification into negation normal form
 	TRACE ("Translating the specification into negation normal form");
 	spec.to_nnf ();
+#ifdef VERB_LEVEL_TRACE
 	std::string s; spec.str (s);
 	TRACE ("Specification in NNF: '%s'", s.c_str ());
+#endif
 
 	// mark the atoms and store pointers to them in "atoms"
-	TRACE ("Exploring the atoms of the specification");
+	TRACE ("Exploring atoms in the specification");
 	mark_atoms (spec);
 
 	// encode configurations
-	encode_plain_causality ();
-	encode_plain_sym_conflict ();
+	encode_causality ();
+	encode_sym_conflict ();
 
 	// encode the constraints associated to the transition atoms
 	encode_plain_trans_enabled ();
+	encode_plain_deadlock ();
 	encode_plain_event_enabled ();
+
+	// finally, encode the specification
+	TRACE ("Encoding the specification");
+	sat::Lit p = encode_spec (spec);
+	phi->add_clause (p);
 }
 
 void Cunfsat::encode_plain_trans_enabled ()
@@ -586,32 +594,144 @@ void Cunfsat::encode_plain_trans_enabled ()
 	}
 }
 
+void Cunfsat::encode_plain_deadlock ()
+{
+	struct event * e;
+	struct ls * n;
+	std::vector<sat::Lit> clause, clause2 (2);
+
+	if (! deadlock_pos && ! deadlock_neg)
+	{
+		TRACE ("Skipping deadlock encoding, no 'deadlock' atom found in spec");
+		return;
+	}
+
+	// create a new variable for the deadlock atom in the spec
+	TRACE ("Encoding the deadlock constraint: dead <=> ~e_1* ^ ... ^ ~e_n*");
+	deadlock_var = phi->new_var ();
+	SHOW (deadlock_var, "d");
+
+	// create clauses for encoding parts C=> and C<=
+	clause2[0] = ~deadlock_var;
+	clause.push_back (deadlock_var);
+	for (n = u.unf.events.next; n; n = n->next)
+	{
+		e = ls_i (struct event, n, nod);
+		if (e->id == 0) continue;
+
+		// if the deadlock atom happens positive, we need part C=>
+		if (deadlock_pos)
+		{
+			clause2[2] = ~var_en (e);
+			phi->add_clause (clause2);
+		}
+		// if the deadlock atom happens negative, we need part C<=
+		if (deadlock_neg) clause.push_back (var_en (e));
+	}
+	if (deadlock_neg) phi->add_clause (clause);
+}
+
 void Cunfsat::encode_plain_event_enabled ()
 {
+	struct event * e;
+	struct event * ep;
+	sat::Lit p;
+	bool lr;
+	bool rl;
+	std::vector<sat::Lit> clause, clause2 (2);
+	std::vector<struct event *> preds;
+
 	TRACE ("Encoding 'event enabled' constraints: e* <=> ~e ^ /\\_pred(e)");
-	for (auto it = event_en_var_map->begin (); it != event_en_var_map->end (); ++it)
+
+	/*
+	 * if this method is called after both
+	 * - encode_plain_trans_enabled
+	 * - encode_plain_deadlock
+	 * then all events for which we need to produce 'event enabled'
+	 * constraints will be already in the map event_en_var_map, so all we
+	 * have to do is to iterate through the map :)
+	 */
+	for (auto it = event_en_var_map->begin ();
+			it != event_en_var_map->end (); ++it)
 	{
 		SHOW (it->first->ft->name, "s");
 		SHOW (it->second.to_dimacs (), "d");
+		e = it->first;
+		p = it->second;
+
+		// determine whether we need part B=>, part B<=, or both
+		lr = e->m == mrk_pos || e->m == mrk_both || deadlock_neg;
+		rl = e->m == mrk_neg || e->m == mrk_both || deadlock_pos;
+
+		// prepare clauses for both parts
+		clause2[0] = ~p;
+		clause.push_back (p);
+		if (! e->iscutoff)
+		{
+			clause.push_back (var (e));
+			if (lr)
+			{
+				clause2[1] = ~var (e);
+				phi->add_clause (clause2);
+			}
+		}
+
+		// iterate through all immediate predecessors of e
+		get_imm_pred (e, preds);
+		for (auto itt = preds.begin(); itt != preds.end(); ++itt)
+		{
+			ep = *itt;
+			if (lr)
+			{
+				clause2[1] = var (ep);
+				phi->add_clause (clause2);
+			}
+			if (rl) clause.push_back (~ var(ep));
+		}
+		if (rl) phi->add_clause (clause);
 	}
-	// FIXME Continue here!!
 }
 
-void Cunfsat::encode_plain_deadlock ()
+sat::Lit Cunfsat::encode_spec (Spec & s)
 {
-}
+	switch (s.type)
+	{
+	case Spec::TRANS :
+		return var (s.trans);
+	case Spec::DEADLOCK :
+		return deadlock_var;
+	case Spec::PLACE :
+		return var (s.place);
+	case Spec::NOT :
+		return ~ encode_spec (*s.left);
+	default :
+		break;
+	}
 
-void Cunfsat::encode_plain_causality ()
-{
-	encode_ctx_causality ();
-}
+	ASSERT (s.type == Spec::AND || s.type == Spec::OR);
+	sat::Lit p = phi->new_var ();
+	sat::Lit q = encode_spec (*s.left);
+	sat::Lit r = encode_spec (*s.right);
+#ifdef VERB_LEVEL_TRACE
+	std::string str;
+	s.str (str);
+	TRACE ("Variable %d encodes expr %s", p.to_dimacs (), str.c_str ());
+#endif
 
-void Cunfsat::encode_plain_sym_conflict ()
-{
-	encode_ctx_sym_conflict ();
-}
-
-void Cunfsat::encode_plain_spec ()
-{
+	if (s.type == Spec::AND)
+	{
+		// p <=> q ^ r
+		phi->add_clause (~p, q);
+		phi->add_clause (~p, r);
+		phi->add_clause (~q, ~r, p);
+	}
+	else
+	{
+		// p <=> q v r
+		phi->add_clause (~p, q, r);
+		phi->add_clause (~q, p);
+		phi->add_clause (~r, p);
+	}
+	return p;
 }
 
