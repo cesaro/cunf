@@ -55,7 +55,7 @@ Copyright (C) 2010-2014  Cesar Rodriguez <cesar.rodriguez@cs.ox.ac.uk>
 Department of Computer Science, University of Oxford, UK
 
 Uses code of ...
-FIXME mention Minisat, Boost
+FIXME mention Minisat
 
 This program comes with ABSOLUTELY NO WARRANTY.  This is free software,
 and you are welcome to redistribute it under certain conditions.  You should
@@ -65,7 +65,8 @@ If not, see <http://www.gnu.org/licenses/>.
 
 Usage: cunf [OPTION]... NET [SPECIFICATION]
 
-where NET is a path to an .ll_net input file.  Allowed OPTIONS are:
+where NET is a path to an .ll_net input file and SPECIFICATION is an
+optional file containing properties to verify.  Allowed OPTIONS are:
 
  --cutoff={mcm,parikh,erv,mole,N}
       Sets the algorithm used for computing cutoff events:
@@ -80,10 +81,13 @@ where NET is a path to an .ll_net input file.  Allowed OPTIONS are:
  --save-unf=FILE
       Saves a copy of the unfolding to FILE.
 
+ -s, --stats
+      Print statistics about the computation.
+
  -v, --verb=N
       Increments the verbosity level by the optional parameter N, a number
       between 0 and 3, with 3 being the most verbose level).  If N is not
-      provided it is assumed to be 1.  Multiple occurrences allowed.
+      provided it is assumed to be 1.  Multiple occurrences accumulate.
 
  -h, --help
       Shows this message.
@@ -161,6 +165,71 @@ char * peakmem (void)
 	return b;
 }
 
+void stats ()
+{
+
+#ifdef CONFIG_DEBUG
+	db_mem ();
+#endif
+	res_usage ();
+	PRINT ("time\t%.3f\n"
+		"mem\t%ld\n"
+
+		"hist\t%d\n"
+		"events\t%d\n"
+		"cond\t%d\n"
+
+		"gen\t%d\n"
+		"read\t%d\n"
+		"comp\t%d\n"
+
+		"r(h)\t%.2f\n"
+		"s(h)\t%.2f\n"
+		"co(r)\t%.2f\n"
+		"rco(r)\t%.2f\n"
+		"mrk(h)\t%.2f\n"
+
+		"pre(e)\t%.2f\n"
+		"ctx(e)\t%.2f\n"
+		"pst(e)\t%.2f\n"
+
+		"cutoffs\t%d\n"
+		"ewhite\t%llu\n"
+		"egray\t%llu\n"
+		"eblack\t%llu\n"
+		"net\t%s",
+
+		u.unf.usrtime / 1000.0,
+		u.unf.vmsize / 1024,
+
+		u.unf.numh - 1,
+		u.unf.numev - 1,
+		u.unf.numcond,
+
+		u.unf.numgen,
+		u.unf.numread,
+		u.unf.numcomp,
+
+		u.unf.numr / (float) (u.unf.numh - 1),
+		u.unf.nums / (float) (u.unf.numh - 1),
+		u.unf.numco / 
+			(float) (u.unf.numgen + u.unf.numread + u.unf.numcomp),
+		u.unf.numrco / 
+			(float) (u.unf.numgen + u.unf.numread + u.unf.numcomp),
+		u.unf.nummrk / (float) (u.unf.numh - 1),
+
+		u.unf.numepre / (float) (u.unf.numev - 1),
+		u.unf.numecont / (float) (u.unf.numev - 1),
+		u.unf.numepost / (float) (u.unf.numev - 1),
+
+
+		u.unf.numcutoffs,
+		u.unf.numewhite,
+		u.unf.numegray,
+		u.unf.numeblack,
+		opt.net_path);
+}
+
 
 #include "sat/cnf_minisat.hh"
 
@@ -206,7 +275,8 @@ void parse_options (int argc, char ** argv)
 	char *endptr;
 	struct option longopts[] = {
 			{"cutoff", required_argument, 0, 'c'},
-			{"save-unf", required_argument, 0, 's'},
+			{"save-unf", required_argument, 0, 'u'},
+			{"stats", no_argument, 0, 's'},
 			{"help", no_argument, 0, 'h'},
 			{"verb", optional_argument, 0, 'v'},
 			{"version", no_argument, 0, '9'},
@@ -216,12 +286,13 @@ void parse_options (int argc, char ** argv)
 	opt.cutoffs = OPT_ERV;
 	opt.save_path = 0;
 	opt.depth = 0;
+	opt.stats = 0;
 	i = VERB_PRINT;
 
 	// parse the command line, supress automatic error messages by getopt
 	opterr = 0;
 	while (1) {
-		op = getopt_long (argc, argv, "vhV", longopts, 0);
+		op = getopt_long (argc, argv, "svhV", longopts, 0);
 		if (op == -1) break;
 		switch (op) {
 		case 'c' :
@@ -240,6 +311,9 @@ void parse_options (int argc, char ** argv)
 			}
 			break;
 		case 's' :
+			opt.stats = 1;
+			break;
+		case 'u' :
 			opt.save_path = optarg;
 			break;
 		case 'v' :
@@ -270,7 +344,7 @@ void parse_options (int argc, char ** argv)
 	verb_set (i);
 }
 
-int main_ (int argc, char **argv)
+void main_ (int argc, char **argv)
 {
 	cna::Speccheck verif;
 
@@ -325,82 +399,20 @@ int main_ (int argc, char **argv)
 	if (opt.spec_path)
 		verif.verify ();
 
-	// if requested, write the unfolding on disk
+	// if requested, write the unfolding on disk and print statistics
 	if (opt.save_path) {
-		TRACE ("Writing unfolding to '%s'\n", opt.save_path);
+		TRACE ("Writing unfolding to '%s'", opt.save_path);
 		write_cuf (opt.save_path);
 	}
-
-#ifdef CONFIG_DEBUG
-	db_mem ();
-#endif
-	rusage ();
-	PRINT ("\ntime\t%.3f\n"
-		"mem\t%ld\n"
-
-		"hist\t%d\n"
-		"events\t%d\n"
-		"cond\t%d\n"
-
-		"gen\t%d\n"
-		"read\t%d\n"
-		"comp\t%d\n"
-
-		"r(h)\t%.2f\n"
-		"s(h)\t%.2f\n"
-		"co(r)\t%.2f\n"
-		"rco(r)\t%.2f\n"
-		"mrk(h)\t%.2f\n"
-
-		"pre(e)\t%.2f\n"
-		"ctx(e)\t%.2f\n"
-		"pst(e)\t%.2f\n"
-
-		"cutoffs\t%d\n"
-		"ewhite\t%llu\n"
-		"egray\t%llu\n"
-		"eblack\t%llu\n"
-		"net\t%s\n",
-
-		u.unf.usrtime / 1000.0,
-		u.unf.vmsize / 1024,
-
-		u.unf.numh - 1,
-		u.unf.numev - 1,
-		u.unf.numcond,
-
-		u.unf.numgen,
-		u.unf.numread,
-		u.unf.numcomp,
-
-		u.unf.numr / (float) (u.unf.numh - 1),
-		u.unf.nums / (float) (u.unf.numh - 1),
-		u.unf.numco / 
-			(float) (u.unf.numgen + u.unf.numread + u.unf.numcomp),
-		u.unf.numrco / 
-			(float) (u.unf.numgen + u.unf.numread + u.unf.numcomp),
-		u.unf.nummrk / (float) (u.unf.numh - 1),
-
-		u.unf.numepre / (float) (u.unf.numev - 1),
-		u.unf.numecont / (float) (u.unf.numev - 1),
-		u.unf.numepost / (float) (u.unf.numev - 1),
-
-
-		u.unf.numcutoffs,
-		u.unf.numewhite,
-		u.unf.numegray,
-		u.unf.numeblack,
-		opt.net_path);
-
-	// return EXIT_SUCCESS;
-	exit (EXIT_SUCCESS);
+	if (opt.stats) stats ();
 }
 
 int main (int argc, char **argv)
 {
 	try 
 	{
-		return main_ (argc, argv);
+		main_ (argc, argv);
+		exit (EXIT_SUCCESS);
 	}
 	catch (std::exception & e)
 	{
@@ -410,4 +422,5 @@ int main (int argc, char **argv)
 	{
 		PRINT ("An unknown error ocurred, can't tell more... Aborting.");
 	}
+	exit (EXIT_FAILURE);
 }

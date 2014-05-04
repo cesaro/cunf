@@ -140,6 +140,7 @@ struct opt {
 	int cutoffs;
 	long int depth;
 	char * save_path;
+	int stats;
 };
 
 extern struct u u;

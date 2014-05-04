@@ -58,7 +58,11 @@ void Speccheck::spec_deadlocks ()
 
 void Speccheck::verify ()
 {
-	for (size_t i = 0; i < spec.size(); ++i) verify (spec[i], i);
+	for (size_t i = 0; i < spec.size(); ++i)
+	{
+		if (i) PRINT ("");
+		verify (spec[i], i);
+	}
 }
 
 void Speccheck::verify (Spec * s, int i)

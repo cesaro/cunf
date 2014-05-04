@@ -94,9 +94,11 @@ struct ec * ec_alloc (struct cond * c, struct h * h)
 		}
 		ASSERT (i >= 0);
 		ASSERT (EC_ISGEN (rp));
-#ifdef CONFIG_DEBUG
-		db_r2 ("  ", rp, "");
-		db_r2 (" is ancestor of ", r, 0);
+#ifdef VERB_LEVEL_DEBUG
+		if (verb_debug) {
+			db_r2 ("  ", rp, "");
+			db_r2 (" is ancestor of ", r, 0);
+		}
 #endif
 		r->r1 = rp;
 	} else {
