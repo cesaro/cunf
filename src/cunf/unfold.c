@@ -247,6 +247,6 @@ void unfold (void)
 	h_term ();
 	pe_term ();
 
-	INFO ("Unfolding done. Analyzing ...");
+	INFO ("Unfolding done.");
 }
 

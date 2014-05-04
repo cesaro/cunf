@@ -21,6 +21,7 @@
  * Def: Ec is E minus all cutoff (black) events
  * Def: pred(e) = pre ( pre(e) U cont(e) )
  * Def: ev(t) = {e in E : t is the label of e}
+ * Def: cf(e) = {e' in Ec : e and e' are in direct conflict}
  *
  * Variables
  * 	e		event e happens
@@ -57,7 +58,8 @@
  *
  * Enabled events (part B)
  * 	for all events e such that e* was referenced in part A or C, generate
- * 	e* <=> ~e ^ e_1 ^ ... ^ e_n [with e_i in pred(e)]
+ * 	e* <=> ~e ^ e_1 ^ ... ^ e_n ^ ~f_1 ^ ... ^ ~f_m
+ * 			[with e_i in pred(e) and f_i in cf(e)]
  *		- if e is cutoff, omit e in the rhs (as ~e is always true)
  *
  *		Part B=>
@@ -166,7 +168,7 @@ void Cunfsat::encode_causality ()
 	struct event * e;
 	struct ls * n;
 
-	INFO ("Encoding causality");
+	INFO (" + Encoding causality");
 	for (n = u.unf.events.next; n; n = n->next)
 	{
 		e = ls_i (struct event, n, nod);
@@ -192,7 +194,7 @@ void Cunfsat::encode_sym_conflict ()
 	struct ls * n;
 	int i, j;
 
-	INFO ("Encoding symmetric conflicts");
+	INFO (" + Encoding symmetric conflicts");
 	for (n = u.unf.conds.next; n; n = n->next)
 	{
 		c = ls_i (struct cond, n, nod);
@@ -287,6 +289,7 @@ Cunfsat::get_imm_pred (struct event * e, std::vector<struct event *> & l)
 	struct cond * c;
 
 	// we skip the bottom event from the list of predecessors
+	// XXX - important! Observe that we do not clear() the list l of events!!!
 	m = ++u.mark;
 	for (i = e->pre.deg - 1; i >= 0; --i)
 	{
@@ -304,6 +307,30 @@ Cunfsat::get_imm_pred (struct event * e, std::vector<struct event *> & l)
 		c->pre->m = m;
 		// and here
 		l.push_back (c->pre);
+	}
+}
+
+void
+Cunfsat::get_imm_sym_cfl (struct event * e, std::vector<struct event *> & l)
+{
+	struct cond * c;
+	struct event * ee;
+	int m, i, j;
+
+	// XXX - important! Observe that we do not clear() the list l of events!!!
+	m = ++u.mark;
+	e->m = m;
+	for (i = e->pre.deg - 1; i >= 0; --i)
+	{
+		c = (struct cond *) e->pre.adj[i];
+
+		for (j = c->post.deg - 1; j >= 0; --j)
+		{
+			ee = (struct event *) c->post.adj[j];
+			if (ee->iscutoff || ee->m == m) continue;
+			ee->m = m;
+			l.push_back (ee);
+		}
 	}
 }
 
@@ -532,7 +559,7 @@ void Cunfsat::encode_plain ()
 #endif
 
 	// mark the atoms and store pointers to them in "atoms"
-	TRACE ("Exploring atoms in the specification");
+	TRACE (" + Exploring atoms in the specification");
 	mark_atoms (spec);
 
 	// encode configurations
@@ -545,7 +572,7 @@ void Cunfsat::encode_plain ()
 	encode_plain_event_enabled ();
 
 	// finally, encode the specification
-	TRACE ("Encoding the property");
+	TRACE (" + Encoding the property");
 	sat::Lit p = encode_spec (spec);
 	phi->add_clause (p);
 }
@@ -555,9 +582,12 @@ void Cunfsat::encode_plain_trans_enabled ()
 	struct ls * n;
 	struct trans * t;
 	struct event * e;
+	bool lr;
+	bool rl;
 	std::vector<sat::Lit> clause, clause2 (2);
 
-	TRACE ("Encoding atomic constraints: t <=> \\/_ev(t)");
+	TRACE (" + Encoding atomic constraints: t <=> \\/_ev(t), for %d atoms",
+			atoms.size ());
 	SHOW (mrk_pos, "d");
 	SHOW (mrk_neg, "d");
 	SHOW (mrk_both, "d");
@@ -570,16 +600,18 @@ void Cunfsat::encode_plain_trans_enabled ()
 		SHOW (t->name, "s");
 		SHOW (t->m, "d");
 
+		lr = t->m == mrk_pos || t->m == mrk_both;
+		rl = t->m == mrk_neg || t->m == mrk_both;
+
 		// for all events labelled by t (if there is at least one...)
 		for (n = t->events.next; n; n = n->next)
 		{
 			e = ls_i (struct event, n, tnod);
 			ASSERT (e->ft == t);
-			e->m = t->m;
 
 			// if the transition happens in a positive atom, we need Part A=>
-			if (t->m == mrk_pos || t->m == mrk_both) clause.push_back (var_en (e));
-			if (t->m == mrk_neg || t->m == mrk_both)
+			if (lr) clause.push_back (var_en (e));
+			if (rl)
 			{
 				// if it happens in a negative atom, we need part A<=
 				clause2[0] = ~ var_en (e);
@@ -588,7 +620,8 @@ void Cunfsat::encode_plain_trans_enabled ()
 		}
 
 		// add the only clause generated for part A=>
-		if (t->m == mrk_pos || t->m == mrk_both) phi->add_clause (clause);
+		if (lr) phi->add_clause (clause);
+		clause.clear ();
 	}
 }
 
@@ -600,14 +633,16 @@ void Cunfsat::encode_plain_deadlock ()
 
 	if (! deadlock_pos && ! deadlock_neg)
 	{
-		TRACE ("Skipping deadlock encoding, no 'deadlock' atom found in spec");
+		TRACE (" + Skipping deadlock encoding, no 'deadlock' atom " \
+				"found in spec");
 		return;
 	}
 
 	// create a new variable for the deadlock atom in the spec
-	TRACE ("Encoding the deadlock constraint: dead <=> ~e_1* ^ ... ^ ~e_n*");
+	TRACE (" + Encoding the deadlock constraint: " \
+			"dead <=> ~e_1* ^ ... ^ ~e_n*");
 	deadlock_var = phi->new_var ();
-	SHOW (deadlock_var, "d");
+	SHOW (deadlock_var.to_dimacs (), "d");
 
 	// create clauses for encoding parts C=> and C<=
 	clause2[0] = ~deadlock_var;
@@ -620,7 +655,7 @@ void Cunfsat::encode_plain_deadlock ()
 		// if the deadlock atom happens positive, we need part C=>
 		if (deadlock_pos)
 		{
-			clause2[2] = ~var_en (e);
+			clause2[1] = ~var_en (e);
 			phi->add_clause (clause2);
 		}
 		// if the deadlock atom happens negative, we need part C<=
@@ -632,14 +667,15 @@ void Cunfsat::encode_plain_deadlock ()
 void Cunfsat::encode_plain_event_enabled ()
 {
 	struct event * e;
-	struct event * ep;
+	struct event * ee;
 	sat::Lit p;
 	bool lr;
 	bool rl;
 	std::vector<sat::Lit> clause, clause2 (2);
-	std::vector<struct event *> preds;
+	std::vector<struct event *> list;
 
-	TRACE ("Encoding 'event enabled' constraints: e* <=> ~e ^ /\\_pred(e)");
+	TRACE (" + Encoding 'event enabled' constraints: " \
+			"e* <=> ~e ^ /\\_pred(e)");
 
 	/*
 	 * if this method is called after both
@@ -658,14 +694,15 @@ void Cunfsat::encode_plain_event_enabled ()
 		p = it->second;
 
 		// determine whether we need part B=>, part B<=, or both
-		lr = e->m == mrk_pos || e->m == mrk_both || deadlock_neg;
-		rl = e->m == mrk_neg || e->m == mrk_both || deadlock_pos;
+		lr = e->ft->m == mrk_pos || e->ft->m == mrk_both || deadlock_neg;
+		rl = e->ft->m == mrk_neg || e->ft->m == mrk_both || deadlock_pos;
 
 		// prepare clauses for both parts
 		clause2[0] = ~p;
 		clause.push_back (p);
 		if (! e->iscutoff)
 		{
+			SHOW (e->m, "d");
 			clause.push_back (var (e));
 			if (lr)
 			{
@@ -675,18 +712,35 @@ void Cunfsat::encode_plain_event_enabled ()
 		}
 
 		// iterate through all immediate predecessors of e
-		get_imm_pred (e, preds);
-		for (auto itt = preds.begin(); itt != preds.end(); ++itt)
+		list.clear ();
+		get_imm_pred (e, list);
+		SHOW (list.size(), "d");
+		for (auto itt = list.begin(); itt != list.end(); ++itt)
 		{
-			ep = *itt;
+			ee = *itt;
 			if (lr)
 			{
-				clause2[1] = var (ep);
+				clause2[1] = var (ee);
 				phi->add_clause (clause2);
 			}
-			if (rl) clause.push_back (~ var(ep));
+			if (rl) clause.push_back (~ var(ee));
+		}
+
+		// iterate through all direct conflicts of e
+		list.clear ();
+		get_imm_sym_cfl (e, list);
+		for (auto itt = list.begin(); itt != list.end(); ++itt)
+		{
+			ee = *itt;
+			if (lr)
+			{
+				clause2[1] = ~var (ee);
+				phi->add_clause (clause2);
+			}
+			if (rl) clause.push_back (var(ee));
 		}
 		if (rl) phi->add_clause (clause);
+		clause.clear ();
 	}
 }
 

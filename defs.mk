@@ -118,7 +118,7 @@ YACC:=bison
 
 %.unf.cuf : %.ll_net
 	@echo "UNF $<"
-	@src/main $<
+	@src/cunf/cunf $< --save $@
 
 %.mp.mp : %.unf.cuf
 	@echo "MER $<"

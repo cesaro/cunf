@@ -63,7 +63,7 @@ void Speccheck::verify ()
 
 void Speccheck::verify (Spec * s, int i)
 {
-	INFO ("Checking property #%d", i);
+	INFO ("Verifying property #%d", i);
 
 	Cunfsat encoding (*s);
 	bool ret;
@@ -76,13 +76,16 @@ void Speccheck::verify (Spec * s, int i)
 	PRINT ("Property : #%d", i);
 	PRINT ("NNF      : %s", nnf.c_str ());
 	PRINT ("Result   : %s", ret ? "SAT" : "UNSAT");
-	PRINT ("Model    : (not implemented, but run with -vv ;)");
+	PRINT ("Model    : %s",
+			ret ? "(not implemented, but run with -vv ;)" : "n/a");
 
 #ifdef VERB_LEVEL_TRACE
 	if (verb_trace && ret) {
-		TRACE ("Here are the events in the model:");
 		std::vector<struct event *> & conf = encoding.counterexample ();
+		TRACE ("Here are the events in the model:");
+		TRACE (" = Begin of configuration = ");
 		for (auto it = conf.begin (); it != conf.end (); ++it) db_e (*it);
+		TRACE (" = End of configuration = ");
 	}
 #endif
 }

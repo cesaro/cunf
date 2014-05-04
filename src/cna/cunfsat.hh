@@ -44,6 +44,7 @@ private:
 	// auxiliar methods
 	bool is_stubborn (struct event * e);
 	void get_imm_pred (struct event * e, std::vector<struct event *> & l);
+	void get_imm_sym_cfl (struct event * e, std::vector<struct event *> & l);
 	sat::Lit var (struct event * e);
 	sat::Lit var_en (struct event * e);
 	sat::Lit var (struct place * p);
