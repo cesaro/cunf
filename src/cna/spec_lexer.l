@@ -22,7 +22,7 @@ static void __c (void);
 %option prefix="__cna_"
 
 COMMENT	#.*$
-ID			[^!()"&| \t\n]+
+ID			[^!()"&|; \t\n]+
 QID		\"[^"\n]*\"
 
 %%
@@ -39,13 +39,14 @@ QID		\"[^"\n]*\"
 					__cna_lval.id = __cna_text;
 					return ID;
 				}
-!				{ __c (); return NOT; }
-\(				{ __c (); return OPEN; }
-\)				{ __c (); return CLOSE; }
-\|\|			{ __c (); return OR; }
-&&				{ __c (); return AND; }
+"!"			{ __c (); return NOT; }
+"("			{ __c (); return OPEN; }
+")"			{ __c (); return CLOSE; }
+"||"			{ __c (); return OR; }
+"&&"			{ __c (); return AND; }
+";"			{ __c (); return SEMICOLON; }
 [ \t]			{ __c (); }
-\n				{ __c (); __cna_column = 0; }
+"\n"			{ __c (); __cna_column = 0; }
 
 \"[^"\n]*$	{ __c (); __cna_errorv ("missing terminating \" character"); }
 .				{ __c (); __cna_errorv ("'%s': unexpected character", yytext); }

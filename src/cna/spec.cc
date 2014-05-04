@@ -4,46 +4,10 @@
 #include <string>
 #include <stdexcept>
 
-#include "cna/spec_intrnl.hh"
 #include "util/misc.h"
 #include "cna/spec.hh"
 
 using namespace cna;
-
-/* for communication between spec_parse and the parser */
-const char * __cna_filename = 0;
-Spec * __cna_ast = 0;
-
-Spec::Spec (const char * filename, FILE * f)
-{
-	// open the file if necessary
-	SHOW (filename, "s");
-	SHOW (f, "p");
-	if (! f) f = fopen (filename, "r");
-	if (! f)
-	{
-		std::string s = fmt ("%s: %s", filename, strerror (errno));
-		throw std::runtime_error (s);
-	}
-
-	// parse the file
-	__cna_filename = filename;
-	__cna_in = f;
-	__cna_restart (f);
-	__cna_parse ();
-
-	// move the subformula store in the parsed abstract syntax tree
-	SHOW (__cna_ast->type, "d");
-	SHOW (__cna_ast->left, "d");
-	SHOW (__cna_ast->right, "d");
-	copy_from (*__cna_ast);
-	SHOW (this->left, "d");
-	SHOW (this->right, "d");
-
-	// safely destroy the memory of the root spec
-	__cna_ast->type = DEADLOCK;
-	delete __cna_ast;
-}
 
 Spec::Spec ()
 {
@@ -87,8 +51,9 @@ Spec::~Spec (void)
 	}
 }
 
-void Spec::str (std::string &s)
+void Spec::to_str (std::string &s)
 {
+	bool sw;
 	switch (type) {
 	case PLACE :
 		ASSERT (place);
@@ -105,17 +70,19 @@ void Spec::str (std::string &s)
 	case AND :
 		ASSERT (left && right);
 		s += "(";
-		left->str (s);
+		left->to_str (s);
 		s += type == OR ? " || " : " && ";
-		right->str (s);
+		right->to_str (s);
 		s += ")";
 		break;
 
 	case NOT :
 		ASSERT (left);
-		s += "(!";
-		left->str (s);
-		s += ")";
+		sw = left->type == OR || left->type == AND;
+		if (sw) s += "(";
+		s += "!";
+		left->to_str (s);
+		if (sw) s += ")";
 		break;
 	}
 }
@@ -154,9 +121,11 @@ void Spec::push_negations (Spec & s)
 {
 	Spec * ss;
 
+#ifdef VERB_LEVEL_DEBUG
 	std::string s_;
-	s.str (s_);
+	s.to_str (s_);
 	SHOW (s_.c_str (), "s");
+#endif
 
 	switch (s.type)
 	{

@@ -219,6 +219,8 @@ void unfold (void)
 {
 	struct h *h;
 
+	INFO ("Unfolding ...");
+
 #ifdef CONFIG_PMASK
 	ec_pmask_init ();
 #endif
@@ -244,5 +246,7 @@ void unfold (void)
 
 	h_term ();
 	pe_term ();
+
+	INFO ("Unfolding done. Analyzing ...");
 }
 

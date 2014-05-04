@@ -24,14 +24,17 @@ static inline cna::Spec * __lookup_id (const char * name);
 %token		CLOSE;
 %token		OR;
 %token		AND;
+%token		SEMICOLON;
 
-%type <spec> expr or_expr and_expr paren_expr
+%type <spec> or_expr and_expr paren_expr
 
 %%
 
-expr
-   : or_expr					{ __cna_ast = $1; }
-   ;
+expr_list
+	: /* nothing */
+	| expr_list or_expr SEMICOLON
+									{ __cna_specv->push_back ($2); }
+	;
 
 or_expr
    : and_expr					{ $$ = $1; }
@@ -44,7 +47,7 @@ and_expr
    ;
 
 paren_expr
-   : OPEN expr CLOSE			{ $$ = $2; }
+   : OPEN or_expr CLOSE		{ $$ = $2; }
    | NOT paren_expr			{ $$ = new cna::Spec (cna::Spec::NOT, $2); }
    | ID							{ $$ = __lookup_id ($1); }
    ;
@@ -88,7 +91,7 @@ static inline cna::Spec * __lookup_id (const char * name)
 	struct place * p;
 	struct trans * t;
 
-	// check first whther it is a deadlock
+	// check first wether it is a deadlock
 	if (strcmp (name, "deadlock") == 0)
 		return new cna::Spec ();
 

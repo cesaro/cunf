@@ -22,8 +22,6 @@ public :
 	class Spec * right;
 
 	// constructors
-	Spec (const std::string & filename, FILE * f = 0) : Spec (filename.c_str (), f) {}
-	Spec (const char * filename, FILE * f = 0);
 	Spec (); // deadlock
 	Spec (struct place * p);
 	Spec (struct trans * t);
@@ -34,7 +32,7 @@ public :
 
 	// other methods
 	Spec & operator= (const Spec & rhs);
-	void str (std::string &s);
+	void to_str (std::string &s);
 	void to_nnf ();
 
 private :

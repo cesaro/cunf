@@ -36,7 +36,7 @@
 #include "util/glue.h"
 #include "util/misc.h"
 
-#include "cna/cunfsat.hh"
+#include "cna/speccheck.hh"
 
 extern "C" {
 /* all gloabal data is stored in this structure */
@@ -272,6 +272,8 @@ void parse_options (int argc, char ** argv)
 
 int main_ (int argc, char **argv)
 {
+	cna::Speccheck verif;
+
 	// parse commandline options
 	parse_options (argc, argv);
 
@@ -316,28 +318,12 @@ int main_ (int argc, char **argv)
 	TRACE ("It is a *%s* net\n", u.net.isplain ? "plain" : "contextual");
 	nc_static_checks ();
 
-	// build the unfolding
-	INFO ("Unfolding ...");
+	// load the specification file, unfold, and do model checking
+	if (opt.spec_path)
+		verif.load_spec (opt.spec_path);
 	unfold ();
-	
-	cna::test ();
-#if 0
-	// do model checking
-	INFO ("Unfolding done. Analyzing ...");
-	if (opt.spec_path) {
-		cna::Cunfsat v;
-		v.load_spec (std::string (opt.spec_path));
-		v.encode ();
-		bool ret = v.solve ();
-		if (ret) {
-			PRINT ("The net has a deadlock:");
-			std::vector<struct event *> & conf = v.counterexample ();
-			for (auto it = conf.begin (); it != conf.end (); ++it) db_e (*it);
-		} else {
-			PRINT ("The net has no deadlock");
-		}
-	}
-#endif
+	if (opt.spec_path)
+		verif.verify ();
 
 	// if requested, write the unfolding on disk
 	if (opt.save_path) {

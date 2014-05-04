@@ -3,6 +3,8 @@
 #define _CNA_SPEC_INTERNL_HH_
 
 #include <string>
+#include <vector>
+
 #include <stdio.h>
 #include "cna/spec.hh"
 
@@ -16,8 +18,8 @@ extern FILE * __cna_in;
 /* in spec_parser.y */
 int __cna_parse (void);
 
-/* in spec.cc, for communication with cna::spec_parse */
+/* in spec.cc, for communication with cna::Speccheck.load_spec */
 extern const char * __cna_filename;
-extern cna::Spec * __cna_ast;
+extern std::vector<cna::Spec *> * __cna_specv;
 
 #endif

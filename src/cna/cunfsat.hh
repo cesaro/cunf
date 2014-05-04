@@ -55,7 +55,6 @@ private:
 	// asserting this implementation is sound
 	void assert_is_config (int m);
 	void assert_disables_all (int m);
-	void assert_is_deadlock (int m);
 	void assert_get_marking (int m, std::unordered_set<struct place *> & mrk);
 	void assert_disables_t
 			(std::unordered_set<struct place *> & mrk, struct trans * t);
@@ -100,8 +99,6 @@ inline sat::Lit Cunfsat::var (struct trans * t) {
 	DEBUG ("Trans %s is variable %d", t->name, q.to_dimacs ());
 	return q;
 }
-
-void test ();
 
 } // namespace cna
 #endif

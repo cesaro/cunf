@@ -135,7 +135,9 @@ std::vector<struct event *> & Cunfsat::counterexample ()
 		e = ls_i (struct event, n, nod);
 		/* we need to explore here exactly the same events that
 		 * encode_ctx_causality has added, otherwise var (e) will add new
-		 * variables */
+		 * variables
+		 * FIXME implement this using an iterator over event_var_map!! ;)
+		 */
 		if (e->id == 0 || e->iscutoff) continue;
 		if (! model[var (e)]) continue;
 		e->m = m;
@@ -143,7 +145,8 @@ std::vector<struct event *> & Cunfsat::counterexample ()
 	}
 
 	// assert that the answer is indeed a sound answer
-	assert_is_deadlock (m);
+	assert_is_config (m);
+	if (spec.type == Spec::DEADLOCK) assert_disables_all (m);
 
 	return violating_run;
 }
@@ -163,7 +166,7 @@ void Cunfsat::encode_causality ()
 	struct event * e;
 	struct ls * n;
 
-	INFO ("Encoding causality (ctx version)");
+	INFO ("Encoding causality");
 	for (n = u.unf.events.next; n; n = n->next)
 	{
 		e = ls_i (struct event, n, nod);
@@ -189,7 +192,7 @@ void Cunfsat::encode_sym_conflict ()
 	struct ls * n;
 	int i, j;
 
-	INFO ("Encoding symmetric conflicts (ctx version)");
+	INFO ("Encoding symmetric conflicts");
 	for (n = u.unf.conds.next; n; n = n->next)
 	{
 		c = ls_i (struct cond, n, nod);
@@ -377,12 +380,6 @@ void Cunfsat::assert_is_config (int m)
 	// FIXME assert it has no loop of asymmetric conflict
 }
 
-void Cunfsat::assert_is_deadlock (int m)
-{
-	assert_is_config (m);
-	assert_disables_all (m);
-}
-
 void
 Cunfsat::assert_get_marking (int m, std::unordered_set<struct place *> & mrk)
 {
@@ -529,7 +526,8 @@ void Cunfsat::encode_plain ()
 	TRACE ("Translating the specification into negation normal form");
 	spec.to_nnf ();
 #ifdef VERB_LEVEL_TRACE
-	std::string s; spec.str (s);
+	std::string s;
+	spec.to_str (s);
 	TRACE ("Specification in NNF: '%s'", s.c_str ());
 #endif
 
@@ -547,7 +545,7 @@ void Cunfsat::encode_plain ()
 	encode_plain_event_enabled ();
 
 	// finally, encode the specification
-	TRACE ("Encoding the specification");
+	TRACE ("Encoding the property");
 	sat::Lit p = encode_spec (spec);
 	phi->add_clause (p);
 }
@@ -714,7 +712,7 @@ sat::Lit Cunfsat::encode_spec (Spec & s)
 	sat::Lit r = encode_spec (*s.right);
 #ifdef VERB_LEVEL_TRACE
 	std::string str;
-	s.str (str);
+	s.to_str (str);
 	TRACE ("Variable %d encodes expr %s", p.to_dimacs (), str.c_str ());
 #endif
 

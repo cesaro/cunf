@@ -1,8 +1,9 @@
 
 #include <string>
-#include "cna/cunfsat.hh"
 #include "util/misc.h"
 #include "cunf/global.h"
+#include "cna/cunfsat.hh"
+#include "cna/speccheck.hh"
 
 namespace cna {
 
@@ -11,21 +12,10 @@ namespace cna {
  */
 void test1 ()
 {
-	DEBUG ("Loading file 'input'");
-	Spec s ("input");
-
-	std::string str;
-	s.str (str);
-	DEBUG2 ("Parsed specification: '%s'", str.c_str ());
-	SHOW (s.type, "d");
-
-	s.to_nnf ();
-	str.clear ();
-	s.str (str);
-	DEBUG2 ("Now in in NNF: '%s'", str.c_str ());
-
-	Cunfsat enc (s);
-	enc.encode ();
+	Speccheck v;
+	
+	v.load_spec ("input");
+	v.verify ();
 }
 
 /*
