@@ -61,37 +61,68 @@ void Speccheck::verify ()
 	for (size_t i = 0; i < spec.size(); ++i)
 	{
 		if (i) PRINT ("");
-		verify (spec[i], i);
+		do_verification (spec[i], i);
 	}
 }
 
-void Speccheck::verify (Spec * s, int i)
+void Speccheck::do_verification (Spec * s, int i)
 {
-	INFO ("Verifying property #%d", i);
-
-	Cunfsat encoding (*s);
 	bool ret;
 	std::string nnf;
+	std::string errmsg;
+	std::vector<struct event *> * conf;
 
-	encoding.encode ();
-	ret = encoding.solve ();
-	s->to_str (nnf);
+	INFO ("Verifying property #%d", i);
 
-	PRINT ("Property : #%d", i);
-	PRINT ("NNF      : %s", nnf.c_str ());
-	PRINT ("Result   : %s", ret ? "SAT" : "UNSAT");
-	PRINT ("Model    : %s",
-			ret ? "(not implemented, but run with -vv ;)" : "n/a");
+	try
+	{
+		Cunfsat enc (*s);
+		enc.encode ();
+		ret = enc.solve ();
 
 #ifdef VERB_LEVEL_TRACE
-	if (verb_trace && ret) {
-		std::vector<struct event *> & conf = encoding.counterexample ();
-		TRACE ("Here are the events in the model:");
-		TRACE (" = Begin of configuration = ");
-		for (auto it = conf.begin (); it != conf.end (); ++it) db_e (*it);
-		TRACE (" = End of configuration = ");
-	}
+		if (verb_trace && ret) {
+			conf = & enc.counterexample ();
+		}
 #endif
+	}
+	catch (std::exception & e)
+	{
+		errmsg = fmt ("%s", e.what ());
+	}
+	catch (Minisat::OutOfMemoryException & e)
+	{
+		// FIXME this should be wrapped by sat::Cnf...
+		errmsg = "Minisat went out of memory";
+	}
+	catch (...)
+	{
+		errmsg = "Runtime error ocurred, that's all I know...";
+	}
+
+	s->to_str (nnf);
+	PRINT ("Property : #%d", i);
+	PRINT ("NNF      : %s", nnf.c_str ());
+
+	if (errmsg.size ())
+	{
+		PRINT ("Result   : UNKNOWN (%s)", errmsg.c_str());
+		PRINT ("Model    : n/a");
+	}
+	else
+	{
+		PRINT ("Result   : %s", ret ? "SAT" : "UNSAT");
+		PRINT ("Model    : %s",
+				ret ? "(not implemented, but run with -vv ;)" : "n/a");
+#ifdef VERB_LEVEL_TRACE
+		if (verb_trace && ret) {
+			TRACE ("Here are the events in the model:");
+			TRACE (" = Begin of configuration = ");
+			for (auto it = conf->begin (); it != conf->end (); ++it) db_e (*it);
+			TRACE (" = End of configuration = ");
+		}
+#endif
+	}
 }
 
 Speccheck::~Speccheck ()

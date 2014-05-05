@@ -21,7 +21,7 @@ public:
 	~Speccheck ();
 
 private:
-	void verify (Spec * s, int i);
+	void do_verification (Spec * s, int i);
 
 	// internal state
 	std::vector<Spec *> spec;

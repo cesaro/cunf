@@ -19,7 +19,7 @@ include defs.mk
 
 all: $(TARGETS) tags
 	#./src/cunf/cunf examples/tiny/numh.ll_net  --save out.cuf input
-	./src/cunf/cunf -vvv examples/tiny/pag9.ll_net  --save out.cuf input
+	#./src/cunf/cunf -vvv examples/tiny/pag9.ll_net  --save out.cuf input
 
 $(TARGETS) : % : %.o $(OBJS)
 	@echo "LD  $@"
