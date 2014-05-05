@@ -624,6 +624,9 @@ class Net :
             if len (self.__pnmlitm) == 0 :
                 raise Exception, 'missplaced "%s" entity' % tag
             #print 'new! ', repr (self.__pnmlitm)
+            for k in ['name', 'm0'] :
+                if k in self.__pnmlitm :
+                    self.__pnmlitm[k] = self.__pnmlitm[k].strip(' \n\t')
             self.__pnmlq.append (self.__pnmlitm)
             self.__pnmlitm = {}
             self.__pnmlitm['type'] = tag
@@ -634,8 +637,10 @@ class Net :
 
         elif tag == 'name' :
             self.__pnmlitm['data'] = 'name'
+            self.__pnmlitm['name'] = ''
         elif tag == 'initialMarking' :
             self.__pnmlitm['data'] = 'm0'
+            self.__pnmlitm['m0'] = ''
 
         elif tag in ['page', 'pnml', 'graphics', 'text', 'offset', 'text'] :
             return
@@ -651,12 +656,13 @@ class Net :
         pass
 
     def __pnml_data (self, data):
-        data = data.strip(' \n\t')
+        #data = data.strip(' \n\t') <- dangerous here, data can be split!!
         if len (data) == 0 : return
 
         #print "DATA ", repr (data)
         if 'data' not in self.__pnmlitm : return
-        self.__pnmlitm[self.__pnmlitm['data']] = data
+        k = self.__pnmlitm['data']
+        self.__pnmlitm[k] += data
 
 def test1 () :
     n = Net (True)
