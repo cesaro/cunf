@@ -58,6 +58,8 @@ void Speccheck::spec_deadlocks ()
 
 void Speccheck::verify ()
 {
+	// hack for the MCC'14, make this better
+	results.resize (spec.size());
 	for (size_t i = 0; i < spec.size(); ++i)
 	{
 		if (i) PRINT ("");
@@ -67,24 +69,36 @@ void Speccheck::verify ()
 
 void Speccheck::do_verification (Spec * s, int i)
 {
-	bool ret;
+	bool ret = false;
 	std::string nnf;
 	std::string errmsg;
+#ifdef VERB_LEVEL_TRACE
 	std::vector<struct event *> * conf;
+#endif
 
 	INFO ("Verifying property #%d", i);
 
 	try
 	{
-		Cunfsat enc (*s);
-		enc.encode ();
-		ret = enc.solve ();
-
-#ifdef VERB_LEVEL_TRACE
-		if (verb_trace && ret) {
-			conf = & enc.counterexample ();
+		// hack
+		if (i == 1
+				&& s->type == Spec::DEADLOCK
+				&& spec[0]->type == Spec::DEADLOCK)
+		{
+			ret = results[0] == 1;
+			if (results[0] == 2) throw std::runtime_error ("same error");
 		}
+		else
+		{
+			Cunfsat enc (*s);
+			enc.encode ();
+			ret = enc.solve ();
+#ifdef VERB_LEVEL_TRACE
+			if (verb_trace && ret) {
+				conf = & enc.counterexample ();
+			}
 #endif
+		}
 	}
 	catch (std::exception & e)
 	{
@@ -106,11 +120,13 @@ void Speccheck::do_verification (Spec * s, int i)
 
 	if (errmsg.size ())
 	{
+		results[i] = 2; // hack
 		PRINT ("Result   : UNKNOWN (%s)", errmsg.c_str());
 		PRINT ("Model    : n/a");
 	}
 	else
 	{
+		results[i] = ret ? 1 : 0; // hack
 		PRINT ("Result   : %s", ret ? "SAT" : "UNSAT");
 		PRINT ("Model    : %s",
 				ret ? "(not implemented, but run with -vv ;)" : "n/a");

@@ -41,7 +41,7 @@ int verb_get ();
 #define PRINT_(fmt,args...)	mylog (0, fmt, ##args)
 
 // the implementation
-inline void mylog (int level, const char * fmt, ...)
+static inline void mylog (int level, const char * fmt, ...)
 {
 	va_list ap;
 
@@ -74,6 +74,8 @@ void breakme (void);
 		breakme (); \
 		exit (1); \
 	}
+#else
+#define ASSERT(expr)
 #endif
 #define DEBUG2(fmt,args...) \
 	DEBUG (__FILE__ ":%d: %s: " fmt, __LINE__, __func__, ##args)

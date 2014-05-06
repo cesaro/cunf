@@ -25,6 +25,7 @@ private:
 
 	// internal state
 	std::vector<Spec *> spec;
+	std::vector<int> results;
 };
 
 inline void load_spec (const std::string & filename, FILE * f = 0)

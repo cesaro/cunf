@@ -14,13 +14,13 @@
 # this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # traditional variables
-#CFLAGS:=-Wall -Wextra -std=c99 -O3
+CFLAGS:=-Wall -Wextra -std=c99 -O3
 #CFLAGS:=-Wall -Wextra -std=c99 -pg
-CFLAGS:=-Wall -Wextra -std=c99 -g
-#CFLAGS:=-Wall -Wextra -std=c99
-#CXXFLAGS:=-Wall -Wextra -std=c++11 -O3
-CXXFLAGS:=-Wall -Wextra -std=c++11 -g
-CPPFLAGS:=-I src/ -D_POSIX_C_SOURCE=200809L -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS
+#CFLAGS:=-Wall -Wextra -std=c99 -g
+CXXFLAGS:=-Wall -Wextra -std=c++11 -O3
+#CXXFLAGS:=-Wall -Wextra -std=c++11 -pg
+#CXXFLAGS:=-Wall -Wextra -std=c++11 -g
+CPPFLAGS:=-I src/ -D_POSIX_C_SOURCE=200809L -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -D NDEBUG
 LDFLAGS:=-dead_strip
 #LDFLAGS:=
 
@@ -89,11 +89,11 @@ YACC:=bison
 
 %.o : %.c
 	@echo "CC  $<"
-	@$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 %.o : %.cc
 	@echo "CXX $<"
-	@$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 %.pdf : %.dot
 	@echo "DOT $<"

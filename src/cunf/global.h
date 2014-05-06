@@ -107,9 +107,9 @@ struct unf {
 	unsigned long long numegray; /* ... with at least 1 cutoff and 1 non cutoff */
 	unsigned long long numeblack; /* ... with only cutoff histories */
 
-	int numepost;		/* number of conditions event postsets */
-	int numecont;		/* number of conditions event contexts */
-	int numepre;		/* number of conditions event presets */
+	int numepost;		/* number of conditions in event postsets */
+	int numecont;		/* number of conditions in event contexts */
+	int numepre;		/* number of conditions in event presets */
 
 	long usrtime;		/* user time of the process (in ms) */
 	long maxrss;		/* maximum Resident Set Size (in kb) */
