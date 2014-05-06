@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
@@ -44,7 +45,7 @@ struct u u;
 struct opt opt;
 }
 
-/*****************************************************************************/
+// FIXME mention Minisat
 
 void help (void)
 {
@@ -53,9 +54,6 @@ The Cunf Toolset - a model checker for Petri nets (with read arcs)
 
 Copyright (C) 2010-2014  Cesar Rodriguez <cesar.rodriguez@cs.ox.ac.uk>
 Department of Computer Science, University of Oxford, UK
-
-Uses code of ...
-FIXME mention Minisat
 
 This program comes with ABSOLUTELY NO WARRANTY.  This is free software,
 and you are welcome to redistribute it under certain conditions.  You should
@@ -68,21 +66,37 @@ Usage: cunf [OPTION]... NET [SPECIFICATION]
 where NET is a path to an .ll_net input file and SPECIFICATION is an
 optional file containing properties to verify.  Allowed OPTIONS are:
 
- --cutoff={mcm,parikh,erv,mole,N}
-      Sets the algorithm used for computing cutoff events:
+ -c RULE, --cutoff=RULE
+      Sets the algorithm used for computing which events are the cutoff
+      points of the prefix, as well the order to insert histories into the
+      unfolding.  RULE can be one of the following:
        * mcm     McMillan's algorithm
        * parikh  Parikh vector strategy FIXME
        * erv     Esparza-Romer-Vogler's total order
        * mole    The modification of ERV implemented in the unfolder Mole
-       * N       A non-negative number N will instruct Cunf to cut off
-                 events of depth N; with N=0 the cutoff algorthm is
-                 disabled and the unfolder may never stop
 
- --save-unf=FILE
+ --max-depth=N
+ --max-events=N
+ --max-conditions=N
+ --max-histories=N
+      Stop inserting histories (events) into the constructed unfolding
+      prefix under different conditions.
+      With --max-depth, Cunf will skip inserting histories whose depth is
+      strictly larger than N (events enabled at the initial marking have a
+      depth of 1).  Remaining options stop the algorithm whenever the
+      indicated number of events, conditions, or histories has been
+      reached.
+      Observe that these options do not alter the order in which histories
+      are inserted into the prefix. However, notice that --max-depth can
+      unexpectedly interact with the cutoff algorith, and force to insert
+      events that otherwise would have been left out.
+       
+ -s FILE, --save-unf=FILE
       Saves a copy of the unfolding to FILE.
 
- -s, --stats
-      Print statistics about the computation.
+ -i, --stats
+      Print statistical information about the computation and the computed
+      unfolding prefix.
 
  -v, --verb=N
       Increments the verbosity level by the optional parameter N, a number
@@ -122,23 +136,23 @@ void res_usage (void)
 	int fd, ret;
 
 	u.unf.usrtime = 0;
-	u.unf.vmsize = 0;
+	u.unf.maxrss = 0;
 	ret = getrusage (RUSAGE_SELF, &r);
 	if (ret >= 0) {
 		/* in linux this is 0; in mac os this is the maxrss in kb */
-		u.unf.vmsize = r.ru_maxrss / 1024;
+		u.unf.maxrss = r.ru_maxrss / 1024;
 		u.unf.usrtime = r.ru_utime.tv_sec * 1000 +
 				r.ru_utime.tv_usec / 1000;
 	}
 
-	/* this will only work in linux, in macos u.unf.vmsize is set to maxrss
+	/* this will only work in linux, in macos u.unf.maxrss is set to maxrss
 	 * in kb */
 	fd = open ("/proc/self/statm", O_RDONLY);
 	if (fd < 0) return;
 	ret = read (fd, buff, 128);
 	close (fd);
 	buff[127] = 0;
-	u.unf.vmsize = strtoul (buff, 0, 10) * sysconf (_SC_PAGESIZE) >> 10;
+	u.unf.maxrss = strtoul (buff, 0, 10) * sysconf (_SC_PAGESIZE) >> 10;
 }
 
 char * peakmem (void)
@@ -165,6 +179,16 @@ char * peakmem (void)
 	return b;
 }
 
+/*
+ * Progress message:
+ *
+ * Events
+ * Conditions
+ * Ev/s
+ * avg depth
+ * max depth
+ */
+
 void stats ()
 {
 
@@ -172,35 +196,36 @@ void stats ()
 	db_mem ();
 #endif
 	res_usage ();
-	PRINT ("time\t%.3f\n"
-		"mem\t%ld\n"
+	PRINT ( \
+		"cpu time             : %.3f\n"
+		"max memory (rss)     : %ld\n"
 
-		"hist\t%d\n"
-		"events\t%d\n"
-		"cond\t%d\n"
+		"histories            : %d\n"
+		"events               : %d\n"
+		"conditions           : %d\n"
 
-		"gen\t%d\n"
-		"read\t%d\n"
-		"comp\t%d\n"
+		"generating cond.     : %d\n"
+		"reading cond.        : %d\n"
+		"compound cond.       : %d\n"
 
-		"r(h)\t%.2f\n"
-		"s(h)\t%.2f\n"
-		"co(r)\t%.2f\n"
-		"rco(r)\t%.2f\n"
-		"mrk(h)\t%.2f\n"
+		"vector r(h) [avg]    : %.2f\n"
+		"vector s(h) [avg]    : %.2f\n"
+		"vector co(r) [avg]   : %.2f\n"
+		"vector rco(r) [avg]  : %.2f\n"
+		"vector mrk(h) [avg]  : %.2f\n"
 
-		"pre(e)\t%.2f\n"
-		"ctx(e)\t%.2f\n"
-		"pst(e)\t%.2f\n"
+		"pre-set(e) [avg]     : %.2f\n"
+		"context(e) [avg]     : %.2f\n"
+		"post-set(e) [avg]    : %.2f\n"
 
-		"cutoffs\t%d\n"
-		"ewhite\t%llu\n"
-		"egray\t%llu\n"
-		"eblack\t%llu\n"
-		"net\t%s",
+		"cutoffs              : %d\n"
+		"white events         : %llu\n"
+		"gray events          : %llu\n"
+		"black events         : %llu\n"
+		"net                  : %s",
 
 		u.unf.usrtime / 1000.0,
-		u.unf.vmsize / 1024,
+		u.unf.maxrss / 1024,
 
 		u.unf.numh - 1,
 		u.unf.numev - 1,
@@ -224,75 +249,43 @@ void stats ()
 
 
 		u.unf.numcutoffs,
-		u.unf.numewhite,
+		u.unf.numewhite, // FIXME, these are available only after write_cuf!!
 		u.unf.numegray,
 		u.unf.numeblack,
 		opt.net_path);
 }
 
-
-#include "sat/cnf_minisat.hh"
-
-void test (void)
-{
-	sat::Msat s;
-	sat::Lit p, q, r;
-	std::vector<sat::Lit> c(1);
-	std::vector<sat::Lit> amo(3);
-
-	p = s.new_var ();
-	q = s.new_var ();
-	r = s.new_var ();
-
-	amo[0] = p;
-	amo[1] = q;
-	amo[2] = r;
-	s.amo_2tree (amo);
-
-	c[0] = p;
-	s.add_clause (c);
-	c[0] = q;
-	s.add_clause (c);
-
-	auto ret = s.solve ();
-	if (ret == sat::Cnf::SAT) {
-		DEBUG ("SAT");
-		sat::CnfModel & m = s.get_model ();
-		for (sat::Var v = 0; v < s.no_vars (); ++v)
-		{
-			DEBUG ("var %d is %s", v, m[v] ? "T" : "F");
-		}
-	} else if (ret == sat::Cnf::UNSAT) {
-		DEBUG ("UNSAT");
-	} else {
-		DEBUG ("UNKNOWN");
-	}
-}
-
 void parse_options (int argc, char ** argv)
 {
-	long int op, i;
+	int op, verb;
 	char *endptr;
 	struct option longopts[] = {
 			{"cutoff", required_argument, 0, 'c'},
-			{"save-unf", required_argument, 0, 'u'},
-			{"stats", no_argument, 0, 's'},
+			{"max-depth", required_argument, 0, 'd'},
+			{"max-events", required_argument, 0, 'e'},
+			{"max-conditions", required_argument, 0, 'k'},
+			{"max-histories", required_argument, 0, 'H'},
+			{"save-unf", required_argument, 0, 's'},
+			{"stats", no_argument, 0, 'i'},
 			{"help", no_argument, 0, 'h'},
 			{"verb", optional_argument, 0, 'v'},
-			{"version", no_argument, 0, '9'},
+			{"version", no_argument, 0, 'V'},
 			{0, 0, 0, 0}};
 
 	// default options
-	opt.cutoffs = OPT_ERV;
 	opt.save_path = 0;
-	opt.depth = 0;
+	opt.cutoffs = OPT_ERV;
 	opt.stats = 0;
-	i = VERB_PRINT;
+	opt.maxdepth = INT_MAX;
+	opt.maxev = INT_MAX;
+	opt.maxcond = INT_MAX;
+	opt.maxh = INT_MAX;
+	verb = VERB_PRINT;
 
 	// parse the command line, supress automatic error messages by getopt
 	opterr = 0;
 	while (1) {
-		op = getopt_long (argc, argv, "svhV", longopts, 0);
+		op = getopt_long (argc, argv, "c:s:ivhV", longopts, 0);
 		if (op == -1) break;
 		switch (op) {
 		case 'c' :
@@ -305,24 +298,42 @@ void parse_options (int argc, char ** argv)
 			} else if (strcmp (optarg, "mole") == 0) {
 				opt.cutoffs = OPT_ERV_MOLE;
 			} else {
-				opt.depth = strtol (optarg, &endptr, 10);
-				if (optarg[0] == 0 || *endptr != 0) usage ();
-				opt.cutoffs = OPT_DEPTH;
+				usage ();
 			}
 			break;
-		case 's' :
-			opt.stats = 1;
+		case 'd' :
+			opt.maxdepth = (int) strtol (optarg, &endptr, 10);
+			if (optarg[0] == 0 || *endptr != 0) usage ();
+			if (opt.maxdepth < 0) opt.maxdepth = INT_MAX;
 			break;
-		case 'u' :
+		case 'e' :
+			opt.maxev = (int) strtol (optarg, &endptr, 10);
+			if (optarg[0] == 0 || *endptr != 0) usage ();
+			if (opt.maxev < 0) opt.maxev = INT_MAX;
+			break;
+		case 'k' :
+			opt.maxcond = (int) strtol (optarg, &endptr, 10);
+			if (optarg[0] == 0 || *endptr != 0) usage ();
+			if (opt.maxcond < 0) opt.maxcond = INT_MAX;
+			break;
+		case 'H' :
+			opt.maxh = (int) strtol (optarg, &endptr, 10);
+			if (optarg[0] == 0 || *endptr != 0) usage ();
+			if (opt.maxh < 0) opt.maxh = INT_MAX;
+			break;
+		case 's' :
 			opt.save_path = optarg;
 			break;
-		case 'v' :
-			if (! optarg || optarg[0] == 0) { i++; break; }
-			i += strtol (optarg, &endptr, 10);
-			if (*endptr != 0) usage ();
+		case 'i' :
+			opt.stats = 1;
 			break;
 		case 'h' :
 			help ();
+		case 'v' :
+			if (! optarg || optarg[0] == 0) { verb++; break; }
+			verb += strtol (optarg, &endptr, 10);
+			if (*endptr != 0) usage ();
+			break;
 		case 'V' :
 			version ();
 		default :
@@ -340,8 +351,8 @@ void parse_options (int argc, char ** argv)
 		usage ();
 	}
 
-	if (i < VERB_PRINT || i > VERB_DEBUG) usage ();
-	verb_set (i);
+	if (verb < VERB_PRINT || verb > VERB_DEBUG) usage ();
+	verb_set (verb);
 }
 
 void main_ (int argc, char **argv)
@@ -352,36 +363,32 @@ void main_ (int argc, char **argv)
 	parse_options (argc, argv);
 
 	// welcome
-	INFO ("Net file: '%s'", opt.net_path);
-	if (opt.spec_path)
-		INFO ("Specification file: '%s'", opt.spec_path);
-	else
-		INFO ("Specification file: (none)");
+	TRACE ("Net file: %s", opt.net_path);
+	TRACE ("Specification file: %s",
+			opt.spec_path ? opt.spec_path : "(none)");
 	switch (opt.cutoffs)
 	{
 	case OPT_MCMILLAN :
-		INFO ("Cutoff algorithm: McMillan's");
+		TRACE ("Cutoff algorithm: McMillan's");
 		break;
 	case OPT_PARIKH :
-		INFO ("Cutoff algorithm: Parikh strategy");
+		TRACE ("Cutoff algorithm: Parikh strategy");
 		break;
 	case OPT_ERV :
-		INFO ("Cutoff algorithm: Esparza-Romer-Vogler");
+		TRACE ("Cutoff algorithm: Esparza-Romer-Vogler");
 		break;
 	case OPT_ERV_MOLE :
-		INFO ("Cutoff algorithm: Mole's strategy");
-		break;
-	case OPT_DEPTH :
-		INFO ("Cutoff algorithm: Depth (%d)", opt.depth);
+		TRACE ("Cutoff algorithm: Mole's strategy");
 		break;
 	default :
-		throw std::logic_error ("Error while parsing the arguments");
+		throw std::logic_error ("Bug in " __FILE__ );
 	}
 	if (opt.save_path)
-		INFO ("Saving the unfolding: Yes, to '%s'", opt.save_path);
+		TRACE ("Saving the unfolding: Yes, to '%s'", opt.save_path);
 	else
-		INFO ("Saving the unfolding: No");
-	INFO ("Verbosity level: %d\n", verb_get ());
+		TRACE ("Saving the unfolding: No");
+	TRACE ("Verbosity level: %d\n", verb_get ());
+	// FIXME print maxev, maxdepth, ...
 
 	// initialize the unfolding structure
 	u.mark = 2;

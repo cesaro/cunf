@@ -35,6 +35,7 @@ struct hash {
 };
 
 struct hash hash;
+static int have_total_order = 0;
 
 int marking_hash (const struct nl *l)
 {
@@ -62,6 +63,9 @@ void marking_init (void)
 	hash.size = 1 + u.net.numpl * 800;
 	hash.tab = gl_malloc (hash.size * sizeof (struct ls));
 	for (i = hash.size - 1; i >= 0; i--) ls_init (hash.tab + i);
+
+	/* initialize the variable have_total_order, used in marking_add */
+	have_total_order = opt.cutoffs == OPT_ERV || opt.cutoffs == OPT_ERV_MOLE;
 }
 
 void marking_add (struct h *h)
@@ -79,8 +83,7 @@ void marking_add (struct h *h)
 
 	/* add the marking h->marking to the hash table if there is no
 	 * other history h' such that h->marking = h'->marking; if such h'
-	 * exists, then h is a cutoff; the function returns 1 iff h is a
-	 * cutoff */
+	 * exists, then h is a cutoff */
 
 	/* determine if the marking h->marking is in the hash table */
 	ASSERT (marking_hash (h->marking) == h->hash);
@@ -91,18 +94,12 @@ void marking_add (struct h *h)
 		if (ret == 0) break;
 	}
 
-#ifdef CONFIG_MCMILLAN
-	/* if it is the case, and the corresponding history is smaller,
-	 * according to the McMillan's order, then it is a cutoff */
-	if (n && h_cmp (he->h, h) < 0) {
-#else
-	/* if present in the hash table, then we know h is a cutoff, as we are
-	 * sure that the corresponding history is smaller (the ERV order is
-	 * total) */
-	if (n) {
-		// FIXME -- this deosn't work!!! ASSERT (h_cmp (he->h, h) < 0);
+	/* if it is, then either we have a total unfolding order, and
+	 * necessarily the history he->h comes strictly before h in the order
+	 * (see FIXME below), or the order is not total and we have to check */
+	if (n && (have_total_order || h_cmp (he->h, h) < 0)) {
+		// ASSERT (h_cmp (he->h, h) < 0); // FIXME -- this doesnt't work!!!
 		ASSERT (h_cmp (he->h, h) <= 0);
-#endif
 
 		/* deallocate the marking and set history h as a cutoff, whose
 		 * corresponding history is he->h */

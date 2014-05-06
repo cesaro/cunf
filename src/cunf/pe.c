@@ -86,21 +86,26 @@ static void _pe_q_alloc (void)
 	}
 }
 
+/*
+ * XXX - we stop searching for PEs whenever the quota for
+ * events/conditions/histories/depth have been achieved; but doing it this
+ * way we can get more events/conditions/... in the prefix than requested,
+ * as processing PEs due to a single history can traigger the addition of
+ * many histories to the queue; to fix this, add an additional check to
+ * _pe_q_insert
+ */
+
 static void _pe_q_insert (struct h * h)
 {
 	int idx;
 
-	/* if we reached the maximum depth (-d option), or we have found
-	 * the stop transition, skip the insertion */
-	if (opt.depth && h->depth > opt.depth) return;
-	if (pe.q.skip) return;
-	
 	/* make room for a new item and proceed with the insertion */
+	if (pe.q.skip) return;
 	pe.q.size++;
 	idx = pe.q.size;
 	_pe_q_alloc ();
 
-	/* when the -T is used and u.stoptr is found, empty the queue to make
+	/* if u.stoptr is found, empty the queue to make
 	 * sure that the corresponding event is processed immediately. Also,
 	 * prevent any further additions to the PE queue. */
 	if (h->e->ft == u.stoptr) {
@@ -292,20 +297,20 @@ static void _pe_comb_solution ()
 
 #ifdef VERB_LEVEL_TRACE
 	int i;
-	TRACE_ ("  Solution %s, ", pe.comb.t->name);
+	DEBUG_ ("  Solution %s, ", pe.comb.t->name);
 	if (verb_trace) {
 		db_r2 (0, pe.comb.r, "");
 		for (i = 0; i < pe.comb.size; i++)
 			db_r2 (" ", pe.comb.tab[i].tab[pe.comb.tab[i].i], "");
 	}
-	TRACE_ ("\n");
+	DEBUG_ ("\n");
 #endif
 
 	e = u.net.isplain ? 0 : _pe_comb_instance_of ();
 	if (! e) e = _pe_comb_new_event ();
 
 	h = _pe_comb_new_hist (e);
-	if (h) _pe_q_insert (h);
+	_pe_q_insert (h);
 }
 
 static void _pe_comb_ent_add (int i, struct ec *r)

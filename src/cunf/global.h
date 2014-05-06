@@ -89,17 +89,17 @@ struct net {
 };
 
 struct unf {
-	struct ls conds;	/* list of conditions */
-	struct ls events;	/* list of events */
-	int numcond, numev;	/* number of conditions/events in net	*/
-	int numh;		/* number of histories */
+	struct ls conds;		/* list of conditions */
+	struct ls events;		/* list of events */
+	int numcond, numev;	/* number of conditions/events in prefix */
+	int numh;				/* number of histories */
 	int numcutoffs;		/* number of cutoff histories */
-	int numgen;		/* number of generating ecs */
-	int numread;		/* number of reading ecs */
-	int numcomp;		/* number of compound ecs */
+	int numgen;				/* number of generating ecs */
+	int numread;			/* number of reading ecs */
+	int numcomp;			/* number of compound ecs */
 
-	int numr;		/* number of pairs in the R relation */
-	int nums;		/* number of pairs in the S relation */
+	int numr;				/* number of pairs in the R relation */
+	int nums;				/* number of pairs in the S relation */
 	unsigned long long numco; /* number of pairs in the concurrency rel. */
 	unsigned long long numrco; /* number of pairs in r->rco arrays */
 	unsigned long long nummrk; /* number of conditions in the marking lists */
@@ -112,7 +112,7 @@ struct unf {
 	int numepre;		/* number of conditions event presets */
 
 	long usrtime;		/* user time of the process (in ms) */
-	long vmsize;		/* current virtual memory size (in kb) */
+	long maxrss;		/* maximum Resident Set Size (in kb) */
 
 	struct event *e0;	/* event generating the minimal conditions */
 };
@@ -132,15 +132,19 @@ struct u {
 #define OPT_PARIKH		1
 #define OPT_ERV			2
 #define OPT_ERV_MOLE		3
-#define OPT_DEPTH			4
 
 struct opt {
 	char * net_path;
 	char * spec_path;
-	int cutoffs;
-	long int depth;
 	char * save_path;
+
+	int cutoffs;
 	int stats;
+
+	int maxdepth;
+	int maxev;
+	int maxcond;
+	int maxh;
 };
 
 extern struct u u;
