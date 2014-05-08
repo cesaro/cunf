@@ -57,6 +57,7 @@ public:
 	virtual CnfModel & get_model (void) =0;
 
 	void amo_2tree (std::vector<Lit> & lits);
+	void amo_2tree_two_ways (std::vector<Lit> & lits, Lit p);
 };
 
 
@@ -78,6 +79,7 @@ public:
 
 	inline iterator begin () { return map.begin (); }
 	inline iterator end () { return map.end (); }
+	bool contains (T & k) { return map.count (k); }
 
 private:
 	std::unordered_map<T,Lit,Hash> map;

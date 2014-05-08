@@ -46,6 +46,7 @@ private:
 	void get_imm_pred (struct event * e, std::vector<struct event *> & l);
 	void get_imm_sym_cfl (struct event * e, std::vector<struct event *> & l);
 	sat::Lit var (struct event * e);
+	sat::Lit var (struct cond * c);
 	sat::Lit var_en (struct event * e);
 	sat::Lit var (struct place * p);
 	sat::Lit var (struct trans * t);
@@ -65,6 +66,7 @@ private:
 	sat::Cnf * phi;
 	sat::Msat * __phi_msat;
 	sat::VarMap<struct event*> * event_var_map;
+	sat::VarMap<struct cond*> * cond_var_map;
 	sat::VarMap<struct event*> * event_en_var_map;
 	sat::VarMap<struct place*> * place_var_map;
 	sat::VarMap<struct trans*> * trans_var_map;
@@ -83,6 +85,11 @@ private:
 inline sat::Lit Cunfsat::var (struct event * e) {
 	sat::Lit p = (*event_var_map)[e];
 	DEBUG ("Event e%d:%s is variable %d", e->id, e->ft->name, p.to_dimacs ());
+	return p;
+}
+inline sat::Lit Cunfsat::var (struct cond * c) {
+	sat::Lit p = (*cond_var_map)[c];
+	DEBUG ("Cond c%d:%s is variable %d", c->id, c->fp->name, p.to_dimacs ());
 	return p;
 }
 inline sat::Lit Cunfsat::var_en (struct event * e) {

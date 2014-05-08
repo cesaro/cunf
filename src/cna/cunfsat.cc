@@ -4,8 +4,9 @@
 #include <cerrno>
 #include <stdexcept>
 
-#include "util/misc.h"
 #include "cunf/global.h"
+#include "util/misc.h"
+#include "util/stopwatch.hh"
 #include "cna/spec.hh"
 #include "sat/cnf.hh"
 
@@ -18,13 +19,16 @@
  * ==============
  *
  * Def: E is the set of events
+ * Def: C is the set of conditions
  * Def: Ec is E minus all cutoff (black) events
+ * Def: Cc is the set of conditions having at least two non-cutoffs in post(c)
  * Def: pred(e) = pre ( pre(e) U cont(e) )
  * Def: ev(t) = {e in E : t is the label of e}
- * Def: cf(e) = {e' in Ec : e and e' are in direct conflict}
+ * Def: cf(e) = {c in Cc : c is in pre(e)}
  *
  * Variables
  * 	e		event e happens
+ * 	c		exactly one event in post(c) has happened
  * 	t		transition t is enabled
  * 	e*		event e is is enabled at the configuration identified by the e's
  * 	dead	a single variable saying whether the configuration is a dead
@@ -35,7 +39,7 @@
  *
  * Symmetric conflict
  * 	for all conditions c with at least two events in both post(c) and Ec
- * 	AMO (e_1, ..., e_n) [with e_i in post(c) \cap Ec]
+ * 	c <=> AMO (e_1, ..., e_n) [with e_i in post(c) \cap Ec]
  *
  * Deadlock (part C)
  * 	dead <=> ~e_1* ^ ... ^ ~e_n* [with e_i in E]
@@ -58,14 +62,14 @@
  *
  * Enabled events (part B)
  * 	for all events e such that e* was referenced in part A or C, generate
- * 	e* <=> ~e ^ e_1 ^ ... ^ e_n ^ ~f_1 ^ ... ^ ~f_m
- * 			[with e_i in pred(e) and f_i in cf(e)]
+ * 	e* <=> ~e ^ e_1 ^ ... ^ e_n ^ ~c_1 ^ ... ^ ~c_m
+ * 			[with e_i in pred(e) and c_i in cf(e)]
  *		- if e is cutoff, omit e in the rhs (as ~e is always true)
  *
  *		Part B=>
- *			(~e*, ~e), (~e*, e_1), ..., (~e*, e_n)
+ *			(~e*, ~e), (~e*, e_1), ..., (~e*, e_n), (~e*, ~c_1), ...
  *		Part B<=
- *			(e, ~e_1, ..., ~e_n, e*)
+ *			(e, ~e_1, ..., ~e_n, c_1, ..., c_m, e*)
  *
  * You need,
  * 	- for every transition happening only as a positive atom:
@@ -90,6 +94,7 @@ Cunfsat::Cunfsat (Spec & s)
 	__phi_msat = new sat::Msat (); // we chose minisat here
 	phi = __phi_msat;
 	event_var_map = new sat::VarMap<struct event *> (*phi);
+	cond_var_map = new sat::VarMap<struct cond *> (*phi);
 	event_en_var_map = new sat::VarMap<struct event *> (*phi);
 	place_var_map = new sat::VarMap<struct place *> (*phi);
 	trans_var_map = new sat::VarMap<struct trans *> (*phi);
@@ -98,6 +103,7 @@ Cunfsat::Cunfsat (Spec & s)
 Cunfsat::~Cunfsat ()
 {
 	delete event_var_map;
+	delete cond_var_map;
 	delete event_en_var_map;
 	delete place_var_map;
 	delete trans_var_map;
@@ -126,24 +132,17 @@ bool Cunfsat::solve ()
 std::vector<struct event *> & Cunfsat::counterexample ()
 {
 	sat::CnfModel & model = phi->get_model ();
-	struct event * e;
-	struct ls * n;
 	int m;
 
 	violating_run.clear ();
 	m = ++u.mark;
-	for (n = u.unf.events.next; n; n = n->next)
+	for (auto it = event_var_map->begin (); it != event_var_map->end (); ++it)
 	{
-		e = ls_i (struct event, n, nod);
-		/* we need to explore here exactly the same events that
-		 * encode_ctx_causality has added, otherwise var (e) will add new
-		 * variables
-		 * FIXME implement this using an iterator over event_var_map!! ;)
-		 */
-		if (e->id == 0 || e->iscutoff) continue;
-		if (! model[var (e)]) continue;
-		e->m = m;
-		violating_run.push_back (e);
+		// it->first is the event; it->second is the variable
+		if (model[it->second]) {
+			it->first->m = m;
+			violating_run.push_back (it->first);
+		}
 	}
 
 	// assert that the answer is indeed a sound answer
@@ -204,11 +203,7 @@ void Cunfsat::encode_sym_conflict ()
 		for (i = c->post.deg - 1; i >= 0; --i)
 		{
 			e = (struct event *) c->post.adj[i];
-			if (! e->iscutoff)
-			{
-				j++;
-				if (j >= 2) break;
-			}
+			if (! e->iscutoff && ++j >= 2) break;
 		}
 		if (j < 2) continue;
 
@@ -221,7 +216,7 @@ void Cunfsat::encode_sym_conflict ()
 			conflict.push_back (var (e));
 		}
 		ASSERT (conflict.size () >= 2);
-		phi->amo_2tree (conflict);
+		phi->amo_2tree_two_ways (conflict, var (c));
 		conflict.clear ();
 	}
 }
@@ -668,22 +663,27 @@ void Cunfsat::encode_plain_event_enabled ()
 {
 	struct event * e;
 	struct event * ee;
+	struct cond * c;
 	sat::Lit p;
 	bool lr;
 	bool rl;
+	int i;
 	std::vector<sat::Lit> clause, clause2 (2);
 	std::vector<struct event *> list;
 
 	TRACE (" + Encoding 'event enabled' constraints: " \
-			"e* <=> ~e ^ /\\_pred(e)");
+			"e* <=> ~e ^ /\\_pred(e) ^ /\\_cf(e)");
 
 	/*
 	 * if this method is called after both
 	 * - encode_plain_trans_enabled
 	 * - encode_plain_deadlock
+	 * - encode_sym_conflict
 	 * then all events for which we need to produce 'event enabled'
-	 * constraints will be already in the map event_en_var_map, so all we
-	 * have to do is to iterate through the map :)
+	 * constraints will be already in the map event_en_var_map, and all
+	 * conditions involved in the definition of e* will also be in
+	 * cond_var_map, so all we have to do is to iterate through
+	 * event_en_var_map :)
 	 */
 	for (auto it = event_en_var_map->begin ();
 			it != event_en_var_map->end (); ++it)
@@ -726,18 +726,18 @@ void Cunfsat::encode_plain_event_enabled ()
 			if (rl) clause.push_back (~ var(ee));
 		}
 
-		// iterate through all direct conflicts of e
+		// iterate through all conditions in e's preset
 		list.clear ();
-		get_imm_sym_cfl (e, list);
-		for (auto itt = list.begin(); itt != list.end(); ++itt)
+		for (i = e->pre.deg - 1; i >= 0; --i)
 		{
-			ee = *itt;
+			c = (struct cond *) e->pre.adj[i];
+			if (! cond_var_map->contains (c)) continue;
 			if (lr)
 			{
-				clause2[1] = ~var (ee);
+				clause2[1] = ~var (c);
 				phi->add_clause (clause2);
 			}
-			if (rl) clause.push_back (var(ee));
+			if (rl) clause.push_back (var(c));
 		}
 		if (rl) phi->add_clause (clause);
 		clause.clear ();

@@ -9,6 +9,50 @@
 
 namespace sat {
 
+void Cnf::amo_2tree_two_ways (std::vector<Lit> & l, Lit p)
+{
+	std::vector<Lit> laux;
+	std::vector<Lit>::size_type i;
+
+	// if you have only one literal q in l, then q <=> p
+	ASSERT (l.size () >= 1);
+	if (l.size () == 1)
+	{
+		add_clause (~p, l[0]);
+		add_clause (p, ~l[0]);
+		return;
+	}
+
+	// while there is at least two, build one 'layer' of the tree
+	while (l.size () != 2)
+	{
+		i = (l.size () & 1);
+		if (i) laux.push_back (l[0]);
+		for (; i < l.size (); i += 2)
+		{
+			Lit q = l[i];
+			Lit r = l[i + 1];
+			Lit s = new_var ();
+			add_clause (~q, ~r);
+			add_clause (~q, s);
+			add_clause (~r, s);
+			add_clause (~s, q, r);
+			laux.push_back (s);
+		}
+		l = laux;
+		laux.clear ();
+	}
+
+	// exactly two should remain, do the trick with p
+	ASSERT (l.size () == 2);
+	Lit q = l[0];
+	Lit r = l[1];
+	add_clause (~q, ~r);
+	add_clause (~q, p);
+	add_clause (~r, p);
+	add_clause (~p, q, r);
+}
+
 void Cnf::amo_2tree (std::vector<Lit> & l)
 {
 	std::vector<Lit> c(2), laux;

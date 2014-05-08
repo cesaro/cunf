@@ -15,5 +15,3 @@
 tags
 src/cunf/cunf
 src/pep2dot
-minisat/core/minisat
-minisat/core/depend.mk
