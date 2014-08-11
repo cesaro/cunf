@@ -332,12 +332,13 @@ class Cna :
 
     def deadlock (self) :
         # nothing to do if there is zero cutoffs
+        #db ('self.u.nr_black = ', self.u.nr_black)
         if self.u.nr_black == 0 :
             self.phi.add ([self.phi.var (1)])
             return self.phi
 
         # causal closure
-        #db ('causal')
+        #db ('deadlock causal')
         self.__causal ()
         self.result['event variables'] = len (self.phi.varmap)
 
@@ -877,6 +878,7 @@ class Cna :
         self.result['answer'] = r
 
         # build the trace
+        #db ('trace', out)
         if len (out) != 2 :
             raise Exception, 'Error while parsing minisat output'
         out = out[1].split ()
@@ -895,6 +897,10 @@ class Cna :
             self.result['note'] = \
 'Looks like the trace contains a cycle of asymmetric conflict. Did you use \
 the "nocy" reduction?'
+        if len (trace) == 0 and self.u.nr_black == 0 :
+            k = 'note' if 'note' not in self.result else 'note1'
+            self.result[k] = \
+'The unfolding has no cutoff, all executions are finite!'
         self.result['trace'] = ' '.join (trace)
 
 __init_t = time.time ()
