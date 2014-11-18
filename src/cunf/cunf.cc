@@ -140,7 +140,7 @@ void res_usage (void)
 	ret = getrusage (RUSAGE_SELF, &r);
 	if (ret >= 0) {
 		/* in linux this is 0; in mac os this is the maxrss in kb */
-		u.unf.maxrss = r.ru_maxrss / 1024;
+		u.unf.maxrss = r.ru_maxrss / 1024; // this line, fix it!!
 		u.unf.usrtime = r.ru_utime.tv_sec * 1000 +
 				r.ru_utime.tv_usec / 1000;
 	}

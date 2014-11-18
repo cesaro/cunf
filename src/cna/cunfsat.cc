@@ -274,7 +274,7 @@ void Cunfsat::encode_ctx_all_disabled ()
 bool Cunfsat::is_stubborn (struct event * e)
 {
 	ASSERT (false);
-	return e != e;
+	return e + 2 != e + 2;
 }
 
 void

@@ -200,6 +200,7 @@ class Net :
         if fmt == 'grml' : return self.__write_grml (f, m)
         if fmt == 'pnml' : return self.__write_pnml (f, m)
         if fmt == 'ctxdot' : return self.__write_ctxdot (f, 5, 1)
+        if fmt == 'pt1' : return self.__write_pt1 (f, m)
         raise Exception, "'%s': unknown output format" % fmt
 
     def __write_pep (self, f, m=0) :
@@ -239,6 +240,23 @@ class Net :
                 f.write ('%d>%d\n' % (tab[p], tab[t]))
 
         if out : f.write ('RA\n' + out)
+
+    def __write_pt1 (self, f, m=0) :
+        # we ignore m !!
+        f.write ('PT1\n%d\n%d\n' % (len (self.places), len (self.trans)))
+        s = ''
+
+        tab = {}
+        for p in self.places :
+            f.write ('"%s" %d\n' % (repr (p), p.m0))
+            tab[p] = len (tab)
+
+        for t in self.trans :
+            assert len (t.cont) == 0
+            f.write ('"%s" %d %d' % (repr (t), len (t.pre), len (t.post)))
+            for p in t.post : f.write (' %d' % tab[p])
+            for p in t.post : f.write (' %d' % tab[p])
+            f.write ('\n')
 
     # FIXME -- this method has never been tested !!
     def __write_ctxdot (self, f, items, n) :
