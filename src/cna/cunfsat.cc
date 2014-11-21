@@ -167,7 +167,7 @@ void Cunfsat::encode_causality ()
 	struct event * e;
 	struct ls * n;
 
-	INFO (" + Encoding causality");
+	TRACE (" + Encoding causality");
 	for (n = u.unf.events.next; n; n = n->next)
 	{
 		e = ls_i (struct event, n, nod);
@@ -193,7 +193,7 @@ void Cunfsat::encode_sym_conflict ()
 	struct ls * n;
 	int i, j;
 
-	INFO (" + Encoding symmetric conflicts");
+	TRACE (" + Encoding symmetric conflicts");
 	for (n = u.unf.conds.next; n; n = n->next)
 	{
 		c = ls_i (struct cond, n, nod);
