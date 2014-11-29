@@ -78,8 +78,11 @@ void marking_add (struct h *h)
 	ASSERT (h->marking);
 	ASSERT (h->corr != 0); /* histories always initialized as cutoffs */
 
-	/* h->corr = 0;
-	return; */
+	/* if we don't want cutoffs, declare the history free to go */
+	if (opt.cutoffs == OPT_NONE) {
+		h->corr = 0;
+		return;
+	}
 
 	/* add the marking h->marking to the hash table if there is no
 	 * other history h' such that h->marking = h'->marking; if such h'

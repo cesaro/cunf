@@ -74,6 +74,7 @@ optional file containing properties to verify.  Allowed OPTIONS are:
        * parikh  Parikh vector strategy FIXME
        * erv     Esparza-Romer-Vogler's total order
        * mole    The modification of ERV implemented in the unfolder Mole
+       * none    Events added in McMillan's order, but none declared as cutoff
 
  --max-depth=N
  --max-events=N
@@ -97,6 +98,10 @@ optional file containing properties to verify.  Allowed OPTIONS are:
  -i, --stats
       Print statistical information about the computation and the computed
       unfolding prefix.
+
+ -I, --interactive
+      Allows the user to interactively select which events are added to the
+      unfolder and when to stop (experimental).
 
  -v, --verb=N
       Increments the verbosity level by the optional parameter N, a number
@@ -267,6 +272,7 @@ void parse_options (int argc, char ** argv)
 			{"max-histories", required_argument, 0, 'H'},
 			{"save-unf", required_argument, 0, 's'},
 			{"stats", no_argument, 0, 'i'},
+			{"interactive", no_argument, 0, 'I'},
 			{"help", no_argument, 0, 'h'},
 			{"verb", optional_argument, 0, 'v'},
 			{"version", no_argument, 0, 'V'},
@@ -280,12 +286,13 @@ void parse_options (int argc, char ** argv)
 	opt.maxev = INT_MAX;
 	opt.maxcond = INT_MAX;
 	opt.maxh = INT_MAX;
+	opt.interactive = 0;
 	verb = VERB_PRINT;
 
 	// parse the command line, supress automatic error messages by getopt
 	opterr = 0;
 	while (1) {
-		op = getopt_long (argc, argv, "c:s:ivhV", longopts, 0);
+		op = getopt_long (argc, argv, "c:s:iIvhV", longopts, 0);
 		if (op == -1) break;
 		switch (op) {
 		case 'c' :
@@ -297,6 +304,8 @@ void parse_options (int argc, char ** argv)
 				opt.cutoffs = OPT_ERV;
 			} else if (strcmp (optarg, "mole") == 0) {
 				opt.cutoffs = OPT_ERV_MOLE;
+			} else if (strcmp (optarg, "none") == 0) {
+				opt.cutoffs = OPT_NONE;
 			} else {
 				usage ();
 			}
@@ -326,6 +335,9 @@ void parse_options (int argc, char ** argv)
 			break;
 		case 'i' :
 			opt.stats = 1;
+			break;
+		case 'I' :
+			opt.interactive = 1;
 			break;
 		case 'h' :
 			help ();
@@ -379,6 +391,9 @@ void main_ (int argc, char **argv)
 		break;
 	case OPT_ERV_MOLE :
 		TRACE ("Cutoff algorithm: Mole's strategy");
+		break;
+	case OPT_NONE :
+		TRACE ("Cutoff algorithm: none, but using McMillan's insertion order");
 		break;
 	default :
 		throw std::logic_error ("Bug in " __FILE__ );

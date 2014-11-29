@@ -213,8 +213,8 @@ static void _unfold_progress (struct h *h)
 		TRACE ("new!");
 	}
 
-	if ((i & 0xfff) == 0) {
-		TRACE ("  At size %6d, %d histories", h->size, i);
+	if ((i & 0x3ff) == 0) {
+		INFO ("  At size %6d, %d histories", h->size, i);
 	}
 }
 

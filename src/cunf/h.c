@@ -577,7 +577,7 @@ int h_cmp (struct h *h1, struct h *h2)
 
 	/* check McMillan's order */
 	if (h1->size != h2->size) return h1->size - h2->size;
-	if (opt.cutoffs == OPT_MCMILLAN) return 0;
+	if (opt.cutoffs == OPT_MCMILLAN || opt.cutoffs == OPT_NONE) return 0;
 
 	/* sizes are equal, check parikh vectors and return the condition of h1
 	 * to be lexicographically smaller to h2 */

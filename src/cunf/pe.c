@@ -17,12 +17,15 @@
  */
 
 #include <string.h>
+#include <unistd.h>
+#include <ctype.h>
 
 #include "util/al.h"
 #include "util/ls.h"
 #include "util/misc.h"
 #include "util/glue.h"
 #include "cunf/global.h"
+#include "cunf/output.h"
 #include "cunf/debug.h"
 #include "cunf/ec.h"
 #include "cunf/h.h"
@@ -86,11 +89,25 @@ static void _pe_q_alloc (void)
 	}
 }
 
+static void _pe_q_insert_interactive (struct h * h)
+{
+	/* instead of using pe.q as a heap, we simply place the history at the
+	 * end; pe.q.size should actually be called pe.q.last, as it at this
+	 * point it always points to a writable position in pe.q.tab
+	 */
+	pe.q.tab[pe.q.size] = h;
+
+	/* at this point there is pe.q.size elements in the array, the first at
+	 * offset 1, the last at offset pe.q.size; the array has least
+	 * pe.q.size+1 allocated slots
+	 */
+}
+
 /*
  * XXX - we stop searching for PEs whenever the quota for
  * events/conditions/histories/depth have been achieved; but doing it this
  * way we can get more events/conditions/... in the prefix than requested,
- * as processing PEs due to a single history can traigger the addition of
+ * as processing PEs due to a single history can trigger the addition of
  * many histories to the queue; to fix this, add an additional check to
  * _pe_q_insert
  */
@@ -114,6 +131,9 @@ static void _pe_q_insert (struct h * h)
 		pe.q.tab[1] = h;
 		return;
 	}
+
+	/* if in interactive mode, use pe.q as a set rather than a heap */
+	if (opt.interactive) return _pe_q_insert_interactive (h);
 
 	/* insert the new element at the end, then move upwards as needed */
 	for (; idx > 1; idx /= 2) {
@@ -506,6 +526,98 @@ void pe_term (void)
 	gl_free (pe.comb.tab);
 }
 
+static void _pe_interactive_shell_help (void)
+{
+	PRINT ("Available commands (no leading spaces allowed):");
+	PRINT (" q -- Terminates unfolding and exits.");
+	PRINT (" h -- Shows this message.");
+	PRINT (" d -- Dumps current unfolding prefix in DOT format.");
+	PRINT (" l -- Prints (again) the list of current possible extensions.");
+	PRINT (" <number> -- Adds event <number> to the unfolding.");
+}
+
+static void _pe_interactive_shell_print_pes (void)
+{
+	int i;
+
+	PRINT ("===============================");
+	PRINT ("Possible extensions: %d events:", pe.q.size);
+	for (i = 1; i <= pe.q.size; i++) {
+		// db_h (pe.q.tab[i]);
+		db_e (pe.q.tab[i]->e);
+	}
+	PRINT ("===============================");
+}
+
+static struct h * _pe_interactive_shell (void)
+{
+	int i, eid, m, ret;
+	static int first = 1;
+	static int file_count = 0;
+	char buff[65];
+	struct ls *n;
+	struct h * h;
+	
+	_pe_interactive_shell_print_pes ();
+	while (1) {
+		if (first) { first = 0; PRINT ("(Type 'h' to get help.)"); }
+		PRINT_ ("? "); fflush (stdout); // this shouldn't be here
+		ret = read (0, buff, 64);
+		if (ret <= 0) {
+			ret = 1;
+			buff[0] = 'q';
+		}
+		buff[ret] = 0;
+
+		/* quit */
+		if (buff[0] == 'q') {
+			PRINT ("Quitting.");
+			return 0;
+
+		/* print list of possible extensions */
+		} else if (buff[0] == 'l') {
+			_pe_interactive_shell_print_pes ();
+
+		/* dump a DOT file with *all* events */
+		} else if (buff[0] == 'd') {
+			m = ++u.mark;
+			for (n = u.unf.events.next; n; n = n->next) {
+				ls_i (struct event, n, nod)->m = m;
+			}
+			// for (i = 1; i <= pe.q.size; i++) pe.q.tab[i]->e->m = 0;
+			sprintf (buff, "prefix.%d.dot", file_count++);
+			write_dot_fancy (buff, m);
+			PRINT ("Current prefix written to './%s'", buff);
+
+		/* help */
+		} else if (buff[0] == 'h') {
+			_pe_interactive_shell_help ();
+
+		/* extend the ufolding with one event */
+		} else if (isdigit (buff[0])) {
+			eid = atoi (buff);
+			for (i = 1; i <= pe.q.size; i++)
+				if (pe.q.tab[i]->e->id == eid) break;
+			if (i > pe.q.size) {
+				PRINT ("Error, event id %d is an extension.", eid);
+				continue;
+			}
+			h = pe.q.tab[i];
+			if (i != pe.q.size) pe.q.tab[i] = pe.q.tab[pe.q.size];
+			pe.q.size--;
+			PRINT ("Adding event e%d:%s", h->e->id, h->e->ft->name);
+			return h;
+
+		/* empty command */
+		} else if (buff[0] == '\n') {
+
+		/* unknown command */
+		} else {
+			PRINT ("Unknown command, type 'h' to get help.");
+		}
+	}
+}
+
 struct h * pe_pop (void)
 {
 	struct h * ret;
@@ -514,6 +626,9 @@ struct h * pe_pop (void)
 
 	/* nothing to do if the queue is empty */
 	if (pe.q.size == 0) return 0;
+
+	/* if in interactive mode, use pe.q as a set rather than a heap */
+	if (opt.interactive) return _pe_interactive_shell ();
 
 	/* the minimal element is at offset 1 in the tab */
 	ret = pe.q.tab[1];

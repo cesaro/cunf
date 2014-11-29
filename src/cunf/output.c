@@ -101,9 +101,11 @@ void write_dot (const char * filename)
 	if (i == EOF) gl_err ("'%s': %s", filename, strerror (errno));
 }
 
-void write_dot_fancy (const char * filename)
+/* display all events marked with m, together it their pre/post conditions
+ */
+void write_dot_fancy (const char * filename, int m)
 {
-	int i, m, enr, hnr;
+	int i, hnr;
 	struct dls l, *ln;
 	struct h *h, *hp;
 	struct event *e;
@@ -117,20 +119,12 @@ void write_dot_fancy (const char * filename)
 		return;
 	}
 
-	m = ++u.mark;
-	ASSERT (m > 0);
-	for (i = u.unf.e0->post.deg - 1; i >= 0; i--) {
-		c = (struct cond *) u.unf.e0->post.adj[i];
-		c->m = m;
-	}
-
 	P ("digraph unfolding {\n\t/* events */\n");
 	P ("\tnode    [shape=box style=filled fillcolor=gray60];\n");
-	enr = 0;
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
-		if (e->id == 0) continue;
-		enr++;
+		//if (e->id == 0) continue;
+		if (e->m != m) continue;
 		P ("\te%-6d [label=\"%s:e%d\"%s];\n",
 				e->id,
 				e->ft->name,
@@ -145,17 +139,19 @@ void write_dot_fancy (const char * filename)
 	P ("\tnode    [style=filled fillcolor=gray90 shape=circle];\n");
 	for (n = u.unf.conds.next; n; n = n->next) {
 		c = ls_i (struct cond, n, nod);
+		if (c->pre->m != m) continue;
 
 		P ("\tc%-6d [label=\"%s:c%d\"];%s\n",
 				c->id, c->fp->name, c->id,
-				c->m == m ? " /* initial */" : "");
+				c->pre == u.unf.e0 ? " /* initial */" : "");
 	}
 
 	P ("\n\t/* history annotations for events */\n");
 	P ("\tedge    [color=white];\n");
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
-		if (e->id == 0) continue;
+		//if (e->id == 0) continue;
+		if (e->m != m) continue;
 		P ("\te%-6d -> e%d [label=\"", e->id, e->id);
 		for (i = e->hist.deg - 1; i >= 0; i--) {
 			h = (struct h *) e->hist.adj[i];
@@ -168,7 +164,8 @@ void write_dot_fancy (const char * filename)
 	P ("\tedge    [color=black];\n");
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
-		if (e->id == 0) continue;
+		//if (e->id == 0) continue;
+		if (e->m != m) continue;
 
 		for (i = e->post.deg - 1; i >= 0; i--) {
 			c = (struct cond *) e->post.adj[i];
@@ -179,11 +176,13 @@ void write_dot_fancy (const char * filename)
 	P ("\n\t/* preset and context of events */\n");
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
-		if (e->id == 0) continue;
+		// if (e->id == 0) continue;
+		if (e->m != m) continue;
 
 		for (i = e->pre.deg - 1; i >= 0; i--) {
 			c = (struct cond *) e->pre.adj[i];
 			P ("\tc%-6d -> e%d;\n", c->id, e->id);
+			ASSERT (c->pre->m == m); // event marks should be causally closed!
 		}
 
 		for (i = e->cont.deg - 1; i >= 0; i--) {
@@ -199,7 +198,8 @@ void write_dot_fancy (const char * filename)
 	hnr = 0;
 	for (n = u.unf.events.next; n; n = n->next) {
 		e = ls_i (struct event, n, nod);
-		if (e->id == 0) continue;
+		//if (e->id == 0) continue;
+		if (e->m != m) continue;
 		for (i = e->hist.deg - 1; i >= 0; i--) {
 			h = (struct h *) e->hist.adj[i];
 			hnr++;
@@ -209,6 +209,7 @@ void write_dot_fancy (const char * filename)
 			h_list (&l, h);
 			for (ln = l.next; ln; ln = ln->next) {
 				hp = dls_i (struct h, ln, auxnod);
+				ASSERT (hp->e->m == m); // event marks should be causally closed !
 				P ("e%d:%s%s ",
 						hp->e->id,
 						hp->e->ft->name,
@@ -218,7 +219,6 @@ void write_dot_fancy (const char * filename)
 		}
 	}
 
-	ASSERT (enr == u.unf.numev - 1);
 	P ("\t <br align=\"left\"/>\n");
 	P ("\t%d transitions<br align=\"left\"/>\n"
 			"\t%d places<br align=\"left\"/>\n"
@@ -230,11 +230,19 @@ void write_dot_fancy (const char * filename)
 			u.unf.numev - 1,
 			u.unf.numcond,
 			u.unf.numh - 1);
-#ifdef CONFIG_MCMILLAN
-	P ("\tUsing McMillan order<br align=\"left\"/>\n");
-#else
-	P ("\tUsing Esparza/Romer/Vogler order<br align=\"left\"/>\n");
-#endif
+	if (opt.cutoffs == OPT_MCMILLAN) {
+		P ("\tUsing McMillan's order<br align=\"left\"/>\n");
+	} else if (opt.cutoffs == OPT_PARIKH) {
+		P ("\tUsing Parikh order<br align=\"left\"/>\n");
+	} else if (opt.cutoffs == OPT_ERV) {
+		P ("\tUsing Esparza/Romer/Vogler order<br align=\"left\"/>\n");
+	} else if (opt.cutoffs == OPT_ERV_MOLE) {
+		P ("\tUsing Mole's version of ERV order<br align=\"left\"/>\n");
+	} else if (opt.cutoffs == OPT_NONE) {
+		P ("\tUsing McMillan's order, but no event declared cutoff<br align=\"left\"/>\n");
+	} else {
+		ASSERT (0);
+	}
 	P ("\t>];\n");
 	P ("}\n");
 

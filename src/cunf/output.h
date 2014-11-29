@@ -24,7 +24,7 @@ extern "C" {
 #endif
 
 void write_dot (const char * filename);
-void write_dot_fancy (const char * filename);
+void write_dot_fancy (const char * filename, int m);
 void write_cuf (const char * filename);
 
 #ifdef __cplusplus // extern C

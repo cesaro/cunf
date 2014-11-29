@@ -106,6 +106,7 @@ distclean : clean
 	@find examples/ -name '*.dot' -exec rm '{}' ';'
 	@find examples/ -name '*.pdf' -exec rm '{}' ';'
 	@find examples/ -name '*.tr' -exec rm '{}' ';'
+	@find examples/ -name '*.pt' -exec rm '{}' ';'
 	@#rm -f test/nets/{plain,cont,pr}/{small,med,large,huge}/*.{cnf,mci,bc,r,cuf,dot,pdf}
 	@echo Mr. Proper done.
 

@@ -132,6 +132,7 @@ struct u {
 #define OPT_PARIKH		1
 #define OPT_ERV			2
 #define OPT_ERV_MOLE		3
+#define OPT_NONE			4
 
 struct opt {
 	char * net_path;
@@ -140,6 +141,7 @@ struct opt {
 
 	int cutoffs;
 	int stats;
+	int interactive;
 
 	int maxdepth;
 	int maxev;

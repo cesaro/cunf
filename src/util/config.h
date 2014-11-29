@@ -18,10 +18,10 @@
 
 
 /* see src/util/misc.h for more info */
-#define CONFIG_MAX_VERB_LEVEL 1
+#define CONFIG_MAX_VERB_LEVEL 3
 
 /* test and debug */
-#undef CONFIG_DEBUG
+#define CONFIG_DEBUG
 
 /* unfold order */
 #undef CONFIG_MCMILLAN
