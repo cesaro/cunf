@@ -175,6 +175,109 @@ class Net :
     def cont2pr (self) :
         pass
 
+    def make_fork (self, pin, pleft, pright, idx) :
+        # print 'make_fork pin', pin, 'pleft', pleft, 'pright', pright, 'idx', idx
+        pfork = self.place_add ('aux_%d_fork' % idx)
+
+        ponl = self.place_add ('aux%d_onl' % idx, 1)
+        ponr = self.place_add ('aux%d_onr' % idx, 1)
+        poffl = self.place_add ('aux%d_offl' % idx)
+        poffr = self.place_add ('aux%d_offr' % idx)
+
+        tonl_onr = self.trans_add ('aux%d_init__onl_onr' % idx)
+        tonl_offr = self.trans_add ('aux%d_init__onl_offr' % idx)
+        toffl_onr = self.trans_add ('aux%d_init__offl_onr' % idx)
+        # this transition is dead, actually, we can never have both offl and offr
+        # toffl_offr = self.trans_add ('aux%d_init__offl_offr' % idx)
+
+        tl = self.trans_add ('aux%d_l__go' % idx)
+        tlwait = self.trans_add ('aux%d_l__wait' % idx)
+        tr = self.trans_add ('aux%d_r__go' % idx)
+        trwait = self.trans_add ('aux%d_r__wait' % idx)
+
+        # setup this mess
+        pin.post_add (tonl_onr)
+        pin.post_add (tonl_offr)
+        pin.post_add (toffl_onr)
+        #pin.post_add (toffl_offr)
+
+        pfork.pre_add (tonl_onr)
+        pfork.pre_add (tonl_offr)
+        pfork.pre_add (toffl_onr)
+        #pfork.pre_add (toffl_offr)
+
+        # on left, on right; nothing to do
+        tonl_onr.cont_add (ponl)
+        tonl_onr.cont_add (ponr)
+
+        # on left, off right; switch right on
+        tonl_offr.cont_add (ponl)
+        tonl_offr.pre_add (poffr)
+        tonl_offr.post_add (ponr)
+
+        # off left, on right; switch left on
+        toffl_onr.cont_add (ponr)
+        toffl_onr.pre_add (poffl)
+        toffl_onr.post_add (ponl)
+
+        # off left, off right; switch both on
+        # toffl_offr.pre_add (poffl)
+        # toffl_offr.pre_add (poffr)
+        # toffl_offr.post_add (ponl)
+        # toffl_offr.post_add (ponr)
+
+        # at this point pfork, ponl, ponr are marked, regardless of the initial
+        # state
+
+        # choose left
+        tl.pre_add (pfork)
+        tl.pre_add (ponr)
+        tl.post_add (poffr)
+        tl.post_add (pleft)
+
+        # choose right
+        tr.pre_add (pfork)
+        tr.pre_add (ponl)
+        tr.post_add (poffl)
+        tr.post_add (pright)
+
+        # wait left
+        tlwait.pre_add (poffl)
+        tlwait.post_add (ponl)
+
+        # wait right
+        trwait.pre_add (poffr)
+        trwait.post_add (ponr)
+
+    def make_fork_more (self, pin, outplaces, idx) :
+        #print 'make_fork_more, pin', pin, 'outplaces', outplaces, 'idx', idx
+        if len (outplaces) == 2 :
+            self.make_fork (pin, outplaces[0], outplaces[1], idx)
+            return idx + 1
+        pright = self.place_add ('aux%d_partialfork' % idx)
+        self.make_fork (pin, outplaces[0], pright, idx)
+        return self.make_fork_more (pright, outplaces[1:], idx + 1)
+
+    def make_race (self, p, idx) :
+        assert len (p.post) >= 2
+        #print 'make_race', p, idx
+
+        # make a new place for each transition in the postset
+        place_choices = []
+        for t in list (p.post) :
+            pnew = self.place_add ('aux%d_priv_%s_%s' % (idx, p.name, t.name))
+            place_choices.append (pnew)
+            t.pre_rem (p)
+            t.pre_add (pnew)
+        return self.make_fork_more (p, place_choices, idx + 1) 
+
+    def stubbornify (self) :
+        idx = 0
+        for p in list (self.places) :
+            #print 'stubbornify loop', p, id (p)
+            if len (p.post) >= 2 :
+                idx = self.make_race (p, idx)
+
     def make_unsafe (self, places) :
         t1 = self.trans_add ('uns_t1')
         t2a = self.trans_add ('uns_t2a')
@@ -449,6 +552,7 @@ class Net :
 
     def read (self, f, fmt='pep') :
         if fmt == 'pep' : return self.__read_pep (f)
+        if fmt == 'pt1' : return self.__read_pt1 (f)
         if fmt == 'grml' : return self.__read_grml (f)
         if fmt == 'pnml' : return self.__read_pnml (f)
         if fmt == 'stg' : return self.__read_stg (f)
@@ -456,6 +560,54 @@ class Net :
 
     def __read_pep (self, f) :
         raise Exception, 'reading PEP files is not yet implemented'
+
+    def __read_pt1 (self, f) :
+        l = f.readline ()
+        l = l[:-1]
+        if l != 'PT1' :
+            raise Exception, "Expected 'PT1' as first line, found '%s'" % l
+        try :
+            pnr = int (f.readline ())
+            tnr = int (f.readline ())
+        except IOError :
+            raise
+        except :
+            raise Exception, "Expected number of places and/or number of transitions"
+
+        # read pnr place names and initial marking
+        tab = {}
+        i = 3 # line number
+        for l in f :
+            i += 1
+            l = l.rstrip ()
+            #print "line %d: '%s'" % (i, l)
+            if not l or l[0] != '"' :
+                raise Exception, "line %d: syntax error" % i
+
+            # split the line in three parts, separator is "quote space"
+            name, sep, end = l[1:].rpartition ('" ')
+            if i - 4 < pnr :
+                # if it is a place line
+                try :
+                    end = int (end)
+                except :
+                    raise Exception, "line %d: expected number, found '%s'" % (i, end)
+                tab[i - 4] = self.place_add (name, end)
+            else :
+                # if it is a transition line
+                try :
+                    nums = [int (x) for x in end.split ()]
+                except :
+                    raise Exception, "line %d: expected number" % i
+                if len (nums) < 2 or len (nums) != 2 + nums[0] + nums[1] :
+                    raise Exception, "line %d: expected different number of indexes" % i
+                t = self.trans_add (name)
+                for idx in nums[2 : 2 + nums[0]] :
+                    #print "pre idx %d, place %s" % (idx, tab[idx])
+                    t.pre_add (tab[idx])
+                for idx in nums[2 + nums[0] : ] :
+                    #print "post idx %d, place %s" % (idx, tab[idx])
+                    t.post_add (tab[idx])
 
     def __read_grml (self, f) :
         par = xml.parsers.expat.ParserCreate ()
@@ -687,7 +839,108 @@ def test1 () :
     n.read (sys.stdin, 'grml')
     n.write (sys.stdout, 'grml')
 
+def test2 () :
+    n = Net (True)
+    n.read (sys.stdin, 'pt1')
+    n.stubbornify ()
+    #n.write (sys.stdout, 'pt1')
+
+def test3 () :
+
+    # two transitions in conflict
+    n = Net (True)
+    p0 = n.place_add ('p0', 1)
+    p1 = n.place_add ('p1')
+    p2 = n.place_add ('p2')
+
+    t1 = n.trans_add ('t1')
+    t2 = n.trans_add ('t2')
+
+    t1.pre_add (p0)
+    t1.post_add (p1)
+
+    t2.pre_add (p0)
+    t2.post_add (p2)
+
+    print "Before stubbornifying !!"
+    n.write (sys.stdout, 'pt1')
+    n.write (sys.stdout, 'dot')
+    n.stubbornify ()
+    print "After stubbornifying !!"
+    n.write (sys.stdout, 'dot')
+    n.cont2plain ()
+    n.write (sys.stdout, 'pt1')
+
+    f = open ('./out.ll_net', 'w')
+    n.write (f, 'pep')
+
+def test4 () :
+
+    # three transitions in conflict
+    n = Net (True)
+    p0 = n.place_add ('p0', 1)
+    p1 = n.place_add ('p1')
+    p2 = n.place_add ('p2')
+    p3 = n.place_add ('p3')
+
+    t1 = n.trans_add ('t1')
+    t2 = n.trans_add ('t2')
+    t3 = n.trans_add ('t3')
+
+    t1.pre_add (p0)
+    t1.post_add (p1)
+
+    t2.pre_add (p0)
+    t2.post_add (p2)
+
+    t3.pre_add (p0)
+    t3.post_add (p3)
+
+    print "Before stubbornifying !!"
+    n.write (sys.stdout, 'dot')
+    n.stubbornify ()
+    print "After stubbornifying !!"
+    n.write (sys.stdout, 'dot')
+
+    f = open ('./out.ll_net', 'w')
+    n.write (f, 'pep')
+
+def test5 () :
+
+    # two transitions in conflict, and return
+    n = Net (True)
+    p0 = n.place_add ('p0', 1)
+    p1 = n.place_add ('p1')
+
+    t1 = n.trans_add ('t1')
+    t2 = n.trans_add ('t2')
+    t3 = n.trans_add ('t3')
+
+    t1.pre_add (p0)
+    t1.post_add (p1)
+
+    t2.pre_add (p0)
+    t2.post_add (p1)
+
+    t3.pre_add (p1)
+    t3.post_add (p0)
+
+    n.write (sys.stdout, 'dot')
+    n.stubbornify ()
+    n.write (sys.stdout, 'dot')
+
+    f = open ('./out.ll_net', 'w')
+    n.write (f, 'pep')
+
+def test6 () :
+
+    n = Net (True)
+    n.read (sys.stdin, 'pt1')
+    n.stubbornify ()
+    n.cont2plain ()
+    n.write (sys.stdout, 'pep')
+
 if __name__ == '__main__' :
-    test1 ()
+    test3 ()
 
 # vi:ts=4:sw=4:et:

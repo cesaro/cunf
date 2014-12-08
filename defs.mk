@@ -117,6 +117,10 @@ YACC:=bison
 	@echo "P2PT $<"
 	@src/pep2pt $< > $@
 
+#%.ll_net : %.pt
+#	@echo "PT2P $<"
+#	@tools/pt2pep.py < $< > $@
+
 #%.ll_net : %.mp
 #	@echo "C2P $<"
 #	@tools/mp2pep.py < $< > $@
