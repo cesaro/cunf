@@ -357,7 +357,7 @@ class Net :
         for t in self.trans :
             assert len (t.cont) == 0
             f.write ('"%s" %d %d' % (repr (t), len (t.pre), len (t.post)))
-            for p in t.post : f.write (' %d' % tab[p])
+            for p in t.pre : f.write (' %d' % tab[p])
             for p in t.post : f.write (' %d' % tab[p])
             f.write ('\n')
 
