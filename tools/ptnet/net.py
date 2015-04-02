@@ -4,10 +4,14 @@ import xml.parsers.expat
 
 class Transition :
     def __init__ (self, name) :
+        self.ident = None
         self.name = name
         self.pre = set ()
         self.cont = set ()
         self.post = set ()
+        self.weight_pre = {}
+        self.weight_cont = {}
+        self.weight_post = {}
         self.m = 0
         self.c = 0
 
@@ -15,93 +19,201 @@ class Transition :
         return str (self.name)
 
     def __str__ (self) :
-        return "%s Pre %s;  Cont %s;  Post %s" \
-                % (self.__repr__ (), self.pre, self.cont, self.post)
+        return "'%s' Pre %s;  Cont %s;  Post %s" \
+                % (self.__repr__ (), self.weight_pre, self.weight_cont, self.weight_post)
 
-    def pre_add (self, p) :
+    def pre_add (self, p, w=1) :
         if p in self.pre : return
+        assert (w >= 1)
         self.pre.add (p)
-        p.post_add (self)
+        self.weight_pre[p] = w
+        p.post_add (self, w)
 
-    def cont_add (self, p) :
+    def cont_add (self, p, w=1) :
         if p in self.cont : return
+        assert (w >= 1)
         self.cont.add (p)
-        p.cont_add (self)
+        self.weight_cont[p] = w
+        p.cont_add (self, w)
 
-    def post_add (self, p) :
+    def post_add (self, p, w=1) :
         if p in self.post : return
+        assert (w >= 1)
         self.post.add (p)
-        p.pre_add (self)
+        self.weight_post[p] = w
+        p.pre_add (self, w)
 
     def pre_rem (self, p) :
         if p not in self.pre : return
         self.pre.remove (p)
+        del self.weight_pre[p]
         p.post_rem (self)
 
     def cont_rem (self, p) :
         if p not in self.cont : return
         self.cont.remove (p)
+        del self.weight_cont[p]
         p.cont_rem (self)
 
     def post_rem (self, p) :
         if p not in self.post : return
         self.post.remove (p)
+        del self.weight_post[p]
         p.pre_rem (self)
 
 class Place :
-    def __init__ (self, name, m0=0) :
+    def __init__ (self, name) :
+        self.ident = None
         self.name = name
         self.pre = set ()
         self.cont = set ()
         self.post = set ()
-        self.m0 = m0
+        self.weight_pre = {}
+        self.weight_cont = {}
+        self.weight_post = {}
         self.m = 0
         self.c = 0
+        self.marking_eq_mark = 0
 
     def __repr__ (self) :
         return str (self.name)
 
     def __str__ (self) :
-        return "%s Pre %s;  Cont %s;  Post %s" \
-                % (self.__repr__ (), self.pre, self.cont, self.post)
+        return "'%s' Pre %s;  Cont %s;  Post %s" \
+                % (self.__repr__ (), self.weight_pre, self.weight_cont, self.weight_post)
+                #% (self.__repr__ (), self.pre, self.cont, self.post)
 
-    def pre_add (self, t) :
+    def pre_add (self, t, w=1) :
         if t in self.pre : return
+        assert (w >= 1)
         self.pre.add (t)
-        t.post_add (self)
+        self.weight_pre[t] = w
+        t.post_add (self, w)
 
-    def cont_add (self, t) :
+    def cont_add (self, t, w=1) :
         if t in self.cont : return
+        assert (w >= 1)
         self.cont.add (t)
-        t.cont_add (self)
+        self.weight_cont[t] = w
+        t.cont_add (self, w)
 
-    def post_add (self, t) :
+    def post_add (self, t, w=1) :
         if t in self.post : return
+        assert (w >= 1)
         self.post.add (t)
-        t.pre_add (self)
+        self.weight_post[t] = w
+        t.pre_add (self, w)
 
     def pre_rem (self, t) :
         if t not in self.pre : return
         self.pre.remove (t)
+        del self.weight_pre[t]
         t.post_rem (self)
 
     def cont_rem (self, t) :
         if t not in self.cont : return
         self.cont.remove (t)
+        del self.weight_cont[t]
         t.cont_rem (self)
 
     def post_rem (self, t) :
         if t not in self.post : return
         self.post.remove (t)
+        del self.weight_post[t]
         t.pre_rem (self)
+
+class Marking :
+    frozen_eq = False
+    def __init__ (self) :
+        self.__marking = {}
+        self.formulas_sat = set ()
+        self.formulas_undef = set ()
+        self.fully_expanded = False
+        self.m = 0
+        self.__hash = 0
+
+    def __getitem__ (self, place) :
+        try :
+            return self.__marking[place];
+        except KeyError :
+            return 0
+
+    def __setitem__ (self, place, value) :
+        #assert (self.__hash == hash (self))
+        self.__update_hash (place, value)
+        self.__marking[place] = value
+        if (value == 0) : del self.__marking[place]
+        #assert (self.__hash == hash (self))
+        for p in self.__marking :
+            assert (self.__marking[p] > 0)
+        return value
+
+    def __iter__ (self) :
+        for p in self.__marking :
+            yield p
+
+    def __repr__ (self) :
+        s = " ".join ("%s=%d" % (repr (p), self.__marking[p]) for p in self.__marking)
+        return "[%s, %s]" % (str (id (self)), s)
+
+    def __str__ (self) :
+        s = "===============\n"
+        s += "marking:"
+        for p in sorted (self.__marking) :
+            s += "\n\t%8s = %d" % (repr (p), self.__marking[p])
+        s += "\nfully_expanded:\n\t" + str (self.fully_expanded)
+        s += "\nformulas_sat:\n\t" + str (self.formulas_sat)
+        s += "\nformulas_undef:\n\t" + str (self.formulas_undef)
+        s += "\n===============\n"
+        return s
+
+    def __update_hash (self, place, value) :
+        if place in self.__marking :
+            self.__hash -= id (place) + self.__marking[place]
+        if value != 0 :
+            self.__hash += id (place) + value
+            
+    def __hash__ (self) :
+#        i = 0
+#        for k,v in self.__marking.items () :
+#            i += id (k) + v
+#        print "__hash__: i", i, "__hash", self.__hash
+#        assert (self.__hash == i)
+        return self.__hash
+
+    def __eq__ (self, other) :
+        if Marking.frozen_eq :
+            return id (self) == id (other)
+        else :
+            return self.__marking == other.__marking
+
+    def clone (self) :
+        new = Marking () 
+        for place in self.__marking :
+            new.__marking[place] = self.__marking[place]
+        new.__hash = self.__hash
+        return new
+
+    def is_sat (self, formula) :
+        return formula in self.formulas_sat
+
+    def is_unsat (self, formula) :
+        return formula not in self.formulas_sat and \
+                formula not in self.formulas_undef
+
+    def is_undef (self, formula) :
+        return formula in self.formulas_undef
 
 class Net :
     def __init__ (self, sanity_check=True) :
         self.places = []
         self.trans = []
-        self.m0 = set ()
+        self.m0 = Marking ()
         self.sanity_check = sanity_check
         self.m = 1
+
+        self.__trans_lookup_table = None
+        self.__places_lookup_table = None
 
         self.author = ''
         self.title = ''
@@ -109,10 +221,36 @@ class Net :
         self.note = ''
         self.version = ''
 
+    def trans_lookup (self, ident) :
+
+        if self.__trans_lookup_table == None :
+            self.__trans_lookup_table = {}
+            for t in self.trans :
+                self.__trans_lookup_table[t.ident] = t
+
+        if ident in self.__trans_lookup_table :
+            return self.__trans_lookup_table[ident]
+        return None
+
+    def place_lookup (self, ident) :
+
+        if self.__places_lookup_table == None :
+            self.__places_lookup_table = {}
+            for t in self.places :
+                self.__places_lookup_table[t.ident] = t
+
+        if ident in self.__places_lookup_table :
+            return self.__places_lookup_table[ident]
+        return None
+
+    def new_mark (self) :
+        self.m += 1
+        return self.m
+
     def place_add (self, name, m0=0) :
-        p = Place (name, m0)
+        p = Place (name)
         self.places.append (p)
-        if m0 : self.m0.add (p)
+        if m0 : self.m0[p] = m0
         # print 'place_add', name, m0
         return p
 
@@ -122,30 +260,57 @@ class Net :
         # print 'trans_add', name
         return t
 
-    def m0_add (self, p, n=1) :
-        p.m0 = n
-        self.m0.add (p)
-
-    # limited support for firing executions in 1-safe nets
     def enables (self, m, t) :
-        return t.pre | t.cont <= m
+        for p in t.pre :
+            if m[p] < t.weight_pre[p] : return False
+        for p in t.cont :
+            if m[p] < t.weight_cont[p] : return False
+        return True
 
-    def enabled (self, m) :
-        s, u = set (), set ()
-        for p in m : u |= set (p.post)
-        for t in u :
-            if self.enables (m, t) : s.add (t)
-        assert (s == self.enabled2 (m))
-        return s
+    def enabled (self, marking) :
+        #result = set ()
+        candidates = set ()
+        m = self.new_mark ()
+        for p in marking :
+            candidates |= p.post | p.cont
+            p.m = m
+        for t in candidates :
+            found = False
+            for p in t.pre :
+                assert ((p.m != m or marking[p] < t.weight_pre[p]) == (marking[p] < t.weight_pre[p]))
+                if marking[p] < t.weight_pre[p] :
+                    found = True
+                    break
+            if found :
+                continue
+            found = False
+            for p in t.cont :
+                if marking[p] < t.weight_cont[p] :
+                    found = True
+                    break
+            if not found :
+                yield t
+                #result.add (t)
+        #assert result == self.enabled2 (marking)
+        #return result
 
-    def enabled2 (self, m) :
-        s = set ()
+    def enabled2 (self, marking) :
+        result = set ()
         for t in self.trans :
-            if self.enables (m, t) : s.add (t)
-        return s
+            if self.enables (marking, t) : result.add (t)
+        return result
 
-    def fire (self, run, m=None) :
-        if m == None : m = self.m0.copy ()
+    def fire (self, marking, t) :
+        assert (self.enables (marking, t))
+        new_marking = marking.clone ()
+        for p in t.pre :
+            new_marking[p] -= t.weight_pre[p]
+        for p in t.post :
+            new_marking[p] += t.weight_post[p]
+        return new_marking
+
+    def fire_run (self, run, m=None) :
+        if m == None : m = self.m0.clone ()
         for t in run :
 #            db ('at', list (m))
 #            db ('firing', t)
@@ -175,7 +340,7 @@ class Net :
     def cont2pr (self) :
         pass
 
-    def make_fork (self, pin, pleft, pright, idx) :
+    def __stubbornify_make_fork (self, pin, pleft, pright, idx) :
         # print 'make_fork pin', pin, 'pleft', pleft, 'pright', pright, 'idx', idx
         pfork = self.place_add ('aux_%d_fork' % idx)
 
@@ -249,16 +414,16 @@ class Net :
         trwait.pre_add (poffr)
         trwait.post_add (ponr)
 
-    def make_fork_more (self, pin, outplaces, idx) :
+    def __stubbornify_make_fork_more (self, pin, outplaces, idx) :
         #print 'make_fork_more, pin', pin, 'outplaces', outplaces, 'idx', idx
         if len (outplaces) == 2 :
             self.make_fork (pin, outplaces[0], outplaces[1], idx)
             return idx + 1
         pright = self.place_add ('aux%d_partialfork' % idx)
-        self.make_fork (pin, outplaces[0], pright, idx)
-        return self.make_fork_more (pright, outplaces[1:], idx + 1)
+        self.__stubbornify_make_fork (pin, outplaces[0], pright, idx)
+        return self.__stubbornify_make_fork_more (pright, outplaces[1:], idx + 1)
 
-    def make_race (self, p, idx) :
+    def __stubbornify_make_race (self, p, idx) :
         assert len (p.post) >= 2
         #print 'make_race', p, idx
 
@@ -269,14 +434,14 @@ class Net :
             place_choices.append (pnew)
             t.pre_rem (p)
             t.pre_add (pnew)
-        return self.make_fork_more (p, place_choices, idx + 1) 
+        return self.__stubbornify_make_fork_more (p, place_choices, idx + 1) 
 
     def stubbornify (self) :
         idx = 0
         for p in list (self.places) :
             #print 'stubbornify loop', p, id (p)
             if len (p.post) >= 2 :
-                idx = self.make_race (p, idx)
+                idx = self.__stubbornify_make_race (p, idx)
 
     def make_unsafe (self, places) :
         t1 = self.trans_add ('uns_t1')
@@ -421,7 +586,7 @@ class Net :
         f.write ('\tnode\t[shape=circle fillcolor=gray95];')
         for p in self.places :
             if m != 0 and p.m != m: continue
-            s = ' (%d)' % p.m0 if p.m0 > 0 else ''
+            s = ' (%d)' % self.m0[p] if self.m0[p] > 0 else ''
             s = '\n\t%sp%d [label="%s%s"];\n' % (prefx, id (p), repr (p), s)
             for t in p.pre :
                 if m == 0 or t.m == m :
@@ -749,6 +914,8 @@ class Net :
         if len (self.__grmlq) : self.__grmlq[-1]['__data'] = data
 
     def __read_pnml (self, f) :
+        # documentation:
+        # http://www.pnml.org/papers/PNML-Tutorial.pdf
         par = xml.parsers.expat.ParserCreate ()
         par.StartElementHandler = self.__pnml_start
         par.EndElementHandler = self.__pnml_end
@@ -756,6 +923,8 @@ class Net :
 
         self.__pnmlitm = {}
         self.__pnmlq = []
+        self.__pnmldepth = 0
+        self.__pnmlskipdepth = sys.maxint
         par.ParseFile (f)
         if len (self.__pnmlitm) == 0 :
             raise Exception, 'missplaced "%s" entity' % tag
@@ -768,31 +937,39 @@ class Net :
             if d['type'] == 'place' :
                 if 'm0' not in d : d['m0'] = 0
                 idx[d['id']] = self.place_add (d['name'], int (d['m0']))
+                idx[d['id']].ident = d['id']
             elif d['type'] == 'transition' :
                 idx[d['id']] = self.trans_add (d['name'])
+                idx[d['id']].ident = d['id']
             elif d['type'] == 'net' :
                 self.title = d['name']
         for d in self.__pnmlq :
             if d['type'] != 'arc' : continue
             if d['source'] not in idx or d['target'] not in idx :
-                raise Exception, 'arc with unknown source or target'
-            idx[d['source']].post_add (idx[d['target']])
+                raise Exception, 'Arc with id "%s" has unknown source or target' % d['id']
+            weight = 1
+            if 'weight' in d :
+                weight = int (d['weight'])
+                #print "arc id '%s' with weight %d" % (d["id"], weight)
+            idx[d['source']].post_add (idx[d['target']], weight)
 
         del self.__pnmlitm
         del self.__pnmlq
 
     def __pnml_start (self, tag, attr):
-        #print "START", repr (tag), attr
+        self.__pnmldepth += 1
+        #print "START", repr (tag), attr, "depth", self.__pnmldepth, "skip depth", self.__pnmlskipdepth
+        if self.__pnmldepth >= self.__pnmlskipdepth : return
 
         if tag == 'net' :
             if len (self.__pnmlitm) != 0 :
-                raise Exception, 'missplaced "net" entity'
+                raise Exception, 'Missplaced XML tag "net"'
             self.__pnmlitm = {}
             self.__pnmlitm['type'] = 'net'
 
         elif tag in ['place', 'transition', 'arc'] :
             if len (self.__pnmlitm) == 0 :
-                raise Exception, 'missplaced "%s" entity' % tag
+                raise Exception, 'Missplaced XML tag "%s"' % tag
             #print 'new! ', repr (self.__pnmlitm)
             for k in ['name', 'm0'] :
                 if k in self.__pnmlitm :
@@ -811,19 +988,26 @@ class Net :
         elif tag == 'initialMarking' :
             self.__pnmlitm['data'] = 'm0'
             self.__pnmlitm['m0'] = ''
+        elif tag == 'inscription' :
+            self.__pnmlitm['data'] = 'weight'
+            self.__pnmlitm['weight'] = ''
 
-        elif tag in ['page', 'pnml', 'graphics', 'text', 'offset', 'text'] :
+        # bug if inscription is an arc weight !!!!
+        elif tag in ['toolspecific', 'graphics'] :
+            self.__pnmlskipdepth = self.__pnmldepth
             return
-        elif tag in ['position', 'inscription', 'dimension', 'fill', 'line'] :
+        elif tag in ['page', 'pnml', 'text'] :
             return
+        # 'offset', 'position', 'dimension', 'fill', 'line', 'size', 'structure', 'unit', 'subunits', 'places'
         else :
             # this else clause is just to be on the safe side
-            raise Exception, 'unknown entity "%s"' % tag
-
+            raise Exception, 'Unexpected XML tag "%s", probably I cannot handle this model. Is this a P/T model?' % tag
 
     def __pnml_end (self, tag):
         #print "END  ", repr (tag)
-        pass
+        self.__pnmldepth -= 1
+        if self.__pnmldepth < self.__pnmlskipdepth :
+            self.__pnmlskipdepth = sys.maxint
 
     def __pnml_data (self, data):
         #data = data.strip(' \n\t') <- dangerous here, data can be split!!
