@@ -6,32 +6,19 @@ The Cunf Tool is a set of programs for carrying out unfolding-based
 verification of Petri nets extended with read arcs, also called contextual
 nets, or c-nets.  The package specifically contains the tools:
 
- - cunf: constructs the unfolding of a c-net;
- - cna: performs reachability and deadlock analysis using unfoldings
-   constructed by cunf;
- - Scripts such as pep2dot or grml2pep to do format conversion between
-   various Petri net formats, unfolding formats, etc.
+* cunf: constructs the unfolding of a c-net;
+* cna: performs reachability and deadlock analysis using unfoldings
+  constructed by cunf;
+* Scripts such as pep2dot or grml2pep to do format conversion between
+  various Petri net formats, unfolding formats, etc.
 
 Cunf is written in C, the sources are in src/ and /include. Cna is
-written in python, and depends on the "ptnet" module; both are located
-in the tools/ folder.
+written in python, and depends on the `<tools/ptnet/>`__ module; both are
+located in the `<tools/>`__ folder.
 
 Cna requires the Minisat solver to be in the $PATH.  For your
 convenience, the source code of Minisat v.2.2.0 is present in the
 minisat/ folder, and the main Makefile will compile it for you.
-
-Authors and Contact
--------------------
-
-The Cunf Tool is developed and maintained by
-
-César Rodríguez
-LSV, CNRS & ENS de Cachan
-61, avenue du Président Wilson
-94235 CACHAN Cedex, France
-
-WWW    : http://www.lsv.ens-cachan.fr/~rodriguez/
-e-mail : cesar.rodriguez@lsv.ens-cachan.fr
 
 Quick Installation
 ------------------
@@ -66,8 +53,15 @@ See https://cunf.googlecode.com/files/user-manual-v1.6.pdf
 Development
 -----------
 
-The Cunf Tool is hosted at https://code.google.com/p/cunf/.
+The Cunf Tool is hosted at https://github.com/cesaro/cunf/
 You can get the latest source code typing in your terminal::
 
-  git clone https://code.google.com/p/cunf/
+  git clone https://github.com/cesaro/cunf/
+
+Author and Contact
+==================
+
+The Cunf Tool is developed and maintained by
+`César Rodríguez <http://lipn.univ-paris13.fr/~rodriguez/>`__.
+Please feel free to contact me in case of questions or to send feedback.
 
