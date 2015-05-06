@@ -11,7 +11,7 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "util/glue.h"
+#include "util/system.h"
 #include "cunf/readlib.h"
 
 /*****************************************************************************/
@@ -58,10 +58,10 @@ void ReadCmdToken (FILE *file)
 	register int  len = 0;
 	char *string = sbuf;
 
-	if (!string) sbuf = string = gl_malloc (sballoc = 512);
+	if (!string) sbuf = string = ut_malloc (sballoc = 512);
 
 	if (!isalnum((int)(*string++ = ReadCharComment(file))))
-		gl_err ("ReadCmdToken: alphanumerical string expected");
+		ut_err ("ReadCmdToken: alphanumerical string expected");
 
 	len++;
 	while (isalnum((int)(*string = getc(file))) || *string == '_')
@@ -70,7 +70,7 @@ void ReadCmdToken (FILE *file)
 		len++;
 		if (len >= sballoc)
 		{
-			sbuf = gl_realloc (sbuf,sballoc += 512);
+			sbuf = ut_realloc (sbuf,sballoc += 512);
 			string = sbuf + len;
 		}
 	}
@@ -120,7 +120,7 @@ void ReadNumber (FILE *file, int *result)
 	if (isdigit((int)digit))
 		number = digit - '0';
 	else
-		gl_err ("ReadNumber: digit expected");
+		ut_err ("ReadNumber: digit expected");
 
 	while (isdigit((int)(digit = getc(file))))
 		number = number * 10 + digit - '0';
@@ -140,10 +140,10 @@ void ReadEnclString (FILE *file)
 	register int  len = 0;
 	char          delimiter;
 
-	if (!str) sbuf = str = gl_malloc (sballoc = 512);
+	if (!str) sbuf = str = ut_malloc (sballoc = 512);
 
 	if ((delimiter = ReadCharComment(file)) != '\'' && delimiter != '"')
-	      gl_err ("ReadEnclString: string leading ' or \" expected");
+	      ut_err ("ReadEnclString: string leading ' or \" expected");
 
 	while (!feof(file) && (*str = getc(file)) != delimiter)
 	{
@@ -151,13 +151,13 @@ void ReadEnclString (FILE *file)
 		len++;
 		if (len >= sballoc)
 		{
-			sbuf = gl_realloc (sbuf,sballoc += 512);
+			sbuf = ut_realloc (sbuf,sballoc += 512);
 			str = sbuf + len;
 		}
 	} /* while */
 
 	if (*str != delimiter)
-	      gl_err ("ReadEnclString: closing %c is missing",delimiter);
+	      ut_err ("ReadEnclString: closing %c is missing",delimiter);
 	*str = '\0';
 }
 
@@ -169,6 +169,6 @@ void ReadCoordinates (FILE *file, int *x, int *y)
 {
 	ReadNumber(file,x);
 	if (ReadWhiteSpace(file) != '@')
-		gl_err ("ReadCoordinates: '@' expected");
+		ut_err ("ReadCoordinates: '@' expected");
 	ReadNumber(file,y);
 }

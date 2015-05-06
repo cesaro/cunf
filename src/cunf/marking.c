@@ -18,7 +18,7 @@
 
 #include "util/nodelist.h"
 #include "util/misc.h"
-#include "util/glue.h"
+#include "util/system.h"
 #include "util/ls.h"
 #include "cunf/marking.h"
 #include "cunf/global.h"
@@ -61,7 +61,7 @@ void marking_init (void)
 	
 	/* FIXME use prime numbers! */
 	hash.size = 1 + u.net.numpl * 800;
-	hash.tab = gl_malloc (hash.size * sizeof (struct ls));
+	hash.tab = ut_malloc (hash.size * sizeof (struct ls));
 	for (i = hash.size - 1; i >= 0; i--) ls_init (hash.tab + i);
 
 	/* initialize the variable have_total_order, used in marking_add */
@@ -116,7 +116,7 @@ void marking_add (struct h *h)
 
 	/* otherwise, insert h into the table */
 	h->corr = 0;
-	nhe = gl_malloc (sizeof (struct hash_entry));
+	nhe = ut_malloc (sizeof (struct hash_entry));
 	nhe->h = h;
 	ls_insert (buckl, &nhe->nod);
 	return;

@@ -22,7 +22,7 @@
 #define _UTIL_BV_H_
 
 #include <string.h>
-#include "util/glue.h"
+#include "util/system.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,12 +36,12 @@ struct bv {
 #define bv_init(b,l) \
 	do { \
 		(b)->len = 1 + (l) / 8; \
-		(b)->tab = (unsigned char *) gl_realloc (0, (b)->len); \
+		(b)->tab = (unsigned char *) ut_realloc (0, (b)->len); \
 		memset ((b)->tab, 0, (b)->len); \
 	} while (0)
 
 #define bv_term(b) \
-		gl_free ((b)->tab)
+		ut_free ((b)->tab)
 
 #define bv_get(b,i) \
 		(((b)->tab[(i) >> 3] & (1 << ((i) & 7))) ? 1 : 0)

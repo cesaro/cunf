@@ -25,7 +25,7 @@
 
 #include "util/config.h"
 #include "util/misc.h"
-#include "util/glue.h"
+#include "util/system.h"
 #include "cunf/global.h"
 #include "cunf/ec.h"
 #include "cunf/h.h"
@@ -326,7 +326,7 @@ void db_mem (void)
 
 	fd = open ("/proc/self/status", O_RDONLY);
 	if (fd < 0) {
-		gl_warn ("'/proc/self/status': %s", strerror (errno));
+		ut_warn ("'/proc/self/status': %s", strerror (errno));
 		return;
 	}
 

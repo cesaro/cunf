@@ -21,7 +21,7 @@
 #include <string.h>
 #include <err.h>
 
-#include "util/glue.h"
+#include "util/system.h"
 #include "util/misc.h"
 #include "cunf/global.h"
 #include "cunf/netconv.h"
@@ -103,7 +103,7 @@ int main (int argc, char ** argv)
 	ASSERT (argv[1] != 0);
 
 	if (argc != 2 || argv[1] == 0) {
-		gl_err ("Invalid arguments, see the code!");
+		ut_err ("Invalid arguments, see the code!");
 	}
 
 	read_pep_net (argv[1]);

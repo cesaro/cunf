@@ -8,7 +8,7 @@
 
 #include "util/nodelist.h"
 #include "util/misc.h"
-#include "util/glue.h"
+#include "util/system.h"
 #include "util/ls.h"
 #include "cunf/unfold.h"
 #include "cunf/global.h"
@@ -66,7 +66,7 @@ struct place * nc_create_place (void)
 {
 	struct place * p;
 	
-	p = gl_malloc (sizeof (struct place));
+	p = ut_malloc (sizeof (struct place));
 	ls_insert (&u.net.places, &p->nod);
 
 	p->id = u.net.numpl++;
@@ -83,7 +83,7 @@ struct trans * nc_create_transition (void)
 {
 	struct trans * t;
 
-	t = gl_malloc (sizeof (struct trans));
+	t = ut_malloc (sizeof (struct trans));
 	ls_insert (&u.net.trans, &t->nod);
 
 	t->id = ++u.net.numtr;
@@ -120,11 +120,11 @@ void nc_static_checks (void)
 	for (n = u.net.trans.next; n; n = n->next) {
 		t = ls_i (struct trans, n, nod);
 		if (t->pre.deg == 0 && t != u.net.t0 && t->post.deg != 0) {
-			gl_warn ("%s is not restricted", t->name);
+			ut_warn ("%s is not restricted", t->name);
 		}
 	}
 
 	ASSERT (u.net.t0);
-	if (u.net.t0->post.deg == 0) gl_err ("No initial marking!");
+	if (u.net.t0->post.deg == 0) ut_err ("No initial marking!");
 }
 

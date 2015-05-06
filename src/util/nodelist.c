@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include "util/config.h"
-#include "util/glue.h"
+#include "util/system.h"
 #include "util/nodelist.h"
 
 /*****************************************************************************/
@@ -33,8 +33,8 @@ static struct nl * _nl_alloc ()
 
 	if (li_counter--) return li_contlist->nodes + li_counter;
 
-	tmp_co = gl_malloc (sizeof(contingent_t));
-	tmp_co->nodes = gl_malloc (CONFIG_NODELIST_STEP * sizeof(struct nl));
+	tmp_co = ut_malloc (sizeof(contingent_t));
+	tmp_co->nodes = ut_malloc (CONFIG_NODELIST_STEP * sizeof(struct nl));
 	tmp_co->next = li_contlist;
 	li_contlist = tmp_co;
 	li_counter = CONFIG_NODELIST_STEP - 1;

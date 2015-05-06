@@ -19,6 +19,8 @@
 #ifndef _UTIL_GLUE_H_
 #define _UTIL_GLUE_H_
 
+#include <stdint.h>
+
 #include "util/config.h"
 #include "util/misc.h"
 
@@ -26,13 +28,18 @@
 extern "C" {
 #endif
 
-void gl_free (void * ptr);
-void * gl_malloc (int size);
-void * gl_realloc (void * ptr, int size);
-char * gl_strdup (char * str);
+void ut_free (void * ptr);
+void * ut_malloc (int size);
+void * ut_realloc (void * ptr, int size);
+char * ut_strdup (char * str);
 
-void gl_err (const char * fmt, ...);
-void gl_warn (const char * fmt, ...);
+void ut_err (const char * fmt, ...);
+void ut_warn (const char * fmt, ...);
+
+uint64_t ut_get_max_rss   (void);
+int      ut_set_mem_limit (uint64_t max_mem_mb);
+int      ut_set_cpu_limit (uint64_t max_time_sec);
+
 
 #ifdef __cplusplus // extern C
 }

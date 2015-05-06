@@ -14,10 +14,11 @@
 # this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # traditional variables
-CFLAGS:=-Wall -Wextra -std=c99 -O3
+#CFLAGS:=-Wall -Wextra -std=c99 -O3
 #CFLAGS:=-Wall -Wextra -std=c99 -pg
-#CFLAGS:=-Wall -Wextra -std=c99 -g
-CXXFLAGS:=-Wall -Wextra -std=c++11 -O3
+CFLAGS:=-Wall -Wextra -std=c99 -g
+CXXFLAGS:=-Wall -Wextra -std=c++0x
+#CXXFLAGS:=-Wall -Wextra -std=c++11 -O3
 #CXXFLAGS:=-Wall -Wextra -std=c++11 -pg
 #CXXFLAGS:=-Wall -Wextra -std=c++11 -g
 CPPFLAGS:=-I src/ -D_POSIX_C_SOURCE=200809L -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -D NDEBUG
@@ -59,8 +60,8 @@ CNMC_NETS:=$(shell tools/nets.sh all | grep -v huge)
 CROSS:=
 
 LD:=$(CROSS)ld
-CC:=$(CROSS)gcc
-CXX:=$(CROSS)g++
+CC:=$(CROSS)gcc-fsf-4.5
+CXX:=$(CROSS)g++-fsf-4.5
 CPP:=$(CROSS)cpp
 LEX:=flex
 YACC:=bison

@@ -24,14 +24,14 @@
 #include "util/ls.h"
 #include "util/al.h"
 #include "util/misc.h"
-#include "util/glue.h"
+#include "util/system.h"
 
 static struct ec * _ec_alloc (struct cond * c)
 {
 	struct ec * r;
 
 	/* mallocate a new structure */
-	r = gl_malloc (sizeof (struct ec));
+	r = ut_malloc (sizeof (struct ec));
 	ASSERT (((unsigned long) r & 7) == 0);
 
 	/* important, append *to the head* to the list c->ecl */
@@ -477,7 +477,7 @@ void __attribute__ ((noinline)) _ec_conc_add (struct ec *r, struct ec *rp,
 	}
 
 	if (r->c->fp == rp->c->fp) {
-		gl_err ("place '%s' is not safe", r->c->fp->name);
+		ut_err ("place '%s' is not safe", r->c->fp->name);
 	}
 
 #ifdef CONFIG_PMASK

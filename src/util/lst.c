@@ -18,7 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/glue.h"
+#include "util/system.h"
 #include "util/lst.h"
 
 #ifdef CONFIG_DEBUG

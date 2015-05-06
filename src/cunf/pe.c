@@ -23,7 +23,7 @@
 #include "util/al.h"
 #include "util/ls.h"
 #include "util/misc.h"
-#include "util/glue.h"
+#include "util/system.h"
 #include "cunf/global.h"
 #include "cunf/output.h"
 #include "cunf/debug.h"
@@ -78,13 +78,13 @@ static void _pe_q_alloc (void)
 
 		/* 2 slots is the minimum size */
 		if (pe.q.size == 0) {
-			pe.q.tab = (struct h **) gl_realloc (0,
+			pe.q.tab = (struct h **) ut_realloc (0,
 					2 * sizeof (struct h *));
 			return;
 		}
 
 		/* duplicate the size */
-		pe.q.tab = (struct h **) gl_realloc (pe.q.tab,
+		pe.q.tab = (struct h **) ut_realloc (pe.q.tab,
 				pe.q.size * 2 * sizeof (struct h *));
 	}
 }
@@ -215,7 +215,7 @@ static struct event * _pe_comb_new_event (void)
 	ASSERT (t->pre.deg + t->cont.deg == pe.comb.size + 1);
 
 	/* allocate and initialize the event */
-	e = gl_malloc (sizeof (struct event));
+	e = ut_malloc (sizeof (struct event));
 	ls_insert (&u.unf.events, &e->nod);
 	al_init (&e->pre);
 	al_init (&e->post);
@@ -343,7 +343,7 @@ static void _pe_comb_ent_add (int i, struct ec *r)
 	/* make room for a new entry */
 	if (pe.comb.tab[i].nr == pe.comb.tab[i].size) {
 		pe.comb.tab[i].size <<= 1;
-		pe.comb.tab[i].tab = gl_realloc (pe.comb.tab[i].tab,
+		pe.comb.tab[i].tab = ut_realloc (pe.comb.tab[i].tab,
 				pe.comb.tab[i].size * sizeof (struct ec *));
 	}
 
@@ -512,18 +512,18 @@ void pe_init (void)
 
 	/* initialize the comb with proper sizes */
 	max += 2;
-	pe.comb.tab = gl_malloc (sizeof (struct comb_entry) * max);
+	pe.comb.tab = ut_malloc (sizeof (struct comb_entry) * max);
 	for (i = 0; i < max; i++) {
 		pe.comb.tab[i].size = 4096;
-		pe.comb.tab[i].tab = gl_realloc (0,
+		pe.comb.tab[i].tab = ut_realloc (0,
 				4096 * sizeof (struct ec*));
 	}
 }
 
 void pe_term (void)
 {
-	gl_free (pe.q.tab);
-	gl_free (pe.comb.tab);
+	ut_free (pe.q.tab);
+	ut_free (pe.comb.tab);
 }
 
 static void _pe_interactive_shell_help (void)

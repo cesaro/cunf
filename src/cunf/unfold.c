@@ -17,7 +17,7 @@
  */
 
 #include "util/misc.h"
-#include "util/glue.h"
+#include "util/system.h"
 #include "util/ls.h"
 #include "util/al.h"
 #include "util/da.h"
@@ -34,7 +34,7 @@ static struct cond * _unfold_new_cond (struct event *e, struct place *p)
 	struct cond *c;
 
 	/* mallocate a new structure */
-	c = gl_malloc (sizeof (struct cond));
+	c = ut_malloc (sizeof (struct cond));
 
 	/* initialize structure's fields */
 	ls_insert (&u.unf.conds, &c->nod);
@@ -163,7 +163,7 @@ static void _unfold_init (void)
 	struct h *h0;
 
 	/* allocate and initialize initial event */
-	e0 = gl_malloc (sizeof (struct event));
+	e0 = ut_malloc (sizeof (struct event));
 	ls_insert (&u.unf.events, &e0->nod);
 	al_init (&e0->pre);
 	al_init (&e0->post);

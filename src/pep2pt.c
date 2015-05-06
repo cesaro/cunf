@@ -21,7 +21,7 @@
 #include <string.h>
 #include <err.h>
 
-#include "util/glue.h"
+#include "util/system.h"
 #include "util/misc.h"
 #include "cunf/global.h"
 #include "cunf/netconv.h"
@@ -61,7 +61,7 @@ static void write_net_pt1 (void)
 			ASSERT (strcmp (t->name, "_t0_") == 0);
 			continue;
 		}
-		if (t->cont.deg != 0) gl_err ("The net has read arcs, aborting!");
+		if (t->cont.deg != 0) ut_err ("The net has read arcs, aborting!");
 		P ("\"%s\" %d %d", t->name, t->pre.deg, t->post.deg);
 		for (i = t->pre.deg - 1; i >= 0; i--) {
 			p = (struct place *) t->pre.adj[i];
@@ -81,7 +81,7 @@ int main (int argc, char ** argv)
 	ASSERT (argv[1] != 0);
 
 	if (argc != 2 || argv[1] == 0) {
-		gl_err ("Invalid arguments, see the code!");
+		ut_err ("Invalid arguments, see the code!");
 	}
 
 	read_pep_net (argv[1]);

@@ -22,7 +22,7 @@
 #include "util/al.h"
 #include "util/da.h"
 #include "util/misc.h"
-#include "util/glue.h"
+#include "util/system.h"
 #include "cunf/marking.h"
 #include "cunf/global.h"
 #include "cunf/debug.h"
@@ -168,7 +168,7 @@ static void _h_parikh_trans2vector (struct h *h)
 	qsort (tda.tab, h->parikh.size, sizeof (struct trans *),
 			_h_t_qsort_cmp);
 
-	h->parikh.tab = gl_malloc (h->parikh.size * sizeof (struct parikh));
+	h->parikh.tab = ut_malloc (h->parikh.size * sizeof (struct parikh));
 	for (i = 0; i < h->parikh.size; i++) {
 		t = da_i (&tda, i, struct trans *);
 		h->parikh.tab[i].t = t;
@@ -368,7 +368,7 @@ struct h * h_alloc (struct event * e)
 
 	/* mallocate a new node in the history graph and set up a pointer to
 	 * the associated event */
-	h = gl_malloc (sizeof (struct h));
+	h = ut_malloc (sizeof (struct h));
 	h->id = u.unf.numh++;
 	h->e = e;
 	al_init (&h->nod);
@@ -400,8 +400,8 @@ void h_free (struct h *h)
 	al_term (&h->rd);
 	al_term (&h->sd);
 	nl_delete (h->marking);
-	gl_free (h->parikh.tab);
-	gl_free (h);
+	ut_free (h->parikh.tab);
+	ut_free (h);
 }
 
 void h_add (struct h * h, struct h * hp)

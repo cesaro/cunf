@@ -34,7 +34,7 @@
 #include "cunf/readpep.h"
 #include "cunf/unfold.h"
 #include "cunf/debug.h"
-#include "util/glue.h"
+#include "util/system.h"
 #include "util/misc.h"
 
 #include "cna/speccheck.hh"
@@ -52,8 +52,8 @@ void help (void)
 	const char * s = R"XXX(
 The Cunf Toolset - a model checker for Petri nets (with read arcs)
 
-Copyright (C) 2010-2014  Cesar Rodriguez <cesar.rodriguez@cs.ox.ac.uk>
-Department of Computer Science, University of Oxford, UK
+Copyright (C) 2010-2015  Cesar Rodriguez <cesar.rodriguez@lipn.fr>
+LIPN, Universite Paris 13, Sorbonne Paris Cite, France
 
 This program comes with ABSOLUTELY NO WARRANTY.  This is free software,
 and you are welcome to redistribute it under certain conditions.  You should
@@ -134,7 +134,8 @@ void version (void)
 	exit (EXIT_SUCCESS);
 }
 
-void res_usage (void)
+/* FIXME remove this */
+void get_res_usage (void)
 {
 	struct rusage r;
 	char buff[128];
@@ -145,7 +146,7 @@ void res_usage (void)
 	ret = getrusage (RUSAGE_SELF, &r);
 	if (ret >= 0) {
 		/* in linux this is 0; in mac os this is the maxrss in kb */
-		u.unf.maxrss = r.ru_maxrss / 1024; // this line, fix it!!
+		//u.unf.maxrss = r.ru_maxrss / 1024; // this line, fix it!!
 		u.unf.usrtime = r.ru_utime.tv_sec * 1000 +
 				r.ru_utime.tv_usec / 1000;
 	}
@@ -160,6 +161,7 @@ void res_usage (void)
 	u.unf.maxrss = strtoul (buff, 0, 10) * sysconf (_SC_PAGESIZE) >> 10;
 }
 
+/* FIXME remove this */
 char * peakmem (void)
 {
 	static char b[16] = "?";
@@ -200,7 +202,7 @@ void stats ()
 #ifdef CONFIG_DEBUG
 	db_mem ();
 #endif
-	res_usage ();
+	get_res_usage ();
 	PRINT ( \
 		"cpu time             : %.3f\n"
 		"max memory (rss)     : %ld\n"

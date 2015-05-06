@@ -31,7 +31,7 @@
 #include "util/ls.h"
 #include "util/al.h"
 #include "util/misc.h"
-#include "util/glue.h"
+#include "util/system.h"
 
 void write_dot (const char * filename)
 {
@@ -45,7 +45,7 @@ void write_dot (const char * filename)
 
 	f = fopen (filename, "w");
 	if (f == 0) {
-		gl_err ("'%s': %s", filename, strerror (errno));
+		ut_err ("'%s': %s", filename, strerror (errno));
 		return;
 	}
 
@@ -98,7 +98,7 @@ void write_dot (const char * filename)
 
 	P ("}\n");
 	i = fclose (f);
-	if (i == EOF) gl_err ("'%s': %s", filename, strerror (errno));
+	if (i == EOF) ut_err ("'%s': %s", filename, strerror (errno));
 }
 
 /* display all events marked with m, together it their pre/post conditions
@@ -115,7 +115,7 @@ void write_dot_fancy (const char * filename, int m)
 
 	f = fopen (filename, "w");
 	if (f == 0) {
-		gl_err ("'%s': %s", filename, strerror (errno));
+		ut_err ("'%s': %s", filename, strerror (errno));
 		return;
 	}
 
@@ -247,7 +247,7 @@ void write_dot_fancy (const char * filename, int m)
 	P ("}\n");
 
 	i = fclose (f);
-	if (i == EOF) gl_err ("'%s': %s", filename, strerror (errno));
+	if (i == EOF) ut_err ("'%s': %s", filename, strerror (errno));
 }
 
 static void _write_int (const char * path, FILE * f, unsigned long int i)
@@ -257,7 +257,7 @@ static void _write_int (const char * path, FILE * f, unsigned long int i)
 	i = htonl (i);
 	ASSERT (sizeof (unsigned long int) == 4 || 0 == (i >> 32));
 	ret = fwrite (&i, 4, 1, f);
-	if (ret != 1) gl_err ("'%s': %s", path, strerror (errno));
+	if (ret != 1) ut_err ("'%s': %s", path, strerror (errno));
 }
 
 static void _write_str (const char * path, FILE * f, const char * str)
@@ -265,7 +265,7 @@ static void _write_str (const char * path, FILE * f, const char * str)
 	int i;
 	
 	i = strlen (str) + 1;
-	if (fwrite (str, i, 1, f) != 1) gl_err ("'%s': %s", path, strerror (errno));
+	if (fwrite (str, i, 1, f) != 1) ut_err ("'%s': %s", path, strerror (errno));
 }
 
 /*
@@ -318,7 +318,7 @@ void write_cuf (const char * filename)
 
 	/* open file */
 	f = fopen (filename, "wb");
-	if (! f) gl_err ("'%s': %s", filename, strerror (errno));
+	if (! f) ut_err ("'%s': %s", filename, strerror (errno));
 
 	/* reverse the list of events and conditions */
 	ls_reverse (&u.unf.events);

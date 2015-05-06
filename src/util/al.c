@@ -23,7 +23,7 @@
 #include <stdint.h>
 
 #include "util/misc.h"
-#include "util/glue.h"
+#include "util/system.h"
 #include "util/al.h"
 
 uint32_t _al_nextpow (uint32_t i)
@@ -57,12 +57,12 @@ static void _al_alloc (struct al * n)
 
 		/* 2 slots is the minimum size */
 		if (n->adj == 0 || n->deg == 0) {
-			n->adj = gl_realloc (0, 2 * sizeof (struct al *));
+			n->adj = ut_realloc (0, 2 * sizeof (struct al *));
 			return;
 		}
 
 		/* duplicate the size */
-		n->adj = gl_realloc (n->adj, n->deg * 2 * sizeof (struct al *));
+		n->adj = ut_realloc (n->adj, n->deg * 2 * sizeof (struct al *));
 	}
 }
 
@@ -76,7 +76,7 @@ void al_init (struct al * n)
 void al_term (struct al * n)
 {
 	ASSERT (n);
-	gl_free (n->adj);
+	ut_free (n->adj);
 }
 
 void al_add (struct al * n, void * ptr)
@@ -132,7 +132,7 @@ void al_cpy (struct al * dst, const struct al * src)
 
 	/* allocate memory for the adjacency array and make a raw copy of the
 	 * original */
-	dst->adj = gl_realloc (0, sizeof (struct al *) * size);
+	dst->adj = ut_realloc (0, sizeof (struct al *) * size);
 	memcpy (dst->adj, src->adj, src->deg * sizeof (struct al *));
 }
 

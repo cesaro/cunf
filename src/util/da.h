@@ -21,7 +21,7 @@
 #ifndef _UTIL_DA_H_
 #define _UTIL_DA_H_
 
-#include "util/glue.h"
+#include "util/system.h"
 
 struct da {
 	int len;
@@ -31,16 +31,16 @@ struct da {
 #define da_init(d,t) \
 	do { \
 		(d)->len = 1; \
-		(d)->tab = gl_realloc (0, sizeof (t)); \
+		(d)->tab = ut_realloc (0, sizeof (t)); \
 	} while (0)
 
 #define da_term(d) \
-		gl_free ((d)->tab)
+		ut_free ((d)->tab)
 
 #define da_trunc(d,l,t) \
 	do { \
 		(d)->len = l; \
-		(d)->tab = gl_realloc ((d)->tab, (l) * sizeof (t)); \
+		(d)->tab = ut_realloc ((d)->tab, (l) * sizeof (t)); \
 	} while (0)
 
 #define da_i(d,i,t) \

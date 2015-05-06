@@ -14,7 +14,7 @@
 #include "cunf/readlib.h"
 #include "cunf/global.h"
 #include "cunf/netconv.h"
-#include "util/glue.h"
+#include "util/system.h"
 
 /*****************************************************************************/
 
@@ -88,25 +88,25 @@ void _read_PEP_file(char *filename, char **types,
 
 	/* Open the file, read the header. */
 	if (!(infile = fopen(filename, "r")))
-		gl_err ("'%s': cannot open for reading", filename);
+		ut_err ("'%s': cannot open for reading", filename);
 
 	ReadCmdToken(infile);
-	if (strcmp(sbuf, "PEP")) gl_err ("keyword `PEP' expected");
+	if (strcmp(sbuf, "PEP")) ut_err ("keyword `PEP' expected");
 
 	/* Check if the file's type (second line of file) is one of those
 	   that are allowed. */
 	ReadNewline(infile);
 	ReadCmdToken(infile);
 	for (; *types && strcmp(sbuf,*types); types++);
-	if (!*types) gl_err ("unexpected format identifier '%s'",sbuf);
-	filetype = gl_strdup(sbuf);
+	if (!*types) ut_err ("unexpected format identifier '%s'",sbuf);
+	filetype = ut_strdup(sbuf);
 
 	ReadNewline(infile);
 	ReadCmdToken(infile);
 	if (strncmp(sbuf, "FORMAT_N", 8))
-		gl_err ("keyword 'FORMAT_N' or 'FORMAT_N2' expected");
+		ut_err ("keyword 'FORMAT_N' or 'FORMAT_N2' expected");
 
-	tbl = (t_lookup*) gl_malloc(sizeof(t_lookup)*(128-' ')) - ' ';
+	tbl = (t_lookup*) ut_malloc(sizeof(t_lookup)*(128-' ')) - ' ';
 	ReadNewline(infile);
 
 	while (!feof(infile))
@@ -114,14 +114,14 @@ void _read_PEP_file(char *filename, char **types,
 		/* Read next block id. */
 		ReadCmdToken(infile);
 
-		blocktype = gl_strdup(sbuf);
+		blocktype = ut_strdup(sbuf);
 
 		/* Identify block. */
 		for (; blocks->name && strcmp(blocks->name,sbuf); blocks++)
 		    if (!blocks->optional)
-			gl_err ("keyword '%s' expected",blocks->name);
+			ut_err ("keyword '%s' expected",blocks->name);
 
-		if (!blocks->name) gl_err ("unknown keyword '%s'",sbuf);
+		if (!blocks->name) ut_err ("unknown keyword '%s'",sbuf);
 
 		for (dest = sdest; dest->name; dest++)
 			if (!strcmp(blocks->name,dest->name)) break;
@@ -151,7 +151,7 @@ void _read_PEP_file(char *filename, char **types,
 		    if (feof(infile)) break;
 		    if (ch == '\n') continue;
 
-		    *(rtmp = restptr = gl_malloc(ralloc = 64)) = '\0';
+		    *(rtmp = restptr = ut_malloc(ralloc = 64)) = '\0';
 
 		    /* If information about this block is wanted, take
 		       the information where to store data from dest. */
@@ -171,7 +171,7 @@ void _read_PEP_file(char *filename, char **types,
 					*(int*)(l->ptr) = 0;
 					break;
 				default:
-					gl_err ("internal error: don't "
+					ut_err ("internal error: don't "
 					"know the type of field '%c'",dst->c);
 				break;
 			    }
@@ -224,7 +224,7 @@ void _read_PEP_file(char *filename, char **types,
 					len = 1;
 					break;
 				    default:
-					gl_err ("unknown token '%c'",ch);
+					ut_err ("unknown token '%c'",ch);
 					break;
 				}
 			}
@@ -235,14 +235,14 @@ void _read_PEP_file(char *filename, char **types,
 			   a 'rest' string. */
 			while (!tbl[ch].ptr && rtmp-restptr+len >= ralloc)
 			{
-				restptr = gl_realloc(restptr, ralloc += 64);
+				restptr = ut_realloc(restptr, ralloc += 64);
 				rtmp = restptr + strlen(restptr);
 			}
 			switch(tbl[ch].type)
 			{
 			    case FT_STRING:
 				if (tbl[ch].ptr)
-					*(char**)(tbl[ch].ptr) = gl_strdup(sbuf);
+					*(char**)(tbl[ch].ptr) = ut_strdup(sbuf);
 				else if (strchr("'\"",ch))
 					sprintf(rtmp,"\"%s\"",sbuf);
 				else
@@ -260,7 +260,7 @@ void _read_PEP_file(char *filename, char **types,
 				if (tbl[ch].ptr)
 				{
 				    *((t_coords**)(tbl[ch].ptr)) =
-						gl_malloc(sizeof(t_coords));
+						ut_malloc(sizeof(t_coords));
 				    (*(t_coords**)(tbl[ch].ptr))->x = num;
 				    (*(t_coords**)(tbl[ch].ptr))->y = num2;
 				}
@@ -286,15 +286,15 @@ void _read_PEP_file(char *filename, char **types,
 		    if (dest->name)
 		    {
 			if (dest->restptr) *(dest->restptr) = restptr;
-			if (dest->hookfunc()) gl_err ("read aborted");
+			if (dest->hookfunc()) ut_err ("read aborted");
 		    }
 		    else
-			gl_free(restptr);
+			ut_free(restptr);
 
 		    HLinput_line++;
 		}
 
-		gl_free(blocktype);
+		ut_free(blocktype);
 		if (!feof(infile)) ungetc(ch,infile);
 		blocks++;
 	}
@@ -302,9 +302,9 @@ void _read_PEP_file(char *filename, char **types,
 	/* Check for mandatory blocks that didn't occur in the file. */
 	for (; blocks->name; blocks++)
 	    if (!blocks->optional)
-		gl_err ("section '%s' not found",blocks->name);
+		ut_err ("section '%s' not found",blocks->name);
 
-	gl_free(tbl+' ');
+	ut_free(tbl+' ');
 	fclose(infile);
 }
 
@@ -469,25 +469,25 @@ static int _insert_place()
 	placecount++;
 	if (rd_ident && rd_ident != placecount) autonumbering = 0;
 	if (!rd_ident && autonumbering) rd_ident = placecount;
-	if (!rd_ident) gl_err ("missing place identifier");
+	if (!rd_ident) ut_err ("missing place identifier");
 		
 	if (rd_ident > AnzPlNamen)
 		AnzPlNamen = rd_ident;
 	else if (PlArray[rd_ident])
-		gl_err ("place identifier %d used twice", rd_ident);
+		ut_err ("place identifier %d used twice", rd_ident);
 
 	while (AnzPlNamen >= MaxPlNamen)
 	{
 		int count;
-		PlArray = gl_realloc((char*) PlArray,
+		PlArray = ut_realloc((char*) PlArray,
 			(MaxPlNamen += NAMES_OFFSET) * sizeof(struct place *));
 		for (count = MaxPlNamen - NAMES_OFFSET; count < MaxPlNamen;)
 			PlArray[count++] = NULL;
 	}
 
 	PlArray[rd_ident] = nc_create_place ();
-	PlArray[rd_ident]->name = rd_name? gl_strdup(rd_name) : NULL;
-	if (rd_marked > 1) gl_err ("place %s has more than one token",rd_name);
+	PlArray[rd_ident]->name = rd_name? ut_strdup(rd_name) : NULL;
+	if (rd_marked > 1) ut_err ("place %s has more than one token",rd_name);
 	PlArray[rd_ident]->m = !!rd_marked;
 	return 0;
 }
@@ -497,24 +497,24 @@ static int _insert_trans()
 	if (!transcount++) autonumbering = 1;
 	if (rd_ident && rd_ident != transcount) autonumbering = 0;
 	if (!rd_ident && autonumbering) rd_ident = transcount;
-	if (!rd_ident) gl_err ("missing transition identifier");
+	if (!rd_ident) ut_err ("missing transition identifier");
 
 	if (rd_ident > AnzTrNamen)
 		AnzTrNamen = rd_ident;
 	else if (TrArray[rd_ident])
-		gl_err ("transition identifier %d used twice",rd_ident);
+		ut_err ("transition identifier %d used twice",rd_ident);
 
 	while (AnzTrNamen >= MaxTrNamen)
 	{
 		int count;
-		TrArray = gl_realloc((char*) TrArray,
+		TrArray = ut_realloc((char*) TrArray,
 			  (MaxTrNamen += NAMES_OFFSET) * sizeof(struct trans *));
 		for (count = MaxTrNamen - NAMES_OFFSET; count < MaxTrNamen;)
 			TrArray[count++] = NULL;
 	}
 
 	TrArray[rd_ident] = nc_create_transition ();
-	TrArray[rd_ident]->name = rd_name? gl_strdup(rd_name) : NULL;
+	TrArray[rd_ident]->name = rd_name? ut_strdup(rd_name) : NULL;
 	return 0;
 }
 
@@ -533,9 +533,9 @@ static int _insert_arc()
 	tr = tp? rd_co->x : rd_co->y;
 
 	if (!tr || (tr > AnzTrNamen) || !TrArray[tr])
-		gl_err ("arc: incorrect transition identifier");
+		ut_err ("arc: incorrect transition identifier");
 	if (!pl || (pl > AnzPlNamen) || !PlArray[pl] )
-		gl_err ("arc: incorrect place identifier");
+		ut_err ("arc: incorrect place identifier");
 
 	tp? nc_create_arc (&(TrArray[tr]->post), &(PlArray[pl]->pre),
 			   TrArray[tr], PlArray[pl])
@@ -550,9 +550,9 @@ static int _insert_ra()
 	int tr = rd_co->x, pl = rd_co->y;
 
 	if (!tr || (tr > AnzTrNamen) || !TrArray[tr])
-		gl_err ("readarc: incorrect transition identifier");
+		ut_err ("readarc: incorrect transition identifier");
 	if (!pl || (pl > AnzPlNamen) || !PlArray[pl] )
-		gl_err ("readarc: incorrect place identifier");
+		ut_err ("readarc: incorrect place identifier");
 
 #if 0
 	/* for now, I'm going to cheat and treat read arcs as
@@ -574,7 +574,7 @@ static void _insert_t0 (void)
 	struct ls *n;
 	struct place *p;
 
-	t0 = gl_malloc (sizeof (struct trans));
+	t0 = ut_malloc (sizeof (struct trans));
 	ls_insert (&u.net.trans, &t0->nod);
 
 	t0->name = "_t0_";
@@ -643,9 +643,9 @@ void read_pep_net (char *PEPfilename)
 	int count;
 
 	/* Set up tables. */
-	PlArray = gl_malloc((count = MaxPlNamen = MaxTrNamen = NAMES_START)
+	PlArray = ut_malloc((count = MaxPlNamen = MaxTrNamen = NAMES_START)
 				* sizeof(struct place *));
-	TrArray = gl_malloc(count * sizeof(struct trans *));
+	TrArray = ut_malloc(count * sizeof(struct trans *));
 	AnzPlNamen = AnzTrNamen = 0;
 	while (--count)
 		PlArray[count] = NULL, TrArray[count] = NULL;
@@ -659,8 +659,8 @@ void read_pep_net (char *PEPfilename)
 	/* Read the net */
 	_read_PEP_file(PEPfilename, type_llnet, netblocks, netdest);
 
-	gl_free(PlArray);
-	gl_free(TrArray);
+	ut_free(PlArray);
+	ut_free(TrArray);
 
 	/* this is cheating! we now append some initial transition t0
 	 * generating the initial marking */
