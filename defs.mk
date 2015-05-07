@@ -17,8 +17,8 @@
 #CFLAGS:=-Wall -Wextra -std=c99 -O3
 #CFLAGS:=-Wall -Wextra -std=c99 -pg
 CFLAGS:=-Wall -Wextra -std=c99 -g
-CXXFLAGS:=-Wall -Wextra -std=c++0x
-#CXXFLAGS:=-Wall -Wextra -std=c++11 -O3
+#CXXFLAGS:=-Wall -Wextra -std=c++0x
+CXXFLAGS:=-Wall -Wextra -std=c++11 -O3
 #CXXFLAGS:=-Wall -Wextra -std=c++11 -pg
 #CXXFLAGS:=-Wall -Wextra -std=c++11 -g
 CPPFLAGS:=-I src/ -D_POSIX_C_SOURCE=200809L -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -D NDEBUG
@@ -58,11 +58,13 @@ CNMC_NETS:=$(shell tools/nets.sh all | grep -v huge)
 
 # define the toolchain
 CROSS:=
+#VERS:=-5
+VERS:=
 
-LD:=$(CROSS)ld
-CC:=$(CROSS)gcc-fsf-4.5
-CXX:=$(CROSS)g++-fsf-4.5
-CPP:=$(CROSS)cpp
+LD:=$(CROSS)ld$(VERS)
+CC:=$(CROSS)gcc$(VERS)
+CXX:=$(CROSS)g++$(VERS)
+CPP:=$(CROSS)cpp$(VERS)
 LEX:=flex
 YACC:=bison
 
