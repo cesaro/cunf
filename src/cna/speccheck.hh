@@ -28,7 +28,7 @@ private:
 	std::vector<int> results;
 };
 
-inline void load_spec (const std::string & filename, FILE * f = 0)
+inline void Speccheck::load_spec (const std::string & filename, FILE * f)
 {
 	return load_spec (filename.c_str (), f);
 }
