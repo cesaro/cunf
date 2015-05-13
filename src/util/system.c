@@ -20,7 +20,11 @@
 #include <err.h>
 #include <string.h>
 #include <stdarg.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <sys/resource.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "util/misc.h"
 #include "util/system.h"
@@ -131,11 +135,16 @@ static int __ut_set_rlimit (int what, uint64_t max)
 #if defined(__linux__)
 static uint64_t __linux_get_max_rss (void)
 {
+	int fd, ret;
+	char buff[128];
+
 	fd = open ("/proc/self/statm", O_RDONLY);
-	if (fd < 0) return;
+	if (fd < 0) return 0;
 	ret = read (fd, buff, 128);
 	close (fd);
+	if (ret < 0) return 0;
 	buff[127] = 0;
+
 	return strtoul (buff, 0, 10) * sysconf (_SC_PAGESIZE) >> 10;
 }
 
