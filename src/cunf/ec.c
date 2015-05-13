@@ -477,7 +477,7 @@ void __attribute__ ((noinline)) _ec_conc_add (struct ec *r, struct ec *rp,
 	}
 
 	if (r->c->fp == rp->c->fp) {
-		ut_err ("place '%s' is not safe", r->c->fp->name);
+		ut_err ("'%s': place is not safe", r->c->fp->name);
 	}
 
 #ifdef CONFIG_PMASK

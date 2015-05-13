@@ -19,7 +19,8 @@ while (<>) {
 		} else {
 			$ident{$plnr} = "P$plnr";
 		}
-		$initial{$plnr} = ($rest =~ /M1/)? 1 : 0;
+		#$initial{$plnr} = ($rest =~ /M1/)? 1 : 0;
+		$initial{$plnr} = $rest =~ /M(\d*)/ ? $1 : 0;
 		$places{$plnr} = "";
 	} elsif ($block eq "TR") {
 		$trnr = /^(\d+)/? $1 : $trnr+1;
@@ -52,11 +53,13 @@ for $pl (sort {$a <=> $b} keys %places) {
 	if (defined($readers{$pl})) {
 		for $tr (split(/%/,$readers{$pl})) {
 			printf "%d\"%s-%s\"9\@9%s\n", $newnr++, $ident{$pl}, $tr,
-					$initial{$pl}? "M1m1" : "";
+					$initial{$pl}? "M$initial{$pl}" : "";
+					#$initial{$pl}? "M1m1" : "";
 		}
 	} else {
 		printf "%d\"%s\"9\@9%s\n", $newnr++, $ident{$pl},
-					$initial{$pl}? "M1m1" : "";
+					$initial{$pl}? "M$initial{$pl}" : "";
+					#$initial{$pl}? "M1m1" : "";
 	}
 }
 

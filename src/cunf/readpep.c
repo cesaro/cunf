@@ -487,7 +487,7 @@ static int _insert_place()
 
 	PlArray[rd_ident] = nc_create_place ();
 	PlArray[rd_ident]->name = rd_name? ut_strdup(rd_name) : NULL;
-	if (rd_marked > 1) ut_err ("place %s has more than one token",rd_name);
+	if (rd_marked > 1) ut_err ("'%s': initial place is not safe", rd_name);
 	PlArray[rd_ident]->m = !!rd_marked;
 	return 0;
 }
