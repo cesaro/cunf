@@ -24,7 +24,7 @@ all: $(TARGETS) tags
 
 $(TARGETS) : % : %.o $(OBJS)
 	@echo "LD  $@"
-	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) 
+	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 #$(MINISAT)/build/release/lib/libminisat.a :
 #	cd $(MINISAT); make lr
