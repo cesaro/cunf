@@ -18,8 +18,9 @@ public:
 	Cunfsat (Spec & s);
 	~Cunfsat ();
 
+	typedef sat::Cnf::result_t result_t;
 	void encode ();
-	bool solve ();
+	result_t solve ();
 	std::vector<struct event *> & counterexample ();
 
 private:

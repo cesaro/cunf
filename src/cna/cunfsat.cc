@@ -120,13 +120,9 @@ void Cunfsat::encode ()
 			phi->no_vars (), phi->no_clauses ());
 }
 
-bool Cunfsat::solve ()
+Cunfsat::result_t Cunfsat::solve ()
 {
-	sat::Cnf::result_t ret;
-
-	ret = phi->solve ();
-	ASSERT (ret != sat::Cnf::UNK);
-	return ret == sat::Cnf::SAT;
+	return phi->solve ();
 }
 
 std::vector<struct event *> & Cunfsat::counterexample ()

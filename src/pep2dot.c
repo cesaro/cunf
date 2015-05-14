@@ -26,7 +26,6 @@
 #include "cunf/global.h"
 #include "cunf/netconv.h"
 #include "cunf/readpep.h"
-#include "cunf/unfold.h"
 
 #define P printf
 

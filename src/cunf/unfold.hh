@@ -19,15 +19,9 @@
 #ifndef _CUNF_UNFOLD_H_
 #define _CUNF_UNFOLD_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "cna/speccheck.hh"
 
-void unfold (void);
-
-#ifdef __cplusplus // extern C
-}
-#endif
+void unfold (cna::Speccheck * verif);
 
 #endif
 

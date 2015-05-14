@@ -197,7 +197,7 @@ class Unfolding (net.Net) :
                 cont.add (self.events[idx])
             c = Condition (len (self.conds), p, pre, post, cont)
             self.conds.append (c)
-            if c.m0 > 0 : self.m0.add (c)
+            if c.m0 > 0 : self.m0[c] = 1
 
         # finally, read transition and place names
         s = f.read ()

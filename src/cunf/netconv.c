@@ -10,7 +10,6 @@
 #include "util/misc.h"
 #include "util/system.h"
 #include "util/ls.h"
-#include "cunf/unfold.h"
 #include "cunf/global.h"
 
 #include "netconv.h"

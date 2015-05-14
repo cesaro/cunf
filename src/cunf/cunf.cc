@@ -32,7 +32,7 @@
 #include "cunf/output.h"
 #include "cunf/netconv.h"
 #include "cunf/readpep.h"
-#include "cunf/unfold.h"
+#include "cunf/unfold.hh"
 #include "cunf/debug.h"
 #include "util/system.h"
 #include "util/misc.h"
@@ -418,10 +418,16 @@ void main_ (int argc, char **argv)
 
 	// load the specification file, unfold, and do model checking
 	if (opt.spec_path)
+	{
 		verif.load_spec (opt.spec_path);
-	unfold ();
-	if (opt.spec_path)
-		verif.verify ();
+		unfold (&verif);
+		verif.verify (true);
+		verif.print_results ();
+	}
+	else
+	{
+		unfold (NULL);
+	}
 
 	// if requested, write the unfolding on disk and print statistics
 	if (opt.save_path) {
