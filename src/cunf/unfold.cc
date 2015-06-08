@@ -220,12 +220,15 @@ static void _unfold_progress (struct h *h)
 
 static void _do_partial_verification (cna::Speccheck * verif)
 {
+	static int counter = 0;
+
 	if (verif == NULL) return;
 
 	// at 500 events, do partial verification
-	if (u.unf.numev != 500) return;
+	if (u.unf.numev < 500 or counter >= 1) return;
 	
 	INFO ("Doing incomplete verification after %d events", u.unf.numev);
+	counter++;
 	verif->verify (false);
 }
 
