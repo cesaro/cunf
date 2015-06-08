@@ -172,7 +172,7 @@ class Marking :
             self.__hash -= id (place) + self.__marking[place]
         if value != 0 :
             self.__hash += id (place) + value
-            
+
     def __hash__ (self) :
 #        i = 0
 #        for k,v in self.__marking.items () :
@@ -482,7 +482,7 @@ class Net :
         tab = {'first' : 'element'}
         for p in self.places :
             if m != 0 and p.m != m : continue
-            m1 = 'M%d' % p.m0 if p.m0 > 0 else ''
+            m1 = 'M%d' % self.m0[p] if self.m0[p] > 0 else ''
             f.write ('%d"%s"9@9%s\n' % (len (tab), repr (p), m1))
             tab[p] = len (tab)
         f.write ('TR\n')
@@ -516,7 +516,7 @@ class Net :
 
         tab = {}
         for p in self.places :
-            f.write ('"%s" %d\n' % (repr (p), p.m0))
+            f.write ('"%s" %d\n' % (repr (p), self.m0[p]))
             tab[p] = len (tab)
 
         for t in self.trans :
@@ -619,7 +619,7 @@ class Net :
             if m != 0 and c.m != m : continue
             s = '<place id="p%d">\n' % len (tab)
             s += '<name><text>%s</text></name>\n' % repr (p)
-            s += '<initialMarking> <text>%d</text> </initialMarking>\n' % p.m0
+            s += '<initialMarking> <text>%d</text> </initialMarking>\n' % self.m0[p]
             s += '</place>\n'
             f.write (s)
             tab[p] = len (tab)
@@ -687,7 +687,7 @@ class Net :
             if m != 0 and c.m != m : continue
             s = '\n<node id="%d" nodeType="place">\n' % len (tab)
             s += '<attribute name="name">%s</attribute>\n' % repr (p)
-            s += '<attribute name="marking">%d</attribute>\n' % p.m0
+            s += '<attribute name="marking">%d</attribute>\n' % self.m0[p]
             s += '</node>\n'
             tab[p] = len (tab)
 

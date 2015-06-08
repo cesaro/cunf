@@ -119,12 +119,13 @@ dist : all
 	mkdir dist/examples/corbett
 	mkdir dist/examples/dekker
 	mkdir dist/examples/dijkstra
-	cp src/main dist/bin/cunf
+	cp src/cunf/cunf dist/bin/cunf
 	cp src/pep2dot dist/bin
+	cp src/pep2pt dist/bin
 	cp tools/cna dist/bin
 	cp tools/grml2pep.py dist/bin
 	cp tools/cuf2pep.py dist/bin
-	cp minisat/core/minisat dist/bin
+	#cp minisat/core/minisat dist/bin
 	cp -R tools/ptnet dist/lib
 	cp -R examples/cont dist/examples/corbett/
 	cp -R examples/other dist/examples/corbett/

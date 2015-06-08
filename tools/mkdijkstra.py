@@ -25,7 +25,7 @@ def mkdijkstra (n) :
         c[i, 'F'] = net.place_add ('c[%d]=F' % i)
         c[i, 'T'] = net.place_add ('c[%d]=T' % i, 1)
         k[i] = net.place_add ('k=%d' % i)
-    net.m0_add (k[0])
+    net.m0[k[0]] = 1
 
     # make all processes
     for i in range (n) :
@@ -40,7 +40,7 @@ def mkdijproc (net, i, n, b, c, k) :
     l = {}
     for j in range (7) :
         l[j] = net.place_add ('l%d/%i' % (j, i))
-    net.m0_add (l[0])
+    net.m0[l[0]] = 1
 
     t = net.trans_add ('b[%d]:=F' % i)
     t.pre_add (l[0])

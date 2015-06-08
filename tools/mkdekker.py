@@ -34,8 +34,7 @@ def mkproc (i, net, n, flag) :
         net.places.append (p)
 
     # p0 is my starting state
-    p0.m0 = 1
-    net.m0.add (p0)
+    net.m0[p0] = 1
 
     # set my flag to 1
     intent.pre_add (p0)
@@ -76,10 +75,9 @@ def mkdekker (n) :
     for i in range (n) :
         flag[i, 0] = ptnet.net.Place ('flag=0/%d' % i)
         flag[i, 1] = ptnet.net.Place ('flag=1/%d' % i)
-        flag[i, 0].m0 = 1
         net.places.append (flag[i, 0])
         net.places.append (flag[i, 1])
-        net.m0.add (flag[i, 0])
+        net.m0[flag[i, 0]] = 1
 
     for i in xrange (n) :
         mkproc (i, net, n, flag)
