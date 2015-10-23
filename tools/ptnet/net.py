@@ -998,6 +998,10 @@ class Net :
             return
         elif tag in ['page', 'pnml', 'text'] :
             return
+        elif tag in ['delay', 'interval',  'cn']:
+            self.__pnmlskipdepth = self.__pnmldepth
+            print "WARNING: found '%s' tag, is this a timed net? Ignoring time information" % tag
+            return
         # 'offset', 'position', 'dimension', 'fill', 'line', 'size', 'structure', 'unit', 'subunits', 'places'
         else :
             # this else clause is just to be on the safe side
