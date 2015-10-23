@@ -120,7 +120,7 @@ The algorithms used by Cna has been described in [RS12]_.
 .. [RS12]
    César Rodríguez and Stefan Schwoon.
    `Verification of Petri Nets with Read Arcs
-   <http://www.lsv.ens-cachan.fr/~rodriguez/tools/cunf/rs12.pdf>`__.
+   <http://www.lsv.ens-cachan.fr/Publis/PAPERS/PDF/RS-concur12.pdf>`__.
    In Proc. of CONCUR'12, vol. 7454 of LNCS, pages 471–485, September 2012.
 
 Similar Tools
