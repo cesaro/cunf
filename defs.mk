@@ -14,16 +14,18 @@
 # this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # traditional variables
-#CFLAGS:=-Wall -Wextra -std=c99 -O3
+#CFLAGS:=-Wall -Wextra -std=c99 -O3 -emit-llvm
+CFLAGS:=-Wall -Wextra -std=c99 -O3
 #CFLAGS:=-Wall -Wextra -std=c99 -pg
-CFLAGS:=-Wall -Wextra -std=c99 -g
+#CFLAGS:=-Wall -Wextra -std=c99 -g
 #CXXFLAGS:=-Wall -Wextra -std=c++0x
+#CXXFLAGS:=-Wall -Wextra -std=c++11 -O3 -emit-llvm
 CXXFLAGS:=-Wall -Wextra -std=c++11 -O3
 #CXXFLAGS:=-Wall -Wextra -std=c++11 -pg
 #CXXFLAGS:=-Wall -Wextra -std=c++11 -g
 CPPFLAGS:=-I src/ -D_POSIX_C_SOURCE=200809L -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -D NDEBUG
 #LDFLAGS:=-dead_strip -static
-LDFLAGS:=-dead_strip
+#LDFLAGS:=-dead_strip
 #LDFLAGS:=
 
 # source code
@@ -59,12 +61,12 @@ CNMC_NETS:=$(shell tools/nets.sh all | grep -v huge)
 
 # define the toolchain
 CROSS:=
-VERS:=-5
-#VERS:=
+#VERS:=-5
+VERS:=
 
-LD:=$(CROSS)ld$(VERS)
-CC:=$(CROSS)gcc$(VERS)
-CXX:=$(CROSS)g++$(VERS)
+LD:=$(CROSS)llvm-ld$(VERS)
+CC:=$(CROSS)clang$(VERS)
+CXX:=$(CROSS)clang++$(VERS)
 CPP:=$(CROSS)cpp$(VERS)
 LEX:=flex
 YACC:=bison

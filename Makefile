@@ -25,6 +25,7 @@ all: $(TARGETS) tags
 $(TARGETS) : % : %.o $(OBJS)
 	@echo "LD  $@"
 	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+	#llvm-link-3.7 -o $@ $^
 
 #$(MINISAT)/build/release/lib/libminisat.a :
 #	cd $(MINISAT); make lr
