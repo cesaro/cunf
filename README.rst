@@ -1,63 +1,68 @@
-===================
-The Cunf Tool v.1.6
-===================
+=====================================
+Cunf: An Unfolder for Contextual Nets
+=====================================
 
-The Cunf Tool is a set of programs for carrying out unfolding-based
-verification of Petri nets extended with read arcs, also called contextual
-nets, or c-nets.  The package specifically contains the tools:
+Cunf is a set of research tools to carrying out unfolding-based
+`formal verification`_ of `Petri nets`_ extended with `read arcs`_, also called
+contextual nets, or c-nets.  The package specifically contains the tools:
 
-* cunf: constructs the unfolding of a c-net;
-* cna: performs reachability and deadlock analysis using unfoldings
+- ``cunf``: constructs the unfolding of a c-net;
+- ``cna``: performs reachability and deadlock analysis using unfoldings
   constructed by cunf;
-* Scripts such as ``pep2dot`` or ``grml2pep`` to do format conversion between
+- Scripts such as ``pep2dot`` or ``grml2pep`` to do format conversion between
   various Petri net formats, unfolding formats, etc.
+- ``ptnet``: a small Python module (see `<tools/ptnet/>`__) suitable to
+  programmatically generate and manage Petri net models.
 
-Cunf is written in C, the sources are in the `<src/>`__ folder. Cna is
-written in python, and depends on the `<tools/ptnet/>`__ module; both are
-located in the `<tools/>`__ folder.
-
-Cna requires the Minisat solver to be in the ``$PATH``.
-
-.. For your
-.. convenience, the source code of Minisat v.2.2.0 was
-.. minisat/ in previous versions of this project :)
+.. _formal verification: https://en.wikipedia.org/wiki/Formal_verification
+.. _Petri nets: https://en.wikipedia.org/wiki/Petri_net
+.. _read arcs: http://www.lsv.fr/~rodrigue/att/thesis-final.pdf
 
 
-Downloads and Installing
-------------------------
+Installation
+============
 
-You are encouraged use the latest available release, v1.6.
-The code present in the repository is considered experimental and you should
-probably not use it.
+Dependencies
+------------
 
-Precompiled Binaries (include examples)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Runnig ``cna`` will require that the ``minisat`` SAT solver be present in the
+``$PATH`` (`download here <http://minisat.se/>`__).
+Compiling the source code will just require ``make`` and a C/C++11-compatible
+compiler.
 
-- Precompiled binaries of the
-  `Cunf Tool v1.6 (Mac OSX x86-64)
-  <https://cunf.googlecode.com/files/cunf-v1.6_macos_x86-64.zip>`__.
-- Precompiled binaries of the
-  `Cunf Tool v1.6 (Linux x86-64)
-  <https://cunf.googlecode.com/files/cunf-v1.6_linux_x86-64.zip>`__.
-- Precompiled binaries of the
-  `Cunf Tool v1.6 (Linux i386, 32 bits)
-  <https://cunf.googlecode.com/files/cunf-v1.6_linux_i386.zip>`__.
+From Precompiled Binaries (include examples)
+--------------------------------------------
 
-Compiling and Installing from Source Code
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Please check the `latest release`_ to find a ``.tar.gz`` file with precompiled
+binaries (currently only available for Linux x86_64).
 
+1. Download the ``.tar.gz`` file and uncompress it.
+2. All binaries are in the ``bin/``, you can directly invoke them from there.
+3. You may move the ``cunf`` binary elsewhere in your system, but do not move
+   the ``cna`` binary as it locates a necessary Python package using a relative
+   path from the ``bin`` folder.
 
-1. Download the following:
-   `Cunf Tool v1.6 (boundle with source code)
-   <https://cunf.googlecode.com/files/cunf-v1.6_src.tar.gz>`__.
+From Source Code
+----------------
 
-2. Type the following commands::
+Please note that development takes place in the ``master`` branch of this
+repository. If you want a stable version of the tool you should download and
+compile the sources of the `latest release`_ available.
+
+1. Download and uncompress the source code (in this case for Cunf v1.6.1)::
+
+    wget https://github.com/cesaro/cunf/archive/v1.6.1.zip
+    unzip cunf-1.6.1.zip
+    cd cunf-1.6.1
+
+2. Compile the source code::
 
     make all
     make dist
 
    This will put all binaries and libraries into the ``dist/`` folder, from
-   where you may copy them to suitable locations in your machine.
+   where you may copy them to suitable locations in your machine following the
+   instructions above for precompiled binaries.
 
 3. In particular, make available to Python the module in::
 
@@ -65,37 +70,33 @@ Compiling and Installing from Source Code
 
    by copying it to any folder pointed by your installation-dependent default
    module search path, or any folder pointed by the environment variable
-   ``PYTHONPATH``.  Cna and other Python scripts won't work without this step.
+   ``PYTHONPATH``.  The tool ``cna`` and other Python scripts won't work without
+   this step.
 
-
-Full details about the installation are given in section 3 of the
-`user's manual
-<https://cunf.googlecode.com/files/user-manual-v1.6.pdf>`__.
+.. _latest release: https://github.com/cesaro/cunf/releases/latest
 
 Documentation
--------------
+=============
 
-See
-`Cunf Tool user's manual
-<https://cunf.googlecode.com/files/user-manual-v1.6.pdf>`__.
+Documentation (including a tutorial) is available in the Cunf user's manual
+available in the `latest release`_ of the tool.
 
 Algorithms
 ----------
 
-The Cunf Tool implements the c-net unfolding procedure proposed by Baldan et
-al. in [BCKS08]_.  The algorithms and data structures actually
-implemented have been partially described in [RSB11]_, [BBCKRS12]_.
-Cunf can only unfold 1-safe c-nets (i.e., no reachable marking puts more
-than one token on every place), and for the
-time being the tool will blindly assume the input is 1-safe.
+Cunf implements the contextual net unfolding algorithm proposed by Baldan et al.
+in [BCKS08]_.  The algorithms and data structures actually implemented have been
+partially described in [RSB11]_, [BBCKRS12]_.  Cunf can only unfold 1-safe
+c-nets (i.e., no reachable marking puts more than one token on every place), and
+for the time being the tool will blindly assume the input is 1-safe.
 
-Cna, whose name stands for *Contextual Net Analyzer*,
-checks for place coverability or deadlock-freedom of a c-net by examining
-its unfolding.  The tool reduces these problems to the satisfiability of a
-propositional formula that it generates out of the unfolding, and uses
+Cna, whose name stands for *Contextual Net Analyzer*, checks for place
+coverability or deadlock-freedom of a c-net by examining its unfolding.  The
+tool reduces these problems to the satisfiability of a propositional formula
+that it generates out of the unfolding, and uses
 `Minisat <http://minisat.se/>`__
-as a back-end to solve the formula.
-The algorithms used by Cna has been described in [RS12]_.
+as a back-end to solve the formula.  The algorithms used by Cna has been
+described in [RS12]_.
 
 .. [BBCKRS12]
    Paolo Baldan, Alessandro Bruni, Andrea Corradini, Barbara König, César
@@ -123,15 +124,17 @@ The algorithms used by Cna has been described in [RS12]_.
    <http://www.lsv.ens-cachan.fr/Publis/PAPERS/PDF/RS-concur12.pdf>`__.
    In Proc. of CONCUR'12, vol. 7454 of LNCS, pages 471–485, September 2012.
 
-Similar Tools
--------------
+Related Tools
+=============
 
 - Stefan Schwoon's
   `Mole <http://www.lsv.ens-cachan.fr/~schwoon/tools/mole/>`__ unfolder.
 - Victor Khomenko's
   `Punf <http://homepages.cs.ncl.ac.uk/victor.khomenko/tools/tools.html>`__
   unfolder.
-- The `PEP <http://theoretica.informatik.uni-oldenburg.de/~pep/>`__ homepage.
+- The `PEP <http://peptool.sourceforge.net/>`__ homepage.
+- `DPU <https://github.com/cesaro/dpu>`__, an unfolder for multithreaded C
+  programs.
 
 Author and Contact
 ------------------

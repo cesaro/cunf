@@ -33,7 +33,7 @@ prof : $(TARGETS)
 	src/main /tmp/ele4.ll_net
 
 tags : $(SRCS)
-	ctags -R src tools
+	ctags -R --c++-kinds=+p --fields=+K --extra=+q src/ tools/ config.h
 
 g : $(TARGETS)
 	gdb ./src/cunf/cunf

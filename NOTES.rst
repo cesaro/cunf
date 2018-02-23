@@ -5,6 +5,13 @@
 - new method Speccheck::verify is untested, as well as _do_partial_verification,
   test it with some small net
 
+- The new version of Cna, in C++, integrated in Cunf, is implemented in the
+  classes Speccheck, methods load_spec() and verify(). It only works for
+  unfoldings of plain nets, see Cunfsat::encode()
+
+- Document somewhere the format of the spec files!! It's not difficult to guess
+  it by looking at the spec_lexer.l
+
 Changelog:
 - v1.6 Installation
 - v1.5 CUF03 format
