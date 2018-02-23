@@ -98,9 +98,6 @@ static void write_net_dot (void)
 
 int main (int argc, char ** argv)
 {
-	ASSERT (argc == 2);
-	ASSERT (argv[1] != 0);
-
 	if (argc != 2 || argv[1] == 0) {
 		ut_err ("Invalid arguments, see the code!");
 	}
