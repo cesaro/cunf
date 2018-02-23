@@ -13,20 +13,22 @@
 # You should have received a copy of the GNU General Public License along with
 # this program.  If not, see <http://www.gnu.org/licenses/>.
 
+.DEFAULT_GOAL := all
+
+include config.mk
+
 # traditional variables
-#CFLAGS:=-Wall -Wextra -std=c99 -O3 -emit-llvm
-CFLAGS:=-Wall -Wextra -std=c99 -O3
-#CFLAGS:=-Wall -Wextra -std=c99 -pg
-#CFLAGS:=-Wall -Wextra -std=c99 -g
-#CXXFLAGS:=-Wall -Wextra -std=c++0x
-#CXXFLAGS:=-Wall -Wextra -std=c++11 -O3 -emit-llvm
-CXXFLAGS:=-Wall -Wextra -std=c++11 -O3
-#CXXFLAGS:=-Wall -Wextra -std=c++11 -pg
-#CXXFLAGS:=-Wall -Wextra -std=c++11 -g
+ifdef CONFIG_DEBUG
+CFLAGS = -Wall -Wextra -std=c11 -g # -pg -emit-llvm
+CXXFLAGS = -Wall -Wextra -std=c++11 -g # -pg -emit-llvm
+endif
+ifdef CONFIG_RELEASE
+CFLAGS = -Wall -Wextra -std=c11 -O3 # -g -pg
+CXXFLAGS = -Wall -Wextra -std=c++11 -O3 # -g -pg
+endif
 CPPFLAGS:=-I src/ -D_POSIX_C_SOURCE=200809L -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -D NDEBUG
-#LDFLAGS:=-dead_strip -static
-#LDFLAGS:=-dead_strip
-#LDFLAGS:=
+#LDFLAGS :=
+#LDLIBS :=
 
 # source code
 SRCS:=$(wildcard src/*.c src/*.cc src/*/*.c src/*/*.cc src/*/*/*.c src/*/*/*.cc)
@@ -48,9 +50,6 @@ MOBJS:=$(MSRCS:.cc=.o)
 MOBJS:=$(MOBJS:.c=.o)
 TARGETS:=$(MOBJS:.o=)
 
-# dependency files
-DEPS:=$(patsubst %.o,%.d,$(OBJS) $(MOBJS))
-
 # list of nets for several tasks
 TEST_NETS:=$(shell tools/nets.sh test)
 TIME_NETS:=$(shell tools/nets.sh time)
@@ -60,14 +59,11 @@ DEAD_NETS:=$(MCI_NETS)
 CNMC_NETS:=$(shell tools/nets.sh all | grep -v huge)
 
 # define the toolchain
-CROSS:=
-#VERS:=-5
 VERS:=
-
-LD:=$(CROSS)llvm-ld$(VERS)
-CC:=$(CROSS)clang$(VERS)
-CXX:=$(CROSS)clang++$(VERS)
-CPP:=$(CROSS)cpp$(VERS)
+LD:=llvm-ld$(VERS)
+CC:=clang$(VERS)
+CXX:=clang++$(VERS)
+CPP:=cpp$(VERS)
 LEX:=flex
 YACC:=bison
 
@@ -94,13 +90,26 @@ YACC:=bison
 %.c : %.l
 %.c : %.y
 
+COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+LINK.c = $(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+LINK.cc = $(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
 %.o : %.c
 	@echo "CC  $<"
-	@$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+	@$(COMPILE.c)
 
 %.o : %.cc
 	@echo "CXX $<"
-	@$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+	@$(COMPILE.cc)
+
+%.i : %.c
+	@echo "CC  $<"
+	@$(COMPILE.c) -E
+
+%.i : %.cc
+	@echo "CXX $<"
+	@$(COMPILE.cc) -E
 
 %.pdf : %.dot
 	@echo "DOT $<"
@@ -209,4 +218,9 @@ YACC:=bison
 	echo >> $@
 	echo "mci2mp:" >> $@
 	mci2mp $(basename $<).mci >> $@
+
+# dependency files
+DEPS:=$(patsubst %.o,%.d,$(OBJS) $(MOBJS))
+$(DEPS) : config.h
+-include $(DEPS)
 

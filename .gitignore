@@ -15,3 +15,5 @@
 tags
 src/cunf/cunf
 src/pep2dot
+config.h
+cunf-*-v*

@@ -19,18 +19,14 @@ include defs.mk
 
 all: $(TARGETS)
 
+$(TARGETS) : % : %.o $(OBJS)
+	@echo "LD  $@"
+	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
 run:
 	#./src/cunf/cunf examples/tiny/numh.ll_net  --save out.cuf input
 	#./src/cunf/cunf -vvv examples/tiny/pag9.ll_net  --save out.cuf input
 	#./src/pep2pt examples/plain/small/dme2.ll_net
-
-$(TARGETS) : % : %.o $(OBJS)
-	@echo "LD  $@"
-	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
-	#llvm-link-3.7 -o $@ $^
-
-#$(MINISAT)/build/release/lib/libminisat.a :
-#	cd $(MINISAT); make lr
 
 prof : $(TARGETS)
 	rm gmon.out.*
