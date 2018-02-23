@@ -1,5 +1,5 @@
 
-# Copyright (C) 2010, 2011  Cesar Rodriguez <cesar.rodriguez@lsv.ens-cachan.fr>
+# Copyright (C) 2010-2018 Cesar Rodriguez <cesar.rodriguez@lipn.fr>
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -17,7 +17,9 @@ include defs.mk
 
 .PHONY: fake all g test clean distclean prof dist
 
-all: $(TARGETS) tags
+all: $(TARGETS)
+
+run:
 	#./src/cunf/cunf examples/tiny/numh.ll_net  --save out.cuf input
 	#./src/cunf/cunf -vvv examples/tiny/pag9.ll_net  --save out.cuf input
 	#./src/pep2pt examples/plain/small/dme2.ll_net

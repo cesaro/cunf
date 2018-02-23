@@ -105,7 +105,7 @@ optional file containing properties to verify.  Allowed OPTIONS are:
 
  -v, --verb=N
       Increments the verbosity level by the optional parameter N, a number
-      between 0 and 3, with 3 being the most verbose level).  If N is not
+      between 0 and 3, with 3 being the most verbose level.  If N is not
       provided it is assumed to be 1.  Multiple occurrences accumulate.
 
  -h, --help
