@@ -78,10 +78,10 @@ static void _unfold_postset (struct event *e)
 	}
 }
 
-static void _unfold_combine (register struct ec *r)
+static void _unfold_combine (struct ec *r)
 {
-	register struct ec *rp;
-	register int i, j;
+	struct ec *rp;
+	int i, j;
 	static struct da l;
 	static int init = 1;
 
