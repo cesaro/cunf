@@ -409,7 +409,7 @@ $ dot -T pdf < dek02.dot > dek02.pdf
 The file \verb!dek02.pdf! depicts the c-net.
 Similarly, if we wish to see the unfolding, we could type:
 \begin{verbatim}
-$ tools/cuf2pep.py < u.cuf > u.ll_net
+$ scripts/cuf2pep.py < u.cuf > u.ll_net
 $ src/pep2dot u.ll_net > u.dot
 $ dot -T pdf < u.dot > u.pdf
 \end{verbatim}
@@ -501,7 +501,7 @@ folder in the source code:
 \item[\cod{examples/dijkstra/}]
   This folder contains c-nets modelling Dijkstra's mutual exclusion
   algorithm\cite{Dij65} for 2 up to 6 processes.
-  They have been generated with the script \verb!tools/mkdijkstra.py!,
+  They have been generated with the script \verb!scripts/mkdijkstra.py!,
   included in the source code (but not the bundle of precompiled binaries).
 
 \item[\cod{examples/corbett/}]
@@ -517,7 +517,7 @@ folder in the source code:
   The folder \verb!other/! contains ordinary Petri nets.
 \end{description}
 
-The folder \verb!tools/! of the source code contains a number of scripts (all
+The folder \verb!scripts/! of the source code contains a number of scripts (all
 them have names starting by \verb!mk!) to generate several families of nets,
 other Dijkstra's or Dekker's mutual exclusion models.
 This folder is \emph{not} distributed with the bundle of precompiled binaries.
@@ -908,8 +908,8 @@ $ make net.unf.cuf
 A Python module for reading and writing a number of c-net and Petri net
 formats is distributed with the \cunft{}.
 \cna actually uses it to read \verb!cuf! files and many scripts in the
-\verb!tools/! folder of the sources use it to carry out various operations.
-All \verb!tools/mk*! scripts use this module, \cf \cref{s:finding}.
+\verb!scripts/! folder of the sources use it to carry out various operations.
+All \verb!scripts/mk*! scripts use this module, \cf \cref{s:finding}.
 
 We briefly illustrate its use with a simple example.  The following code
 produces the c-net in \cref{f:ptnet}

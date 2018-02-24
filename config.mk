@@ -81,4 +81,4 @@ export $(CONFIGVARS)
 
 config.h : config.mk
 	@echo "GEN $@"
-	@tools/env2h.py $(CONFIGVARS) > $@
+	@scripts/env2h.py $(CONFIGVARS) > $@

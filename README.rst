@@ -11,7 +11,7 @@ contextual nets, or c-nets.  The package specifically contains the tools:
   constructed by cunf;
 - Scripts such as ``pep2dot`` or ``grml2pep`` to do format conversion between
   various Petri net formats, unfolding formats, etc.
-- ``ptnet``: a small Python module (see `<tools/ptnet/>`__) suitable to
+- ``ptnet``: a small Python module (see `<scripts/ptnet/>`__) suitable to
   programmatically generate and manage Petri net models.
 
 .. _formal verification: https://en.wikipedia.org/wiki/Formal_verification
@@ -78,8 +78,8 @@ compile the sources of the `latest release`_ available.
 Documentation
 =============
 
-Documentation (including a tutorial) is available in the Cunf user's manual
-available in the `latest release`_ of the tool.
+The Cunf user's manual (available with the `latest release`_) contains all
+documentation available, including a guided tutorial of the tool.
 
 Algorithms
 ----------

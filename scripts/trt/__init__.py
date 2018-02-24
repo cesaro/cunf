@@ -391,7 +391,7 @@ class Dlcnmc :
         if 'cuf' not in args : usage ("Parameter 'cuf' mandatory")
 
         f = '/tmp/trt.%d.tmp' % os.getpid ()
-        cmd = 'tools/cnmc.py dl ' + args['cuf'] + ' 2> ' + f
+        cmd = 'scripts/cnmc.py dl ' + args['cuf'] + ' 2> ' + f
         (c, s) = runit (cmd, args['timeout'], sh=True)
         cmd = ['time', 'ms_act_act', f]
         (c1, s1) = runit (cmd, args['timeout'])
@@ -429,7 +429,7 @@ class Dlcndc :
         if 'cuf' not in args : usage ("Parameter 'cuf' mandatory")
 
         f = '/tmp/trt.%d.tmp' % os.getpid ()
-        cmd = 'tools/cndc.py stb 2-tree nocy ' + args['cuf'] + ' > ' + f
+        cmd = 'scripts/cndc.py stb 2-tree nocy ' + args['cuf'] + ' > ' + f
         (c, s) = runit (cmd, args['timeout'], sh=True)
         cmd = ['time', 'minisat', f]
         (c1, s1) = runit (cmd, args['timeout'])

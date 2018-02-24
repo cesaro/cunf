@@ -323,7 +323,7 @@ test/nets/cont/large/key_4.fsa
 #echo "Contextual unfolding and CMPs (E, B, EH, BH)" >> out
 #for n in $PLAIN; do
 #	./prcompress $n.mci > $n.prcompress.out 2> $n.prcompress.err
-#	tools/merger.py < $n.pr.cuf > $n.cont.mp 2> $n.merger.err
+#	scripts/merger.py < $n.pr.cuf > $n.cont.mp 2> $n.merger.err
 #	E=`grep ^events < $n.merger.err | sed 's/events.//'`
 #	B=`grep conds < $n.merger.err | sed 's/conds.//'`
 #

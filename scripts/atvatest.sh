@@ -55,8 +55,8 @@ examples/cont/large/rw_12.ll_net
 examples/plain/large/rw_12.ll_net
 "
 
-for i in 02 03 04 05 06; do ./tools/mkdijkstra.py $i > /tmp/plain-dij$i.ll_net; done
-for i in 20 40 60; do ./tools/mkdekker.py $i > /tmp/plain-dek$i.ll_net; done
+for i in 02 03 04 05 06; do ./scripts/mkdijkstra.py $i > /tmp/plain-dij$i.ll_net; done
+for i in 20 40 60; do ./scripts/mkdekker.py $i > /tmp/plain-dek$i.ll_net; done
 
 echo >> TABLE
 echo >> TABLE
@@ -69,7 +69,7 @@ for i in $RW; do
 	echo $i >> TABLE
 	./src/main $i | grep 'event\|hist\|time' | grep -v 'At size' >> TABLE
 	echo cna
-	./tools/cna $n.unf.cuf -d -r sccred -n out
+	./scripts/cna $n.unf.cuf -d -r sccred -n out
 	echo minisat
 	minisat out | grep 'CPU\|SATISF' >> TABLE
 	cat TABLE

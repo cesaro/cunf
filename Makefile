@@ -33,7 +33,7 @@ prof : $(TARGETS)
 	src/main /tmp/ele4.ll_net
 
 tags : $(SRCS)
-	ctags -R --c++-kinds=+p --fields=+K --extra=+q src/ tools/ config.h
+	ctags -R --c++-kinds=+p --fields=+K --extra=+q src/ scripts/ config.h
 
 g : $(TARGETS)
 	gdb ./src/cunf/cunf
@@ -90,12 +90,13 @@ dl.mcm.tr : $(DEAD_NETS:%.ll_net=%.dl.mcm.tr)
 	@cat $(DEAD_NETS:%.ll_net=%.dl.mcm.tr) > $@
 
 clean :
-	@rm -f $(TARGETS) $(MOBJS) $(OBJS)
+	@rm -f $(TARGETS) $(MOBJS) $(OBJS) config.h
 	@rm -f src/cna/spec_lexer.cc src/cna/spec_parser.cc src/cna/spec_parser.h
 	@echo Cleaning done.
 
 distclean : clean
 	@rm -f $(DEPS)
+	@make -C doc/manual clean
 	@rm -Rf dist/
 	@find examples/ -name '*.cnf' -exec rm '{}' ';'
 	@find examples/ -name '*.mci' -exec rm '{}' ';'
@@ -121,17 +122,17 @@ dist : all
 	cp src/cunf/cunf dist/bin/cunf
 	cp src/pep2dot dist/bin
 	cp src/pep2pt dist/bin
-	cp tools/cna dist/bin
-	cp tools/grml2pep.py dist/bin
-	cp tools/cuf2pep.py dist/bin
+	cp scripts/cna dist/bin
+	cp scripts/grml2pep.py dist/bin
+	cp scripts/cuf2pep.py dist/bin
 	#cp minisat/core/minisat dist/bin
-	cp -R tools/ptnet dist/lib
+	cp -R scripts/ptnet dist/lib
 	cp -R examples/cont dist/examples/corbett/
 	cp -R examples/other dist/examples/corbett/
 	cp -R examples/plain dist/examples/corbett/
 	cp -R examples/pr dist/examples/corbett/
-	for i in 02 04 05 08 10 20 30 40 50; do ./tools/mkdekker.py $$i > dist/examples/dekker/dek$$i.ll_net; done
-	for i in 02 03 04 05 06 07; do ./tools/mkdijkstra.py $$i > dist/examples/dijkstra/dij$$i.ll_net; done
+	for i in 02 04 05 08 10 20 30 40 50; do ./scripts/mkdekker.py $$i > dist/examples/dekker/dek$$i.ll_net; done
+	for i in 02 03 04 05 06 07; do ./scripts/mkdijkstra.py $$i > dist/examples/dijkstra/dij$$i.ll_net; done
 
 install : dist
 	cp -Rv dist/bin/* $(CONFIG_PREFIX)/bin

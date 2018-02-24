@@ -15,11 +15,11 @@ while true; do
 	# generate some net
 	echo "==========================================================="
 	N=`echo "1 + $RANDOM % 4" | bc`
-	#./tools/mklife.py $N 2> $NET.ll_net 
-	./tools/mklife-majority.pl $N > $NET.ll_net 
+	#./scripts/mklife.py $N 2> $NET.ll_net 
+	./scripts/mklife-majority.pl $N > $NET.ll_net 
 
 	# unfold it
-	tools/trt.py t=cunf timeout=$TIMEOUT net=$NET.ll_net > $NET.unf.tr
+	scripts/trt.py t=cunf timeout=$TIMEOUT net=$NET.ll_net > $NET.unf.tr
 	grep event $NET.unf.tr
 	grep hist $NET.unf.tr
 	if test "`grep stat $NET.unf.tr`" != "stat	0"; then
@@ -29,7 +29,7 @@ while true; do
 
 	# generate reachable markings of the net
 	test/net2dot $NET.ll_net > $NET.dot
-	tools/rs.pl $NET.dot | sed '1d;$d' > $NET.r
+	scripts/rs.pl $NET.dot | sed '1d;$d' > $NET.r
 	if test "`wc -l < $NET.r`" = "1" ; then
 		echo "Only one reachable marking; skiping"
 		continue
@@ -37,7 +37,7 @@ while true; do
 
 	# generate reachable markings of the unfolding
 	test/cuf2dot $NET.unf.cuf
-	tools/rs.pl $NET.unf.dot | sed '1d;$d' > $NET.unf.r
+	scripts/rs.pl $NET.unf.dot | sed '1d;$d' > $NET.unf.r
 
 	# if reachable markings in net and unfolding differ, bug found!
 	if ! diff $NET.r $NET.unf.r; then

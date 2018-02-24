@@ -51,12 +51,12 @@ MOBJS:=$(MOBJS:.c=.o)
 TARGETS:=$(MOBJS:.o=)
 
 # list of nets for several tasks
-TEST_NETS:=$(shell tools/nets.sh test)
-TIME_NETS:=$(shell tools/nets.sh time)
-ALL_NETS:=$(shell tools/nets.sh no-huge)
-MCI_NETS:=$(shell tools/nets.sh mci)
+TEST_NETS:=$(shell scripts/nets.sh test)
+TIME_NETS:=$(shell scripts/nets.sh time)
+ALL_NETS:=$(shell scripts/nets.sh no-huge)
+MCI_NETS:=$(shell scripts/nets.sh mci)
 DEAD_NETS:=$(MCI_NETS)
-CNMC_NETS:=$(shell tools/nets.sh all | grep -v huge)
+CNMC_NETS:=$(shell scripts/nets.sh all | grep -v huge)
 
 # define the toolchain
 VERS:=
@@ -122,11 +122,11 @@ LINK.cc = $(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 %.dot : %.ll_net
 	@echo "P2D $<"
 	@src/pep2dot $< > $@
-	@#tools/pep2dot.py < $< > $@
+	@#scripts/pep2dot.py < $< > $@
 
 %.ll_net : %.cuf
 	@echo "C2P $<"
-	@tools/cuf2pep.py < $< > $@
+	@scripts/cuf2pep.py < $< > $@
 
 %.pt : %.ll_net
 	@echo "P2PT $<"
@@ -134,11 +134,11 @@ LINK.cc = $(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 #%.ll_net : %.pt
 #	@echo "PT2P $<"
-#	@tools/pt2pep.py < $< > $@
+#	@scripts/pt2pep.py < $< > $@
 
 #%.ll_net : %.mp
 #	@echo "C2P $<"
-#	@tools/mp2pep.py < $< > $@
+#	@scripts/mp2pep.py < $< > $@
 
 %.unf.cuf : %.ll_net
 	@echo "UNF $<"
@@ -146,58 +146,58 @@ LINK.cc = $(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.mp.mp : %.unf.cuf
 	@echo "MER $<"
-	@tools/cmerge.py < $< > $@
+	@scripts/cmerge.py < $< > $@
 
 %.unf.cuf.tr : %.ll_net
-	tools/trt.py timeout=5000 t=cunf net=$< > $@
+	scripts/trt.py timeout=5000 t=cunf net=$< > $@
 
 %.unf.mci : %.ll_net
 	@echo "MLE $<"
 	@mole $< -m $@
 
 %.unf.mci.tr : %.ll_net
-	tools/trt.py timeout=900 t=mole net=$< > $@
+	scripts/trt.py timeout=900 t=mole net=$< > $@
 
 %.dl.smod.tr : %.unf.mci.tr
-	tools/trt.py timeout=1200 t=dl.smod mci=$(<:%.tr=%) > $@
+	scripts/trt.py timeout=1200 t=dl.smod mci=$(<:%.tr=%) > $@
 
 %.dl.cnmc.tr : %.unf.cuf.tr
-	tools/trt.py timeout=900 reps=10 t=dl.cnmc cnf cuf=$(<:%.tr=%) > $@
+	scripts/trt.py timeout=900 reps=10 t=dl.cnmc cnf cuf=$(<:%.tr=%) > $@
 
 %.dl.cndc.tr : %.unf.cuf.tr
-	tools/trt.py timeout=900 reps=10 t=dl.cndc cuf=$(<:%.tr=%) > $@
+	scripts/trt.py timeout=900 reps=10 t=dl.cndc cuf=$(<:%.tr=%) > $@
 
 %.dl.clp.tr : %.unf.mci.tr
-	tools/trt.py timeout=900 reps=10 t=dl.clp mci=$(<:%.tr=%) > $@
+	scripts/trt.py timeout=900 reps=10 t=dl.clp mci=$(<:%.tr=%) > $@
 
 %.dl.lola.tr : %.ll_net
-	tools/trt.py timeout=600 t=dl.lola net=$< > $@
+	scripts/trt.py timeout=600 t=dl.lola net=$< > $@
 
 %.dl.smv.tr : %.ll_net
-	tools/trt.py timeout=120 t=dl.smv net=$< > $@
+	scripts/trt.py timeout=120 t=dl.smv net=$< > $@
 
 %.dl.mcm.tr : %.unf.mci.tr
-	tools/trt.py timeout=600 t=dl.mcm mci=$(<:%.tr=%) > $@
+	scripts/trt.py timeout=600 t=dl.mcm mci=$(<:%.tr=%) > $@
 
 %.ll_net : %.xml
 	@echo "X2P $<"
-	@tools/xml2pep.pl < $< > $@
+	@scripts/xml2pep.pl < $< > $@
 
 %.ll_net : %.pnml
 	@echo "P2P $<"
-	@tools/pnml2pep.py < $< > $@
+	@scripts/pnml2pep.py < $< > $@
 
 %.ll_net : %.grml
 	@echo "G2P $<"
-	@tools/grml2pep.py < $< > $@
+	@scripts/grml2pep.py < $< > $@
 
 %.r : %.dot
 	@echo "RS  $<"
-	@tools/rs.pl $< > $@
+	@scripts/rs.pl $< > $@
 
 %.ll_net : %.g
 	@echo "X2P $<"
-	@petrify -ip < $< | tools/stg2pep.py > $@
+	@petrify -ip < $< | scripts/stg2pep.py > $@
 
 %.dot : %.mci
 	@echo "M2D $<"
@@ -211,7 +211,7 @@ LINK.cc = $(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 	echo >> $@
 	echo "prcompress:" >> $@
 	./prcompress -v $(basename $<).mci >> $@
-	./tools/cmerge.py < $(basename $<).pr.cuf > /dev/null 2>> $@
+	./scripts/cmerge.py < $(basename $<).pr.cuf > /dev/null 2>> $@
 
 %.punf.c.txt : %.ll_net
 	-punf -c -n=200000 -N=1 -s -t -@4 '-#' $< > $@ 2>&1
