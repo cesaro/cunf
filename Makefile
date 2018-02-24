@@ -15,7 +15,7 @@
 
 include defs.mk
 
-.PHONY: fake all g test clean distclean prof dist
+.PHONY: fake all g test clean distclean prof dist doc
 
 all: $(TARGETS)
 
@@ -137,10 +137,16 @@ install : dist
 	cp -Rv dist/bin/* $(CONFIG_PREFIX)/bin
 	cp -Rv dist/lib/* $(CONFIG_PREFIX)/lib
 
+doc :
+	make -C doc/manual multi
+	@echo
+	@echo Done. Go to doc/manual to see the user manual.
+
 REL:=cunf-$(shell uname -p)-$(CONFIG_VERSION)
 
-release : dist
+release : dist doc
 	rm -Rf $(REL)
 	cp -R dist $(REL)
 	cp README.rst $(REL)
+	cp doc/manual/main.pdf $(REL)/user-manual-cunf-$(CONFIG_VERSION).pdf
 	tar czf $(REL).tar.gz $(REL)

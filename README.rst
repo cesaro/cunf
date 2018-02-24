@@ -28,7 +28,7 @@ Dependencies
 Runnig ``cna`` will require that the ``minisat`` SAT solver be present in the
 ``$PATH`` (`download here <http://minisat.se/>`__).
 Compiling the source code will just require ``make`` and a C/C++11-compatible
-compiler.
+compiler. Building the documentation requires ``latex``.
 
 From Precompiled Binaries (include examples)
 --------------------------------------------
