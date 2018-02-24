@@ -12,6 +12,9 @@
 - Document somewhere the format of the spec files!! It's not difficult to guess
   it by looking at the spec_lexer.l
 
+- The DEBUG/INFO/TRACE/PRINT macros are much less optimal than they could be.
+  DPU contains an updated version of these.
+
 Changelog:
 - v1.6 Installation
 - v1.5 CUF03 format

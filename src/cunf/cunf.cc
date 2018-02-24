@@ -114,10 +114,10 @@ optional file containing properties to verify.  Allowed OPTIONS are:
  -V, --version
       Prints version information.
 
-For more information, see https://code.google.com/p/cunf/
+For more information, see https://github.com/cesaro/cunf/
 )XXX";
 
-	printf("%s\nCompiled on %s\n", s, __DATE__);
+	printf("%s", s);
 	exit (EXIT_SUCCESS);
 }
 
@@ -130,7 +130,20 @@ void usage (void)
 
 void version (void)
 {
-	PRINT ("Cunf v.FIXME");
+	PRINT ("Cunf %s (%s%s), compiled %s",
+         CONFIG_VERSION,
+         CONFIG_BUILD_COMMIT,
+         CONFIG_BUILD_DIRTY ? ", dirty" : "",
+         CONFIG_BUILD_DATE);
+#ifdef CONFIG_DEBUG
+	PRINT ("Build type: debug");
+#endif
+#ifdef CONFIG_RELEASE
+	PRINT ("Build type: release");
+#endif
+
+   PRINT ("Nodelist step: %zu", CONFIG_NODELIST_STEP);
+	PRINT ("Compilation: %s", CONFIG_COMPILE);
 	exit (EXIT_SUCCESS);
 }
 

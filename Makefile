@@ -96,7 +96,7 @@ clean :
 
 distclean : clean
 	@rm -f $(DEPS)
-	@make -C doc/manual clean
+	@make -s -C doc/manual clean
 	@rm -Rf dist/
 	@find examples/ -name '*.cnf' -exec rm '{}' ';'
 	@find examples/ -name '*.mci' -exec rm '{}' ';'
