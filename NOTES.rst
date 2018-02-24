@@ -16,6 +16,13 @@
   DPU contains an updated version of these.
 
 Changelog:
+- v1.6.1
+  - An incomplete version of CNA has been implemented in C++ and runs inside of
+    Cunf when a spec file is provided. The SAT encoding works for only plain
+    nets, not c-nets. This remains an undocumented features for the user for the
+    time being (although cunf -h indicates that cunf accepts a spec file!)
+  - Configuration has been moved from src/util/config.h to config.mk.
+  - Makefile targets to build documentation and releases have been added.
 - v1.6 Installation
 - v1.5 CUF03 format
 - v1.4 CUF02 format

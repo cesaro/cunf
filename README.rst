@@ -25,12 +25,12 @@ Installation
 Dependencies
 ------------
 
-Runnig ``cna`` will require that the ``minisat`` SAT solver be present in the
-``$PATH`` (`download here <http://minisat.se/>`__).
-Compiling the source code will just require ``make`` and a C/C++11-compatible
-compiler. Building the documentation requires ``latex``.
+To run ``cna`` you will need to have the ``minisat`` SAT solver in the ``$PATH``
+(download it `here <http://minisat.se/>`__).  Compiling the source code will
+just require ``make`` and a C/C++11-compatible compiler. Building the
+documentation requires ``latex``.
 
-From Precompiled Binaries (include examples)
+From Precompiled Binaries (includes examples)
 --------------------------------------------
 
 Please check the `latest release`_ to find a ``.tar.gz`` file with precompiled
@@ -61,8 +61,8 @@ compile the sources of the `latest release`_ available.
     make dist
 
    This will put all binaries and libraries into the ``dist/`` folder, from
-   where you may copy them to suitable locations in your machine following the
-   instructions above for precompiled binaries.
+   where you may directly run them or copy them to suitable locations in your
+   machine.
 
 3. In particular, make available to Python the module in::
 
