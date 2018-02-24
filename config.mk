@@ -5,11 +5,11 @@
 # information during the unfolding computation.  Switching on the option will
 # considerably increase \cunf's running times. Define CONFIG_RELEASE to disable
 # all the above and compile with -O3
-CONFIG_DEBUG = 1
-#CONFIG_RELEASE = 1
+CONFIG_RELEASE = 1
+#CONFIG_DEBUG = 1
 
 # Version of the tool
-CONFIG_VERSION = v1.6.0
+CONFIG_VERSION = v1.6.1
 
 # Folder where the tool will be installed with "make install"
 CONFIG_PREFIX = ~/x/local
