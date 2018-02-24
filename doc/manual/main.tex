@@ -166,164 +166,28 @@ The algorithms used by \cna has been described in\cite{RS12}.
 \section{Author and Contact}%{{{
 \label{s:author}
 
-The \cunft{} is developed and maintained by 
+Cunf is currently maintained by César Rodríguez:
 
-\medskip
-
-César Rodríguez \\[1ex]
-LSV, ENS de Cachan \\
-61, avenue du Président Wilson \\
-94235 Cachan Cedex \\
-France
-
-\begin{tabular}{ll}
-\textit{e-mail}: & \url{cesar.rodriguez@lsv.ens-cachan.fr} \\
-Website        : & \url{http://www.lsv.ens-cachan.fr/~rodriguez/}
-\end{tabular}
-
-\medskip
-
-If you experience any difficulty using the tool, or found a bug,
-or just wish to let me know that you are using it, send me an e-mail.
-
-%}}}
-\section{Installation}%{{{
-
-The \cunft{} has only been tested in Linux and Mac~OS~X; it should
-run well in other Unix systems.
-You can choose to install precompiled binaries or compile and install from the
-source code.
-
-\cna requires the \minisat solver to be installed in your machine, and
-available in the \verb!$PATH!.
-For your convenience, \minisat v.2.2.0 is distributed with the precompiled
-binaries and can be found in the \verb!minisat/! folder of the repository.
-
-\subsection{From Precompiled Binaries}
-\label{s:precompiled}
-
-From the following address, choose the latest version (1.6) of the bundle
-with precompiled binaries that suits your machine,
-download, and unpack it:
 \begin{center}
-\url{https://code.google.com/p/cunf/downloads/list}
+\url{http://lipn.univ-paris13.fr/~rodriguez/}
 \end{center}
-Then follow the next steps:
-\begin{enumerate}
-\item
-  Copy all files in the \verb!bin/! folder to any folder in your
-  computer pointed by your \verb!$PATH!.\footnote{In particular, the \minisat
-  tool has to be somewhere where the \textit{system(3)} C-library function
-  will find it.}
-\item
-  The folder \verb!lib/ptnet/! contains a Python module that should be
-  correctly installed in your system for \cna and other Python scripts
-  to work.
-  Copy it to, \textbf{either},
-  \begin{itemize}
-  \item
-    any folder pointed by your installation-dependent Python's default
-    \textit{Module Search Path},\footnote{To discover the actual search
-    path that Python is using run the command: \\
-    \cod{echo 'import sys; print sys.path' | python}.}
-  \item
-    \textbf{or} any folder pointed by (one of the paths in) the
-    environment variable \verb!$PYTHONPATH!,
-  \item
-    \textbf{or} the same folder where you copied \cna and the other Python
-    scripts, as Python will first search for modules in that folder.
-  \end{itemize}
-\end{enumerate}
 
-\subsection{Compilation and Installation from the Source Code}
-\label{s:compilation}
-
-First, get the source code.  You have two options:
-\begin{enumerate}
-\item
-  Download and unpack the boundle containing the source code of version 1.6 of
-  the tool, from
-  \begin{center}
-  \url{https://code.google.com/p/cunf/downloads/list}
-  \end{center}
-\item
-  \textit{Clone} the \verb!Git! repository where the development takes place,
-  running the command:
-  \begin{center}
-  \verb!git clone https://code.google.com/p/cunf/!
-  \end{center}
-\end{enumerate}
-
-\cunf is written in C, the source code is the \verb!src/! and
-\verb!include/! folders of the tool repository. \cna is
-written in Python, and uses the \verb!ptnet! Python module,
-both are located in the \verb!tools/! folder.
-
-The compilation is handled by \verb!make!, the following targets are available:
-\begin{description}
-\item[\cod{all}]
-  Compiles \cunf and \minisat, leaving the respective binaries in
-  \verb!src/main! and \verb!minisat/core/minisat!.
-\item[\cod{dist}]
-  Builds all necessary files and creates the folder \verb!dist/!, containing
-  the binaries and libraries ready to be installed --- the same files that are
-  distribued from the boundle in \cref{s:precompiled}.
-\end{description}
-
-Some compilation-time options can be tweaked in \verb!include/config.h!, here
-you have a description:
-
-\begin{description}
-\item[\cod{CONFIG\_DEBUG}]  Define this macro to compile debugging code.
-\cunf will perform extensive assertions aiming at finding bugs in the code and
-corrupt data structures.  It will additionally dump verbose debugging
-information during the unfolding computation.  Switching on the option will
-considerably increase \cunf's running times.
-
-\item[\cod{CONFIG\_MCMILLAN}]  Define this macro to use McMillan's adequate
-order\cite{MM95} when \cunf picks possible extensions to extend the
-unfolding prefix.  One and only one of the macros \verb!CONFIG_MCMILLAN!,
-\verb!CONFIG_PARIKH!, \verb!CONFIG_ERV! or \verb!CONFIG_ERV_MOLE!
-can be active.  Recall that this is not a total order.
-
-\item[\cod{CONFIG\_ERV}]  Selects the $\prec_F$ total adequate order
-of\cite{ERV02}.
-
-\item[\cod{CONFIG\_PARIKH}]  Selects the \emph{Parikh} order
-of\cite[definition 4.46]{EH08}.
-Although this this is an adequate order, it is \emph{not} total, and may
-produce prefixes larger than any of the other available total orders.
-However, it always produces prefixes smaller than when using
-\verb!CONFIG_MCMILLAN!.
-
-\item[\cod{CONFIG\_ERV\_MOLE}]  Selects the adequate order used in the Mole
-unfolder\cite{Mole}.  This is a minor, non-documented modification of
-the order $\prec_F$.  It makes possible to compare the unfolding prefixes
-computed by \cunf and \mole.  Refer to the function \verb!h_cmp!, in
-\verb!src/h.c!, for more details.
-
-\item[\cod{CONFIG\_NODELIST\_STEP}]  Defines the number of items to be
-allocated together whenever certain dynamic linked-lists need to grow.  Among
-other uses, these lists are used to store markings.
-
-\end{description}
-
-To generate the binaries, execute
-\begin{verbatim}
-$ make dist
-\end{verbatim}
-and follow the steps in \cref{s:precompiled} with the folder \verb!dist!.
-Observe that your installed copy of \cna will not work before you install the
-\verb!ptnet! module, as indicated in \cref{s:precompiled}.
-You can of course run \cna from the \verb!tools/! folder, since Python first
-searches for modules in the same directory where the executable is located.
+Please feel free to contact me if you have questions about Cunf or want to send feedback.
 
 %}}}
 \section{Getting Started}%{{{
 \label{s:getting}
 
-In this section
-we explain the usage of the \cunft{} with a simple, well-known example.
+\subsection{Installation}
+
+Please refer to the \verb!README.rst! file of the tool for installation
+instructions. Precompiled binaries and instructions how to compile the code are
+available.
+
+\subsection{Running Example}
+
+In this section we explain the usage of the \cunft{} with a simple, well-known
+example.
 
 \begin{figure}[h]
 \centering
@@ -343,8 +207,8 @@ Otherwise it may \verb!withdraw! its intention and clear the flag.  Read arcs
 allow \verb!enter! and \verb!withdraw! to read the flag of the other process.
 
 This c-net is distributed in the \verb!examples/! folder, included in the
-boundle of \cref{s:precompiled} or the \verb!dist/! folder generated after
-compilation, see \cref{s:compilation}.
+precompiled binaries available in the tools's website, or the \verb!dist/!
+folder generated after compilation.
 The file in question is
 \begin{verbatim}
 examples/dekker/dek02.ll_net.
@@ -370,7 +234,7 @@ is deadlock-free, or whether mutual exclusion is guaranteed.
 We first build its unfolding using \cunf,
 and store it in the file \verb!u.cuf!:
 \begin{verbatim}
-$ cunf -o u.cuf dek02.ll_net
+$ cunf dek02.ll_net -i -s u.cuf
 \end{verbatim}
 By default \cunf outputs in \verb!CUF03! format
 (documented in \cref{s:formats}).
@@ -380,17 +244,17 @@ just before the tool terminates.
 We can distinguish the following lines:
 \begin{verbatim}
 [...]
-hist    12
-events  8
-cond    18
+histories            : 12
+events               : 8
+conditions           : 18
 [...]
-co(r)   5.25
-rco(r)  0.50
+vector co(r) [avg]   : 5.25
+vector rco(r) [avg]  : 0.50
 [...]
-pre(e)  1.75
-ctx(e)  0.50
-pst(e)  1.75
-cutoffs 6
+pre-set(e) [avg]     : 1.75
+context(e) [avg]     : 0.50
+post-set(e) [avg]    : 1.75
+cutoffs              : 6
 [...]
 \end{verbatim}
 The first line above is the number of \emph{histories} generated by \cunf
@@ -412,11 +276,11 @@ co(r)   5.25
 \end{verbatim}
 \cunf reports that every element over which the relation is
 defined was related to an average of 5.25 other elements.
-In general, the higher this number is, the slower \cunf's unfolding
-algorithm proceeds.
-More details in \cite[section 7]{BBCKRS12}.
+This number gives an idea about the size of the concurrency relation.
+In general, the higher it is the slower \cunf's unfolding algorithm advances.
+See \cite[section 7]{BBCKRS12} for more details.
 
-Next in the list is the average number of conditions in the 
+Next we see the average number of conditions in the 
 preset, context, and postset of every event.  The last line reports
 the number of cut-off (enriched) events present in the internal object
 constructed by \cunf.
@@ -532,7 +396,7 @@ project\cite{Graphviz} to actually produce the image.
 
 Say that we want to \textit{see} the c-net \verb!dek02.ll_net! which we
 unfolded in the previous sections.
-We first generate a \textit{dot} script out of the net, using the tool
+We generate a \textit{dot} script out of the net, using the tool
 \verb!pep2dot!, included in the \verb!src/! directory of the source code
 (and also in the precompiled distribution):
 \begin{verbatim}
@@ -630,9 +494,9 @@ repository.
 \subsection{Finding More Examples}%{{{
 \label{s:finding}
 
-More examples are distributed in the \verb!examples/! folder in the bundle
-of \cref{s:precompiled} or the (generated) \verb!dist/examples/! folder in
-the source code:
+More examples are distributed in the \verb!examples/! folder of the package
+containing the precompiled binaries or the (generated) \verb!dist/examples/!
+folder in the source code:
 \begin{description}
 \item[\cod{examples/dijkstra/}]
   This folder contains c-nets modelling Dijkstra's mutual exclusion
