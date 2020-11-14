@@ -22,25 +22,37 @@ contextual nets, or c-nets.  The package specifically contains the tools:
 Installation
 ============
 
-Dependencies
-------------
+From Precompiled Binaries
+-------------------------
 
-To run ``cna`` you will need to have the ``minisat`` SAT solver in the ``$PATH``
-(download it `here <http://minisat.se/>`__).  Compiling the source code will
-just require ``make`` and a C/C++11-compatible compiler. Building the
-documentation requires ``latex``.
 
-From Precompiled Binaries (includes examples)
---------------------------------------------
+1. Install dependencies. In Ubuntu, type::
 
-Please check the `latest release`_ to find a ``.tar.gz`` file with precompiled
-binaries (currently only available for Linux x86_64).
+    sudo apt-get install minisat python2.7 python-networkx
 
-1. Download the ``.tar.gz`` file and uncompress it.
-2. All binaries are in the ``bin/``, you can directly invoke them from there.
-3. You may move the ``cunf`` binary elsewhere in your system, but do not move
-   the ``cna`` binary as it locates a necessary Python package using a relative
-   path from the ``bin`` folder.
+   In other operating systems, please ensure that the executable ``minisat`` is
+   in your ``PATH``, and that Python 2.7 and the Python package ``networkx`` are
+   available in your system.
+
+2. Check the `latest release`_ to find the link to the ``.tar.gz`` file with
+   precompiled binaries that you want to download (currently only available for
+   Linux x86_64). Download it and uncompress it::
+
+    wget https://github.com/cesaro/cunf/releases/download/v?.?.?/cunf-x86_64-v1.6.1.tar.gz
+    tar xzvf cunf-x86_64-v1.6.1.tar.gz 
+    cd cunf-x86_64-v1.6.1
+
+3. All binaries are in the ``bin/`` folder, you can directly run them from
+   there. For instance, you can do deadlock detection on one of the examples::
+
+    ./bin/cunf -i examples/dijkstra/dij04.ll_net -s out.unf
+    ./bin/cna  -d out.unf
+
+   The second command should print::
+   
+    NO , the net is deadlock-free
+
+   together with other debugging information.
 
 From Source Code
 ----------------
@@ -49,11 +61,18 @@ Please note that development takes place in the ``master`` branch of this
 repository. If you want a stable version of the tool you should download and
 compile the sources of the `latest release`_ available.
 
-1. Download and uncompress the source code (in this case for Cunf v1.6.1)::
+1. Ensure that you have all the necessary dependencies. In Ubuntu, install the
+   following packages::
 
-    wget https://github.com/cesaro/cunf/archive/v1.6.1.zip
-    unzip cunf-1.6.1.zip
-    cd cunf-1.6.1
+    sudo apt-get install libc-dev coreutils git make
+    sudo apt-get install clang flex bison cpp minisat python2.7 python-networkx
+
+
+2. Check out the latest release::
+
+    git clone git@github.com:cesaro/cunf.git
+    cd cunf
+    git checkout v1.6.1
 
 2. Compile the source code::
 
@@ -64,14 +83,17 @@ compile the sources of the `latest release`_ available.
    where you may directly run them or copy them to suitable locations in your
    machine.
 
-3. In particular, make available to Python the module in::
+3. To test the insallation, do deadlock detection on one of the examples::
 
-    dist/lib/ptnet
+    ./dist/bin/cunf -i dist/examples/dijkstra/dij04.ll_net -s out.unf
+    ./dist/bin/cna  -d out.unf 
 
-   by copying it to any folder pointed by your installation-dependent default
-   module search path, or any folder pointed by the environment variable
-   ``PYTHONPATH``.  The tool ``cna`` and other Python scripts won't work without
-   this step.
+   The second command should print::
+
+    NO , the net is deadlock-free
+
+   together with other debugging information.
+
 
 .. _latest release: https://github.com/cesaro/cunf/releases/latest
 
