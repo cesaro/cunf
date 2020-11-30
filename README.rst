@@ -65,7 +65,7 @@ compile the sources of the `latest release`_ available.
    following packages::
 
     sudo apt-get install libc-dev coreutils git make
-    sudo apt-get install clang flex bison cpp minisat python2.7 python-networkx
+    sudo apt-get install clang flex bison cpp minisat python3.5 python3-networkx
 
 
 2. Check out the latest release::
