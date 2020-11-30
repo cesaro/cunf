@@ -52,7 +52,7 @@ def mkmode (n, m) :
             ui.pre_add (p)
             ui.post_add (modes[i - 1])
     
-    modes[0].m0 = True
+    net.m0[modes[0]] = 1
     net.write (sys.stdout, 'pep')
 
 if __name__ == '__main__' :

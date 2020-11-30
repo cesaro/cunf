@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 A resource p is read by N concurrent transitions t_i which consume from private
@@ -31,13 +31,12 @@ def mkread (n) :
     t.pre_add (p)
     t.post_add (s)
 
-    r.m0 = True
-    net.m0.add (r)
+    net.m0[r] = 1
 
-    for i in xrange (n) :
+    for i in range (n) :
         r = ptnet.net.Place ('r/%d' % i)
         s = ptnet.net.Place ('s/%d' % i)
-        r.m0 = True
+        net.m0[r] = 1
 
         t = ptnet.net.Transition ('t/%d' % i)
         t.pre_add (r)

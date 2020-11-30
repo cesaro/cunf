@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 Produces basic flat arbiters like those in Fig. 5 in:

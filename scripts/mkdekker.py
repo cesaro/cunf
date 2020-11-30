@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 Builds a c-net representing a variant of the Dekker's agorithm on n processses,
@@ -79,7 +79,7 @@ def mkdekker (n) :
         net.places.append (flag[i, 1])
         net.m0[flag[i, 0]] = 1
 
-    for i in xrange (n) :
+    for i in range (n) :
         mkproc (i, net, n, flag)
 
     #net.make_unsafe ([flag[0, 1], flag[1, 1]])

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 Evaluation on two different fomulas of different at-most-one (AMO) encodings
@@ -23,8 +23,8 @@ class Formula (object) :
 
     def amo_standard (self, l) :
         # for n >= 0 items, produces (n^2-n)/2 clauses, no new variables
-        for i in xrange (len (l)) :
-            for j in xrange (i + 1, len (l)) :
+        for i in range (len (l)) :
+            for j in range (i + 1, len (l)) :
                 self.add ([-l[i], -l[j]])
 
     def amo_2tree (self, l) :
@@ -36,7 +36,7 @@ class Formula (object) :
 
         l2 = []
         if len (l) & 1 : l2.append (l.pop ())
-        for i in xrange (0, len (l), 2) :
+        for i in range (0, len (l), 2) :
             v1 = l[i]
             v2 = l[i + 1]
             v = self.var (('amo_2tree', v1, v2))
@@ -56,9 +56,9 @@ class Formula (object) :
 
         l2 = l[: len (l) % k]
         del l[: len (l) % k]
-        for i in xrange (0, len (l), k) :
+        for i in range (0, len (l), k) :
             l3 = l[i:i + k]
-            print 'c i', i, 'k', k, 'l3', l3, 'l', l
+            print ('c i', i, 'k', k, 'l3', l3, 'l', l)
             v = self.var (('amo_ktree', frozenset (l3)))
             for vi in l3 : self.add ([-vi, v])
             self.amo_standard (l3)
@@ -77,7 +77,7 @@ class Formula (object) :
         self.add ([-va, -l[-1]])
         if len (l) == 3 : return
 
-        for i in xrange (1, len (l) - 2) :
+        for i in range (1, len (l) - 2) :
             va = self.var (('amo_seq', ref, l[i]))
             va1 = self.var (('amo_seq', ref, l[i + 1]))
             self.add ([-l[i], va])
@@ -95,7 +95,7 @@ class Formula (object) :
         for v in l :
             f = 1 if z >= 1 else 0
             z -= 1
-            for j in xrange (f, k) :
+            for j in range (f, k) :
                 p = self.var (('amo_bin', fs, j))
                 if (1 << j) & i == 0 : p = -p
                 self.add ([-v, p])
@@ -108,34 +108,34 @@ class Formula (object) :
             self.add ([-l[0], -l[1]])
             return
 
-        print 'c k', k, 'l', l
+        print ('c k', k, 'l', l)
         ref = frozenset (l)
         # there are better ways to implement this comparison, k might be large!
         if (1 << (k - 1)) >= len (l) :
             k = int (math.ceil (math.log (len (l), 2)))
-            print 'c new k', k
+            print ('c new k', k)
         b = int (math.ceil (len (l) ** (1.0 / k)))
-        print 'c b', b
+        print ('c b', b)
         assert ((b ** k) >= len (l))
 
-        t = [0 for i in xrange (k)]
+        t = [0 for i in range (k)]
         for v in l :
-            print 'c v', v, 'assigned to', t
-            for i in xrange (k) :
+            print ('c v', v, 'assigned to', t)
+            for i in range (k) :
                 vij = self.var (('amo_kprod', ref, i, t[i]))
-                print 'c %d -> %d' % (v, vij)
+                print ('c %d -> %d' % (v, vij))
                 self.add ([-v, vij])
-            for i in xrange (k) :
+            for i in range (k) :
                 t[i] += 1
                 if t[i] < b : break
                 t[i] = 0
-        for i in xrange (k - 1) :
-            l2 = [self.var (('amo_kprod', ref, i, j)) for j in xrange (b)]
-            print 'c amo dim', i, 'l2', l2
+        for i in range (k - 1) :
+            l2 = [self.var (('amo_kprod', ref, i, j)) for j in range (b)]
+            print ('c amo dim', i, 'l2', l2)
             self.amo_kprod (l2, k)
         i = t[k - 1] + 1 if t[k - 1] != 0 else b
-        l2 = [self.var (('amo_kprod', ref, k - 1, j)) for j in xrange (i)]
-        print 'c amo dim', k-1, 'l2', l2
+        l2 = [self.var (('amo_kprod', ref, k - 1, j)) for j in range (i)]
+        print ('c amo dim', k-1, 'l2', l2)
         self.amo_kprod (l2, k)
 
     def __repr__ (self) :
@@ -196,15 +196,14 @@ def main2 () :
         assert (False)
 
     unsat_al2 (f, n)
-    print f
-    print >> sys.stderr, 'nnnnnnnnnnnnnnnn', n
+    print (f)
 
 def unsat_p1p2 (f, n) :
     # at least one
-    f.add ([f.var (x) for x in xrange (n)])
+    f.add ([f.var (x) for x in range (n)])
 
     # none of them can actually happen
-    for x in xrange (n) :
+    for x in range (n) :
         v1 = f.var ((x, 'p1'))
         v2 = f.var ((x, 'p2'))
         v = f.var (x)
@@ -214,8 +213,8 @@ def unsat_p1p2 (f, n) :
         f.add ([-v1, -v2])
 
 def unsat_al2 (f, n) :
-    f.add ([f.var (x) for x in xrange (n / 2)])
-    f.add ([f.var (x) for x in xrange (n / 2, n)])
+    f.add ([f.var (x) for x in range (int (n / 2))])
+    f.add ([f.var (x) for x in range (int (n / 2), n)])
 
 def main3 () :
     f = Formula ()
@@ -223,7 +222,7 @@ def main3 () :
     v2 = f.var (1)
     f.add ([-v1, v2])
     f.add ([v1, v2])
-    print f
+    print (f)
 
 if __name__ == '__main__' :
     main2 ()

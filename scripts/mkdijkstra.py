@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 Produces c-nets encoding Dijkstra's mutual exclusion algorithm, following his

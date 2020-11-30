@@ -1,7 +1,7 @@
 
-import mp
+import ptnet.mp
 import sys
-import net
+import ptnet.net
 import struct
 import socket
 import networkx
@@ -21,10 +21,10 @@ def timeit (t = None, msg='') :
         db ('### +%.3fs' % (time.time () - t), msg)
     return time.time ()
 
-class Event (net.Transition) :
+class Event (ptnet.net.Transition) :
     def __init__ (self, nr, label, pre=set(), post=set(), cont=set(),
             white=True, gray=False) :
-        net.Transition.__init__ (self, nr)
+        ptnet.net.Transition.__init__ (self, nr)
         self.nr = nr
         self.label = label
         self.isblack = not white and not gray
@@ -44,9 +44,9 @@ class Event (net.Transition) :
             s = ''
         return '%s:%se%d' % (repr (self.label), s, self.nr)
 
-class Condition (net.Place) :
+class Condition (ptnet.net.Place) :
     def __init__ (self, nr, label, pre=set(), post=set(), cont=set()) :
-        net.Place.__init__ (self, nr)
+        ptnet.net.Place.__init__ (self, nr)
         self.nr = nr
         self.label = label
         self.m0 = 1 if len (pre) == 0 else 0
@@ -58,14 +58,14 @@ class Condition (net.Place) :
     def __repr__ (self) :
         return '%s:c%d' % (repr (self.label), self.nr)
 
-class Unfolding (net.Net) :
+class Unfolding (ptnet.net.Net) :
     def __init__ (self, sanity_check=True) :
-        net.Net.__init__ (self, sanity_check)
+        ptnet.net.Net.__init__ (self, sanity_check)
         self.conds = self.places
         self.events = self.trans
         self.nr_black = 0
         self.nr_gray = 0
-        self.net = net.Net (sanity_check)
+        self.net = ptnet.net.Net (sanity_check)
 
     def rem_cond (self, nr) :
         if self.sanity_check : self.__sane_cond_id (nr)
@@ -104,30 +104,30 @@ class Unfolding (net.Net) :
     def read (self, f, fmt='cuf3') :
         if fmt == 'cuf' : fmt = 'cuf3'
         if fmt == 'cuf3' : return self.__read_cuf3 (f)
-        net.Net.read (self, f, fmt)
+        ptnet.net.Net.read (self, f, fmt)
 
     def __check_event_id (self, i) :
         if 0 <= i < len (self.events) : return
-        raise Exception, '%s: invalid event nr' % i
+        raise Exception ('%s: invalid event nr' % i)
     def __check_cond_id (self, i) :
         if 0 <= i < len (self.conds) : return
-        raise Exception, '%s: invalid condition nr' % i
+        raise Exception ('%s: invalid condition nr' % i)
     def __check_place_id (self, i) :
         if 0 <= i < len (self.net.places) : return
-        raise Exception, '%s: invalid place nr' % i
+        raise Exception ('%s: invalid place nr' % i)
     def __check_trans_id (self, i) :
         if 0 <= i < len (self.net.trans) : return
-        raise Exception, '%s: invalid transition nr' % i
+        raise Exception ('%s: invalid transition nr' % i)
 
     def __cuf2unf_readint (self, f) :
         s = f.read (4)
-        if (len (s) != 4) : raise Exception, 'Corrupted CUF file'
+        if (len (s) != 4) : raise Exception ('Corrupted CUF file')
         tup = struct.unpack ('I', s)
         return socket.ntohl (tup[0])
 
     def __read_cuf3 (self, f) :
         mag = self.__cuf2unf_readint (f)
-        if mag != 0x43554603 : raise Exception, 'Not a CUF03 file'
+        if mag != 0x43554603 : raise Exception ('Not a CUF03 file')
 
         # read first seven fields
         nrp = self.__cuf2unf_readint (f)
@@ -140,27 +140,27 @@ class Unfolding (net.Net) :
         # db (nrp, nrt, nrc, nre, nrw, nrg, m)
 
         # create nrp places and nrt transitions in self.net
-        for i in xrange (nrp) :
-            self.net.places.append (net.Place (None))
-        for i in xrange (nrt) :
-            self.net.trans.append (net.Transition (None))
+        for i in range (nrp) :
+            self.net.places.append (ptnet.net.Place (None))
+        for i in range (nrt) :
+            self.net.trans.append (ptnet.net.Transition (None))
 
         # read nre events
-        for i in xrange (nrw) :
+        for i in range (nrw) :
             idx = self.__cuf2unf_readint (f)
             self.__check_trans_id (idx)
             e = Event (len (self.events), self.net.trans[idx],
                     white=True, gray=False)
             # db ('event', len (self.events), 'trans idx', idx, 'white')
             self.events.append (e)
-        for i in xrange (nrg) :
+        for i in range (nrg) :
             idx = self.__cuf2unf_readint (f)
             self.__check_trans_id (idx)
             e = Event (len (self.events), self.net.trans[idx],
                     white=False, gray=True)
             # db ('event', len (self.events), 'trans idx', idx, 'gray')
             self.events.append (e)
-        for i in xrange (nre - nrg - nrw) :
+        for i in range (nre - nrg - nrw) :
             idx = self.__cuf2unf_readint (f)
             self.__check_trans_id (idx)
             e = Event (len (self.events), self.net.trans[idx],
@@ -171,7 +171,7 @@ class Unfolding (net.Net) :
         self.nr_black = nre - nrg - nrw
 
         # read condition labels, flow and context relations
-        for i in xrange (nrc) :
+        for i in range (nrc) :
             idx = self.__cuf2unf_readint (f)
             self.__check_place_id (idx)
             p = self.net.places[idx]
@@ -187,11 +187,11 @@ class Unfolding (net.Net) :
             cos = self.__cuf2unf_readint (f)
             post = set ()
             cont = set ()
-            for i in xrange (pos) :
+            for i in range (pos) :
                 idx = self.__cuf2unf_readint (f)
                 self.__check_event_id (idx)
                 post.add (self.events[idx])
-            for i in xrange (cos) :
+            for i in range (cos) :
                 idx = self.__cuf2unf_readint (f)
                 self.__check_event_id (idx)
                 cont.add (self.events[idx])
@@ -201,15 +201,15 @@ class Unfolding (net.Net) :
 
         # finally, read transition and place names
         s = f.read ()
-        if s[-1] != '\0' : raise Exception, 'Corrupted CUF file'
+        if s[-1] != 0 : raise Exception ('Corrupted CUF file')
         s = s[:-1]
-        l = s.split ('\0')
-        if len (l) != nrt + nrp : raise Exception, 'Corrupted CUF file'
-        for i in xrange (nrt) :
-            self.net.trans[i].name = l[i]
+        l = s.split (b'\0')
+        if len (l) != nrt + nrp : raise Exception ('Corrupted CUF file')
+        for i in range (nrt) :
+            self.net.trans[i].name = str(l[i])
             # db ('trans idx', i, 'name', l[i])
-        for i in xrange (nrp) :
-            self.net.places[i].name = l[nrt + i]
+        for i in range (nrp) :
+            self.net.places[i].name = str(l[nrt + i])
             # db ('place idx', i, 'name', l[nrt + i])
 
         # db (self.__dict__)
@@ -217,8 +217,8 @@ class Unfolding (net.Net) :
         if self.sanity_check :
             for e in self.events :
                 if not e.pre and not e.cont :
-                    raise Exception, 'Event %s has empty preset+context' \
-                            % repr (e)
+                    raise Exception ('Event %s has empty preset+context' \
+                            % repr (e))
 
     def run_of (self, conf) :
         # TODO: implement the topological sort by hand
@@ -233,7 +233,7 @@ class Unfolding (net.Net) :
 #            ena = list(self.enabled (m) & conf)
 #            db ('enabled', ena)
 #            if not ena :
-#                raise Exception, 'Not a configuration'
+#                raise Exception ('Not a configuration')
 #            run += ena
 #            conf -= ena
 #            db ('enabled', ena, 'remains', len (conf))

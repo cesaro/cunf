@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 N places p_i, initially marked, are read by N transitions t_i which consume from
@@ -14,11 +14,11 @@ def mkcmpread (n) :
     t = ptnet.net.Transition ('t')
     net.trans.append (t)
 
-    for i in xrange (n) :
+    for i in range (n) :
         q = ptnet.net.Place ('q/%d' % i)
         p = ptnet.net.Place ('p/%d' % i)
-        q.m0 = True
-        p.m0 = True
+        net.m0[q] = 1
+        net.m0[p] = 1
 
         u = ptnet.net.Transition ('t/%d' % i)
         u.pre_add (q)

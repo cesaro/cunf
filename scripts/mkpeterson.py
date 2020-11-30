@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 Generates a variant of the Peterson's mutual exclusion algorithm for two
@@ -90,12 +90,9 @@ def mk_box (net, i, begin1, cs_begin1, cs_end1, end1,
         net.places.append (q)
 
     # flags are initially 0 for both processes; the first has the turn
-    f10.m0 = 1
-    f20.m0 = 1
-    turn0.m0 = 1
-    net.m0.add (f10)
-    net.m0.add (f20)
-    net.m0.add (turn0)
+    net.m0[f10] = 1
+    net.m0[f20] = 1
+    net.m0[turn0] = 1
 
     # make both halves
     mk_half_box (net, i, 1, begin1, end1, cs_begin1, cs_end1,
@@ -110,14 +107,10 @@ def mk_peterson2 () :
     net.title = 'A variant of the Peterson mutual exclusion algorithm'
     net.note = ''
 
-    begin1 = ptnet.net.Place ('begin1', 1)
-    begin2 = ptnet.net.Place ('begin2', 1)
-    cs1 = ptnet.net.Place ('cs1')
-    cs2 = ptnet.net.Place ('cs2')
-    for p in [begin1, begin2, cs1, cs2] :
-        net.places.append (p)
-    net.m0.add (begin1)
-    net.m0.add (begin2)
+    begin1 = net.place_add ('begin1', 1)
+    begin2 = net.place_add ('begin2', 1)
+    cs1 = net.place_add ('cs1')
+    cs2 = net.place_add ('cs2')
 
     mk_box (net, 0, begin1, cs1, cs1, begin1, begin2, cs2, cs2, begin2)
     #net.cont2plain ()

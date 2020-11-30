@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2012-2013  Cesar Rodriguez <cesar.rodriguez@lsv.ens-cachan.fr>
 # Laboratoire de Specification et Verification (LSV), ENS Cachan, France
@@ -14,8 +14,7 @@ The Contextual Net Analyser (cna) computes whether a contextual Petri net is
 deadlok-free or if a given list of places is coverable.  The input is a CUF
 file storing the contextual unfolding of the net.  Use cunf(1) to build it.
 The output will be written to the standard output or to OUTFILE if provided.
-The input will be read from the file CUF, or standard input if no file is
-given.
+The input will be read from the file CUF.
 
 It accepts the folloing OPTIONS:
   -h, --help
@@ -76,25 +75,25 @@ try :
     import networkx
     import tempfile
     import subprocess
-except Exception, e:
-    print 'ERROR!'
-    print 'It seems that your python installation is missing some package.'
-    print 'This tool requires, among others, argparse, networkx, tempfile, and subprocess'
-    print 'The runtime reported the following error:\n\n', str (e)
+except Exception as e:
+    print ('ERROR!')
+    print ('It seems that your python installation is missing some package.')
+    print ('This tool requires, among others, argparse, networkx, tempfile, and subprocess')
+    print ('The runtime reported the following error:\n\n', str (e))
     sys.exit (1)
 finally :
-    if sys.version_info < (2, 6, 1) :
-        print '\n\nWARNING: This tool requires Python v.2.6.1 at least!!\n'
+    if sys.version_info < (3, 5, 2) :
+        print ('\n\nWARNING: This tool requires Python v.3.5.2 at least!!\n')
     sys.path.append (os.path.dirname (sys.argv[0]) + '/../lib/')
 
 try :
     import ptnet
-except Exception, e:
-    print 'ERROR!'
-    print 'This tool needs the "ptnet" module to be available in the $PYTHONPATH.'
-    print 'The "ptnet" module is distributed with this program.'
-    print 'You should set the variable PYTHONPATH in environment to the directory'
-    print 'that contains the "ptnet" directory.'
+except Exception as e:
+    print ('ERROR!')
+    print ('This tool needs the "ptnet" module to be available in the $PYTHONPATH.')
+    print ('The "ptnet" module is distributed with this program.')
+    print ('You should set the variable PYTHONPATH in environment to the directory')
+    print ('that contains the "ptnet" directory.')
     sys.exit (1)
 
 def sgl (s) :
@@ -115,8 +114,8 @@ class Cnf (object) :
 
     def amo_pairwise (self, l) :
         # for n >= 0 items, produces (n^2-n)/2 clauses, no new variables
-        for i in xrange (len (l)) :
-            for j in xrange (i + 1, len (l)) :
+        for i in range (len (l)) :
+            for j in range (i + 1, len (l)) :
                 self.add ([-l[i], -l[j]])
 
     def amo_2tree (self, l) :
@@ -128,7 +127,7 @@ class Cnf (object) :
 
         l2 = []
         if len (l) & 1 : l2.append (l.pop ())
-        for i in xrange (0, len (l), 2) :
+        for i in range (0, len (l), 2) :
             v1 = l[i]
             v2 = l[i + 1]
             v = self.var (('amo_2tree', v1, v2))
@@ -148,7 +147,7 @@ class Cnf (object) :
 
         l2 = l[: len (l) % k]
         del l[: len (l) % k]
-        for i in xrange (0, len (l), k) :
+        for i in range (0, len (l), k) :
             l3 = l[i:i + k]
 #            db ('c i', i, 'k', k, 'l3', l3, 'l', l)
             v = self.var (('amo_ktree', frozenset (l3)))
@@ -169,7 +168,7 @@ class Cnf (object) :
         self.add ([-va, -l[-1]])
         if len (l) == 3 : return
 
-        for i in xrange (1, len (l) - 2) :
+        for i in range (1, len (l) - 2) :
             va = self.var (('amo_seq', ref, l[i]))
             va1 = self.var (('amo_seq', ref, l[i + 1]))
             self.add ([-l[i], va])
@@ -187,7 +186,7 @@ class Cnf (object) :
         for v in l :
             f = 1 if z >= 1 else 0
             z -= 1
-            for j in xrange (f, k) :
+            for j in range (f, k) :
                 p = self.var (('amo_bin', fs, j))
                 if (1 << j) & i == 0 : p = -p
                 self.add ([-v, p])
@@ -210,23 +209,23 @@ class Cnf (object) :
         db ('c b', b)
         assert ((b ** k) >= len (l))
 
-        t = [0 for i in xrange (k)]
+        t = [0 for i in range (k)]
         for v in l :
             db ('c v', v, 'assigned to', t)
-            for i in xrange (k) :
+            for i in range (k) :
                 vij = self.var (('amo_kprod', ref, i, t[i]))
                 db ('c %d -> %d' % (v, vij))
                 self.add ([-v, vij])
-            for i in xrange (k) :
+            for i in range (k) :
                 t[i] += 1
                 if t[i] < b : break
                 t[i] = 0
-        for i in xrange (k - 1) :
-            l2 = [self.var (('amo_kprod', ref, i, j)) for j in xrange (b)]
+        for i in range (k - 1) :
+            l2 = [self.var (('amo_kprod', ref, i, j)) for j in range (b)]
             db ('c amo dim', i, 'l2', l2)
             self.amo_kprod (l2, k)
         i = t[k - 1] + 1 if t[k - 1] != 0 else b
-        l2 = [self.var (('amo_kprod', ref, k - 1, j)) for j in xrange (i)]
+        l2 = [self.var (('amo_kprod', ref, k - 1, j)) for j in range (i)]
         db ('c amo dim', k-1, 'l2', l2)
         self.amo_kprod (l2, k)
 
@@ -285,8 +284,8 @@ class Cna :
         if self.opt['log'] : n += 1
         if self.opt['pair'] : n += 1
         if n == 0 : self.opt['tree'] = 4
-        if n > 1 : raise Exception, 'At most one of k-tree, seq, log or pair!'
-        if self.opt['tree'] == 1 : raise Exception, 'Use k > 1 for k-trees!'
+        if n > 1 : raise Exception ('At most one of k-tree, seq, log or pair!')
+        if self.opt['tree'] == 1 : raise Exception ('Use k > 1 for k-trees!')
 
         n = 0
         if self.opt['nocy'] : n += 1
@@ -294,11 +293,10 @@ class Cna :
         if self.opt['unary'] : n += 1
         if self.opt['trans'] : n += 1
         if n == 0 : self.opt['bin'] = True
-        if n > 1 : raise Exception, 'At most one of nocy, bin, unary or trans!'
+        if n > 1 : raise Exception ('At most one of nocy, bin, unary or trans!')
 
         if self.opt['stb'] and self.opt['coverability'] :
-            raise Exception, \
-                    'Stubborn reduction only works with deadlock checking'
+            raise Exception ('Stubborn reduction only works with deadlock checking')
 
         # declare additional fields
         self.phi = Cnf ()
@@ -312,10 +310,10 @@ class Cna :
         try :
             self.u.read (opt.infile, fmt='cuf')
             if opt.infile != sys.stdin : opt.infile.close ()
-        except IOError as (e, m) :
-            raise Exception, "input file: %s" % m
-        except Exception, e:
-            raise Exception, "input file: %s" % str (e)
+        except IOError as e :
+            raise Exception ("input file: %s" % e)
+        except Exception as e:
+            raise Exception ("input file: %s" % str (e))
 
         # declare the reductions used in the construction of the formula
         s = ''
@@ -418,7 +416,7 @@ class Cna :
             elif self.opt['pair'] :
                 self.phi.amo_pairwise (ll)
             else :
-                raise Exception, 'sym internal error'
+                raise Exception ('sym internal error')
 
     def __asym (self) :
         if self.opt['nocy'] : return
@@ -455,7 +453,7 @@ class Cna :
                 elif self.opt['unary'] :
                     self.__asym_scc_una_ord (e, ep, len (g))
                 else :
-                    raise Exception, 'asym internal error'
+                    raise Exception ('asym internal error')
         if self.opt['unary'] and len (g[e]) :
             self.__asym_scc_una (e, len (g))
 
@@ -470,7 +468,7 @@ class Cna :
         self.phi.add ([-ai, -bi, -ci1])
 #        self.phi.add ([-ai, bi, ci]) # optim.
 
-        for i in xrange (1, k) :
+        for i in range (1, k) :
             ai = self.phi.var ((a, i))
             bi = self.phi.var ((b, i))
             ci = self.phi.var ((a, b, i))
@@ -529,7 +527,7 @@ class Cna :
     def __asym_scc_una (self, a, k) :
         aim1 = self.phi.var ((a, 0))
 #        db (aim1, 'is', (a, 0))
-        for i in xrange (1, k) :
+        for i in range (1, k) :
             ai = self.phi.var ((a, i))
             self.phi.add ([-ai, aim1])
 #            db (ai, 'is', (a, i))
@@ -559,7 +557,7 @@ class Cna :
 #        db (bi, 'is', (b, k-1))
 #        db ('clause', [-c, ai])
 #        db ('clause', [-c, -bi])
-        for i in xrange (k - 1) :
+        for i in range (k - 1) :
             bi = self.phi.var ((b, i))
             ai = self.phi.var ((a, i + 1))
             self.phi.add ([-c, -bi, ai])
@@ -640,10 +638,10 @@ class Cna :
             if p.name in h : h[p.name].append (p)
         for p in h :
             if len (h[p]) == 0 :
-                raise Exception, "Place '%s' not found" % p
+                raise Exception ("Place '%s' not found" % p)
             if len (h[p]) > 1 :
-                raise Exception, "There is %d places named '%s', you need to change the names in the net and unfold again!" \
-                        % (len (h[p]), p)
+                raise Exception ("There is %d places named '%s', you need to change the names in the net and unfold again!" \
+                        % (len (h[p]), p))
         return [ll[0] for ll in h.values ()]
 
     def __reduce (self, g) :
@@ -789,7 +787,7 @@ class Cna :
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     preexec_fn=os.setsid, shell=sh)
         except Exception :
-            raise Exception, "Unable to execute the command `minisat', is minisat installed?"
+            raise Exception ("Unable to execute the command `minisat', is minisat installed?")
 
     #    db ('pid', p.pid)
         try :
@@ -815,7 +813,7 @@ class Cna :
                         killed = True
                         break
             p.wait ()
-            s += p.stdout.read ()
+            s += str(p.stdout.read ())
             return (p.returncode if not killed else 254, s)
         except KeyboardInterrupt :
             os.killpg (p.pid, signal.SIGKILL)
@@ -860,8 +858,7 @@ class Cna :
 
         # errors
         if s != 10 :
-            raise Exception, \
-                    'Minisat terminated with unknown exit status %d' % s
+            raise Exception ('Minisat terminated with unknown exit status %d' % s)
 
         # satisfiable
         r = 'YES'
@@ -880,12 +877,12 @@ class Cna :
         # build the trace
         #db ('trace', out)
         if len (out) != 2 :
-            raise Exception, 'Error while parsing minisat output'
+            raise Exception ('Error while parsing minisat output')
         out = out[1].split ()
         try :
             out = [int (x) for x in out]
         except :
-            raise Exception, 'Error when parsing minisat output'
+            raise Exception ('Error when parsing minisat output')
         out = set ([x for x in out if x > 0])
         trace = set ()
         for e in self.u.events :
@@ -912,13 +909,13 @@ def db (*msg) :
     sys.stderr.write (s + '\n')
 
 def opendef (p, s, m) :
-    if s == '-' :
-        return sys.stdin if m == 'r' else sys.stdout
+    if s == '-' and m == 'w' :
+        return sys.stdout
     try :
         return open (s, m)
-    except IOError as (e, t) :
-        p.error ("'%s': %s" % (s, t))
-    except Exception, e:
+    except IOError as e :
+        p.error ("'%s': %s" % (s, e))
+    except Exception as e:
         p.error ("'%s': %s" % (s, str (e)))
 
 def parse () :
@@ -936,7 +933,7 @@ def parse () :
 
     p.add_argument ('infile',
         nargs = '?',
-        type = lambda x : opendef (p, x, 'r'),
+        type = lambda x : opendef (p, x, 'rb'),
         default = '-')
 
     p.add_argument ('outfile',
@@ -979,11 +976,11 @@ if __name__ == '__main__' :
     try :
         main ()
     except KeyboardInterrupt :
-        print 'cna: interrupted'
+        print ('cna: interrupted')
         sys.exit (1)
     except Exception as e :
-        print 'cna: error: %s' % str (e)
-        sys.exit (1)
+        print ('cna: error: %s' % str (e))
+        raise
     sys.exit (0)
 
 # vi:ts=4:sw=4:et:

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 Produces n-Gen c-nets, consisting in n processes that nondeterministically
@@ -26,8 +26,8 @@ def mkcmpread (n) :
     p1 = net.place_add ('p1')
     p2 = net.place_add ('p2')
 
-    net.m0_add (s[0])
-    net.m0_add (s[1])
+    net.m0[s[0]] = 1
+    net.m0[s[1]] = 1
 
     s[0].post_add (v[0])
     s[1].post_add (v[1])
@@ -39,12 +39,11 @@ def mkcmpread (n) :
     v[3].post_add (s[3])
 
     r = []
-    for i in xrange (n) :
+    for i in range (n) :
         q = net.place_add ('q/%d' % i, 1)
         r.append (net.place_add ('r/%d' % i))
         t = net.trans_add ('t/%d' % i)
         u = net.trans_add ('u/%d' % i)
-        net.m0_add (q)
 
         t.pre_add (q)
         t.post_add (r[i])
@@ -57,7 +56,7 @@ def mkcmpread (n) :
     t = net.trans_add ('t')
     p = net.place_add ('p')
     p.pre_add (t)
-    for i in xrange (n) :
+    for i in range (n) :
         t.pre_add (r[i])
     
     net.cont2plain ()

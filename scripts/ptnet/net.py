@@ -177,7 +177,7 @@ class Marking :
 #        i = 0
 #        for k,v in self.__marking.items () :
 #            i += id (k) + v
-#        print "__hash__: i", i, "__hash", self.__hash
+#        print ("__hash__: i", i, "__hash", self.__hash)
 #        assert (self.__hash == i)
         return self.__hash
 
@@ -251,13 +251,13 @@ class Net :
         p = Place (name)
         self.places.append (p)
         if m0 : self.m0[p] = m0
-        # print 'place_add', name, m0
+        # print ('place_add', name, m0)
         return p
 
     def trans_add (self, name) :
         t = Transition (name)
         self.trans.append (t)
-        # print 'trans_add', name
+        # print ('trans_add', name)
         return t
 
     def enables (self, m, t) :
@@ -315,7 +315,7 @@ class Net :
 #            db ('at', list (m))
 #            db ('firing', t)
             if not self.enables (m, t) :
-                raise Exception, 'Cannot fire, transition not enabled'
+                raise Exception ('Cannot fire, transition not enabled')
             m -= set (t.pre)
             m |= set (t.post)
 #        db ('reached', list (m), 'enables', self.enabled (m))
@@ -341,7 +341,7 @@ class Net :
         pass
 
     def __stubbornify_make_fork (self, pin, pleft, pright, idx) :
-        # print 'make_fork pin', pin, 'pleft', pleft, 'pright', pright, 'idx', idx
+        # print ('make_fork pin', pin, 'pleft', pleft, 'pright', pright, 'idx', # idx)
         pfork = self.place_add ('aux_%d_fork' % idx)
 
         ponl = self.place_add ('aux%d_onl' % idx, 1)
@@ -415,7 +415,7 @@ class Net :
         trwait.post_add (ponr)
 
     def __stubbornify_make_fork_more (self, pin, outplaces, idx) :
-        #print 'make_fork_more, pin', pin, 'outplaces', outplaces, 'idx', idx
+        #print ('make_fork_more, pin', pin, 'outplaces', outplaces, 'idx', idx)
         if len (outplaces) == 2 :
             self.make_fork (pin, outplaces[0], outplaces[1], idx)
             return idx + 1
@@ -425,7 +425,7 @@ class Net :
 
     def __stubbornify_make_race (self, p, idx) :
         assert len (p.post) >= 2
-        #print 'make_race', p, idx
+        #print ('make_race', p, idx)
 
         # make a new place for each transition in the postset
         place_choices = []
@@ -439,7 +439,7 @@ class Net :
     def stubbornify (self) :
         idx = 0
         for p in list (self.places) :
-            #print 'stubbornify loop', p, id (p)
+            #print ('stubbornify loop', p, id (p))
             if len (p.post) >= 2 :
                 idx = self.__stubbornify_make_race (p, idx)
 
@@ -469,7 +469,7 @@ class Net :
         if fmt == 'pnml' : return self.__write_pnml (f, m)
         if fmt == 'ctxdot' : return self.__write_ctxdot (f, 5, 1)
         if fmt == 'pt1' : return self.__write_pt1 (f, m)
-        raise Exception, "'%s': unknown output format" % fmt
+        raise Exception ("'%s': unknown output format" % fmt)
 
     def __write_pep (self, f, m=0) :
         f.write ('PEP\nPetriBox\nFORMAT_N2\n')
@@ -721,23 +721,23 @@ class Net :
         if fmt == 'grml' : return self.__read_grml (f)
         if fmt == 'pnml' : return self.__read_pnml (f)
         if fmt == 'stg' : return self.__read_stg (f)
-        raise Exception, "'%s': unknown input format" % fmt
+        raise Exception ("'%s': unknown input format" % fmt)
 
     def __read_pep (self, f) :
-        raise Exception, 'reading PEP files is not yet implemented'
+        raise Exception ('reading PEP files is not yet implemented')
 
     def __read_pt1 (self, f) :
         l = f.readline ()
         l = l[:-1]
         if l != 'PT1' :
-            raise Exception, "Expected 'PT1' as first line, found '%s'" % l
+            raise Exception ("Expected 'PT1' as first line, found '%s'" % l)
         try :
             pnr = int (f.readline ())
             tnr = int (f.readline ())
         except IOError :
             raise
         except :
-            raise Exception, "Expected number of places and/or number of transitions"
+            raise Exception ("Expected number of places and/or number of transitions")
 
         # read pnr place names and initial marking
         tab = {}
@@ -745,9 +745,9 @@ class Net :
         for l in f :
             i += 1
             l = l.rstrip ()
-            #print "line %d: '%s'" % (i, l)
+            #print ("line %d: '%s'" % (i, l))
             if not l or l[0] != '"' :
-                raise Exception, "line %d: syntax error" % i
+                raise Exception ("line %d: syntax error" % i)
 
             # split the line in three parts, separator is "quote space"
             name, sep, end = l[1:].rpartition ('" ')
@@ -756,22 +756,22 @@ class Net :
                 try :
                     end = int (end)
                 except :
-                    raise Exception, "line %d: expected number, found '%s'" % (i, end)
+                    raise Exception ("line %d: expected number, found '%s'" % (i, end))
                 tab[i - 4] = self.place_add (name, end)
             else :
                 # if it is a transition line
                 try :
                     nums = [int (x) for x in end.split ()]
                 except :
-                    raise Exception, "line %d: expected number" % i
+                    raise Exception ("line %d: expected number" % i)
                 if len (nums) < 2 or len (nums) != 2 + nums[0] + nums[1] :
-                    raise Exception, "line %d: expected different number of indexes" % i
+                    raise Exception ("line %d: expected different number of indexes" % i)
                 t = self.trans_add (name)
                 for idx in nums[2 : 2 + nums[0]] :
-                    #print "pre idx %d, place %s" % (idx, tab[idx])
+                    #print ("pre idx %d, place %s" % (idx, tab[idx]))
                     t.pre_add (tab[idx])
                 for idx in nums[2 + nums[0] : ] :
-                    #print "post idx %d, place %s" % (idx, tab[idx])
+                    #print ("post idx %d, place %s" % (idx, tab[idx]))
                     t.post_add (tab[idx])
 
     def __read_grml (self, f) :
@@ -810,14 +810,12 @@ class Net :
             if l[0:8] == '.marking' :
                 l = l[8:].strip (' {}')
                 if '<' in l or '>' in l :
-                    raise Exception, 'line %d: implicit places disallowed' % nr
+                    raise Exception ('line %d: implicit places disallowed' % nr)
                 for s in l.split () :
                     if s not in idx :
-                        raise Exception, 'line %d: place "%s" not found' % \
-                                (nr, s)
+                        raise Exception ('line %d: place "%s" not found' % (nr, s))
                     if idx[s].__class__ != Place :
-                        raise Exception, 'line %d: "%s" is not a place' % \
-                                (nr, s)
+                        raise Exception ('line %d: "%s" is not a place' % (nr, s))
                     idx[s].m0 = 1
                     self.m0.add (idx[s])
                 continue
@@ -825,44 +823,44 @@ class Net :
 
             ll = l.split ()
             if len (ll) < 2 :
-                raise Exception, 'line %d: not a valid arc definition' % nr
+                raise Exception ('line %d: not a valid arc definition' % nr)
             if ll[0] not in idx : idx[ll[0]] = self.place_add (ll[0])
             for n in ll[1:] :
                 if n not in idx : idx[n] = self.place_add (n)
                 if idx[ll[0]].__class__ == idx[n].__class__ :
-                    raise Exception, 'line %d: not a p-t or t-p arc' % nr
+                    raise Exception ('line %d: not a p-t or t-p arc' % nr)
                 idx[ll[0]].post_add (idx[n])
-                # print 'arc', idx[ll[0]], '->', idx[n]
+                # print ('arc', idx[ll[0]], '->', idx[n])
 
     def __grml_start (self, tag, attr):
-        # print "START", repr (tag), attr
+        # print ("START", repr (tag), attr)
 
         attr['__data'] = ''
         self.__grmlq.append (attr)
         if tag == 'model' :
             if not 'formalismUrl' in attr :
-                raise Exception, "no 'formalismUrl' defined"
+                raise Exception ("no 'formalismUrl' defined")
             if attr['formalismUrl'] != 'http://formalisms.cosyverif.org/pt-net.fml' :
-                raise Exception, "unknown value for 'formalismUrl'"
+                raise Exception ("unknown value for 'formalismUrl'")
         elif tag == 'arc' :
             attr['__type'] = attr['arcType']
         elif tag == 'node' :
             attr['__type'] = attr['nodeType']
         elif tag != 'attribute' :
-                raise Exception, "'%s': unknown tag" % tag
-        # print self.__grmlq
+                raise Exception ("'%s': unknown tag" % tag)
+        # print (self.__grmlq)
 
     def __grml_end (self, tag):
-        # print "END", repr (tag)
+        # print ("END", repr (tag))
 
         if tag == 'attribute' :
-            if len (self.__grmlq) < 2 : raise Exception, 'Misplaced attribute'
+            if len (self.__grmlq) < 2 : raise Exception ('Misplaced attribute')
             d = self.__grmlq.pop ()
             self.__grmlq[-1][d['name']] = d['__data']
 
         elif tag == 'node' :
             d = self.__grmlq.pop ()
-            if 'id' not in d : raise Exception, 'id missing in node tag'
+            if 'id' not in d : raise Exception ('id missing in node tag')
             if 'marking' not in d : d['marking'] = 0
             if 'name' not in d : d['name'] = ''
             if d['__type'] == 'place' :
@@ -875,21 +873,19 @@ class Net :
                 self.trans.append (t)
                 self.__grmlidx[d['id']] = t
             else :
-                raise Exception, "'%s': unknown nodeType" % d['__type']
+                raise Exception ("'%s': unknown nodeType" % d['__type'])
 
         elif tag == 'arc' :
             d = self.__grmlq.pop ()
             if 'id' not in d or 'source' not in d or 'target' not in d :
-                raise Exception, 'id, source or target missing in arc tag'
+                raise Exception ('id, source or target missing in arc tag')
             if 'valuation' not in d : d['valuation'] = 1
             if d['valuation'] != '1' :
-                raise Exception, 'Arc valuations different than 1 not supported'
+                raise Exception ('Arc valuations different than 1 not supported')
             if d['source'] not in self.__grmlidx :
-                raise Exception, 'node with id %d has not yet been seen' \
-                        % d['source']
+                raise Exception ('node with id %d has not yet been seen' % d['source'])
             if d['target'] not in self.__grmlidx :
-                raise Exception, 'node with id %d has not yet been seen' \
-                        % d['target']
+                raise Exception ('node with id %d has not yet been seen' % d['target'])
             if d['__type'] == 'arc' :
                 self.__grmlidx[d['source']].post_add (
                         self.__grmlidx[d['target']])
@@ -897,7 +893,7 @@ class Net :
                 self.__grmlidx[d['source']].cont_add (
                         self.__grmlidx[d['target']])
             else :
-                raise Exception, "'%s': unknown arcType" % d['__type']
+                raise Exception ("'%s': unknown arcType" % d['__type'])
 
         elif tag == 'model' :
             d = self.__grmlq.pop ()
@@ -907,10 +903,10 @@ class Net :
             if 'note' in d : self.note = d['__data']
             if 'version' in d : self.version = d['__data']
         else :
-            raise Exception, 'Not a pt-net'
+            raise Exception ('Not a pt-net')
 
     def __grml_data (self, data):
-        # print "DATA", repr (data)
+        # print ("DATA", repr (data))
         if len (self.__grmlq) : self.__grmlq[-1]['__data'] = data
 
     def __read_pnml (self, f) :
@@ -927,7 +923,7 @@ class Net :
         self.__pnmlskipdepth = sys.maxint
         par.ParseFile (f)
         if len (self.__pnmlitm) == 0 :
-            raise Exception, 'missplaced "%s" entity' % tag
+            raise Exception ('missplaced "%s" entity' % tag)
         self.__pnmlq.append (self.__pnmlitm)
 
         idx = {}
@@ -946,11 +942,11 @@ class Net :
         for d in self.__pnmlq :
             if d['type'] != 'arc' : continue
             if d['source'] not in idx or d['target'] not in idx :
-                raise Exception, 'Arc with id "%s" has unknown source or target' % d['id']
+                raise Exception ('Arc with id "%s" has unknown source or target' % d['id'])
             weight = 1
             if 'weight' in d :
                 weight = int (d['weight'])
-                #print "arc id '%s' with weight %d" % (d["id"], weight)
+                #print ("arc id '%s' with weight %d" % (d["id"], weight))
             idx[d['source']].post_add (idx[d['target']], weight)
 
         del self.__pnmlitm
@@ -958,19 +954,19 @@ class Net :
 
     def __pnml_start (self, tag, attr):
         self.__pnmldepth += 1
-        #print "START", repr (tag), attr, "depth", self.__pnmldepth, "skip depth", self.__pnmlskipdepth
+        #print ("START", repr (tag), attr, "depth", self.__pnmldepth, "skip depth", self.__pnmlskipdepth)
         if self.__pnmldepth >= self.__pnmlskipdepth : return
 
         if tag == 'net' :
             if len (self.__pnmlitm) != 0 :
-                raise Exception, 'Missplaced XML tag "net"'
+                raise Exception ('Missplaced XML tag "net"')
             self.__pnmlitm = {}
             self.__pnmlitm['type'] = 'net'
 
         elif tag in ['place', 'transition', 'arc'] :
             if len (self.__pnmlitm) == 0 :
-                raise Exception, 'Missplaced XML tag "%s"' % tag
-            #print 'new! ', repr (self.__pnmlitm)
+                raise Exception ('Missplaced XML tag "%s"' % tag)
+            #print ('new! ', repr (self.__pnmlitm))
             for k in ['name', 'm0'] :
                 if k in self.__pnmlitm :
                     self.__pnmlitm[k] = self.__pnmlitm[k].strip(' \n\t')
@@ -1000,15 +996,15 @@ class Net :
             return
         elif tag in ['delay', 'interval',  'cn']:
             self.__pnmlskipdepth = self.__pnmldepth
-            print "WARNING: found '%s' tag, is this a timed net? Ignoring time information" % tag
+            print ("WARNING: found '%s' tag, is this a timed net? Ignoring time information" % tag)
             return
         # 'offset', 'position', 'dimension', 'fill', 'line', 'size', 'structure', 'unit', 'subunits', 'places'
         else :
             # this else clause is just to be on the safe side
-            raise Exception, 'Unexpected XML tag "%s", probably I cannot handle this model. Is this a P/T model?' % tag
+            raise Exception ('Unexpected XML tag "%s", probably I cannot handle this model. Is this a P/T model?' % tag)
 
     def __pnml_end (self, tag):
-        #print "END  ", repr (tag)
+        #print ("END  ", repr (tag))
         self.__pnmldepth -= 1
         if self.__pnmldepth < self.__pnmlskipdepth :
             self.__pnmlskipdepth = sys.maxint
@@ -1017,7 +1013,7 @@ class Net :
         #data = data.strip(' \n\t') <- dangerous here, data can be split!!
         if len (data) == 0 : return
 
-        #print "DATA ", repr (data)
+        #print ("DATA ", repr (data))
         if 'data' not in self.__pnmlitm : return
         k = self.__pnmlitm['data']
         self.__pnmlitm[k] += data
@@ -1050,11 +1046,11 @@ def test3 () :
     t2.pre_add (p0)
     t2.post_add (p2)
 
-    print "Before stubbornifying !!"
+    print ("Before stubbornifying !!")
     n.write (sys.stdout, 'pt1')
     n.write (sys.stdout, 'dot')
     n.stubbornify ()
-    print "After stubbornifying !!"
+    print ("After stubbornifying !!")
     n.write (sys.stdout, 'dot')
     n.cont2plain ()
     n.write (sys.stdout, 'pt1')
@@ -1084,10 +1080,10 @@ def test4 () :
     t3.pre_add (p0)
     t3.post_add (p3)
 
-    print "Before stubbornifying !!"
+    print ("Before stubbornifying !!")
     n.write (sys.stdout, 'dot')
     n.stubbornify ()
-    print "After stubbornifying !!"
+    print ("After stubbornifying !!")
     n.write (sys.stdout, 'dot')
 
     f = open ('./out.ll_net', 'w')

@@ -1,9 +1,9 @@
-import net
+import ptnet.net
 import networkx
 
-class Mpevent (net.Transition) :
+class Mpevent (ptnet.net.Transition) :
     def __init__ (self, label, pre=set(), post=set(), cont=set(), cff=False) :
-        net.Transition.__init__ (self, label)
+        ptnet.net.Transition.__init__ (self, label)
         self.label = label
         self.iscutoff = cff
 
@@ -14,26 +14,26 @@ class Mpevent (net.Transition) :
     def __repr__ (self) :
         return ('*' if self.iscutoff else '') + repr (self.label)
 
-class Mpcondition (net.Place) :
+class Mpcondition (ptnet.net.Place) :
     def __init__ (self, place, depth, m0=0) :
-        net.Place.__init__ (self, '%s/%d' % (place, depth), m0)
+        ptnet.net.Place.__init__ (self, '%s/%d' % (place, depth), m0)
         self.label = place
         self.depth = depth
 
     def __repr__ (self) :
         return '%s/%d' % (repr (self.label), self.depth)
 
-class Mprocess (net.Net) :
+class Mprocess (ptnet.net.Net) :
     def __init__ (self, sanity_check=True) :
-        net.Net.__init__ (self, sanity_check)
+        ptnet.net.Net.__init__ (self, sanity_check)
         self.mpevents = self.trans
         self.mpconds = self.places
         self.nr_cutoffs = 0
-        self.net = net.Net (sanity_check)
+        self.net = ptnet.net.Net (sanity_check)
 
     def read (self, f, fmt='pep') :
         if fmt == 'mp' : return self.__read_mp (f)
-        net.Net.read (self, f, fmt)
+        ptnet.net.Net.read (self, f, fmt)
 
     def __read_mp (self, f) :
         nr = 1
@@ -47,15 +47,15 @@ class Mprocess (net.Net) :
             nrplaces = int (l[2])
             nrtrans = int (l[3])
         except StopIteration :
-            raise Exception, 'line 1: unexpected end of file'
+            raise Exception ('line 1: unexpected end of file')
         except :
-            raise Exception, 'line 1: expected 4 integers'
+            raise Exception ('line 1: expected 4 integers')
 
         # create transitions and places of the net
         for i in range (nrplaces) :
-            self.net.places.append (net.Place (''))
+            self.net.places.append (ptnet.net.Place (''))
         for i in range (nrtrans) :
-            self.net.trans.append (net.Transition (''))
+            self.net.trans.append (ptnet.net.Transition (''))
         assert (nrplaces == len (self.net.places))
 
         # read mp-conditions
@@ -65,12 +65,12 @@ class Mprocess (net.Net) :
                 nr += 1
                 l = line.split ()
                 if len (l) != 3 :
-                    raise Exception, 'line %d: expected three integers' % nr
+                    raise Exception ('line %d: expected three integers' % nr)
                 mpc  = Mpcondition (self.net.places[int (l[0]) - 1], int (l[1]), int (l[2]))
                 self.mpconds.append (mpc)
                 if mpc.m0 : self.m0.add (mpc)
             except StopIteration :
-                raise Exception, 'line %d: unexpected end of file' % nr
+                raise Exception ('line %d: unexpected end of file' % nr)
 
         # read mp-events and flow relation
         for i in range (nrmpevents) :
@@ -79,12 +79,13 @@ class Mprocess (net.Net) :
                 nr += 1
                 l = line.split ()
                 if len (l) < 4 :
-                    raise Exception, 'line %d: expected at least 4 integers' % nr
+                    raise Exception ('line %d: expected at least 4 integers' %
+                            nr)
                 nrpre = int (l[2])
                 nrpost = int (l[3])
                 if len (l) != 4 + nrpre + nrpost :
-                    raise Exception, 'line %d: expected %d integers' % (nr,
-                            4 + nrpre + nrpost)
+                    raise Exception ('line %d: expected %d integers' % (nr,
+                            4 + nrpre + nrpost))
                 mpe  = Mpevent (self.net.trans[int (l[0]) - 1], cff=(l[1] == '1'))
                 for j in range (nrpre) :
                     mpe.pre_add (self.mpconds[int (l[4 + j])])
@@ -93,7 +94,7 @@ class Mprocess (net.Net) :
                 self.mpevents.append (mpe)
                 if mpe.iscutoff : self.nr_cutoffs += 1
             except StopIteration :
-                raise Exception, 'line %d: unexpected end of file' % nr
+                raise Exception ('line %d: unexpected end of file' % nr)
 
         # skip maximal string length
         try :
@@ -108,19 +109,19 @@ class Mprocess (net.Net) :
                 self.net.places[i].name = next (it).rstrip ()
                 nr += 1
             except :
-                raise Exception, 'line %d: unexpected end of file' % nr
+                raise Exception ('line %d: unexpected end of file' % nr)
         for i in range (nrtrans) :
             try :
                 self.net.trans[i].name = next (it).rstrip ()
                 nr += 1
             except :
-                raise Exception, 'line %d: unexpected end of file' % nr
+                raise Exception ('line %d: unexpected end of file' % nr)
         
         # check there is no more lines
         try :
             next (it)
             nr += 1
-            raise Exception, 'line %d: unexpected extra lines' % nr
+            raise Exception ('line %d: unexpected extra lines' % nr)
         except StopIteration :
             pass
 
@@ -134,7 +135,7 @@ class Mprocess (net.Net) :
 
     def write (self, f, fmt='pep') :
         if fmt == 'mp' : return self.__write_mp (f)
-        net.Net.write (self, f, fmt)
+        ptnet.net.Net.write (self, f, fmt)
 
     def __write_mp (self, f) :
 
@@ -209,15 +210,15 @@ class Mprocess (net.Net) :
         col = {}
 
 #        for n in g :
-#            print repr (n)
+#            print (repr (n))
 #            for np in g[n] :
-#                print '         ', repr (np), g[n][np], g[n][np]['color']
-#                print g[n][np]['color']
+#                print ('         ', repr (np), g[n][np], g[n][np]['color'])
+#                print (g[n][np]['color'])
 
         sccs = networkx.algorithms.strongly_connected_components (g)
         sccs = [x for x in sccs if len (x) >= 2]
         for s in sccs :
-            print '/* scc', len (s), s, '*/'
+            print ('/* scc', len (s), s, '*/')
             for n in s :
                 col[n] = 'blue'
         i = 1

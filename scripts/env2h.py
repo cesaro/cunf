@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import os
@@ -27,22 +27,22 @@ def quote (v) :
 
 def main () :
 
-   print '// Automatically generated using env2h.py, do not edit!'
-   print '#ifndef _CONFIG__'
-   print '#define _CONFIG__'
-   print
+   print ('// Automatically generated using env2h.py, do not edit!')
+   print ('#ifndef _CONFIG__')
+   print ('#define _CONFIG__')
+   print ()
 
    varset = set (sys.argv[1:])
    for var in varset :
       if var not in os.environ :
-         print '#undef', var
+         print ('#undef', var)
          continue
       val = os.environ[var]
       val = val.strip()
-      print '#define', var, quote(val)
+      print ('#define', var, quote(val))
 
-   print
-   print '#endif'
+   print ()
+   print ('#endif')
 
 if __name__ == '__main__' :
     main ()
